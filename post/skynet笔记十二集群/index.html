@@ -50,7 +50,7 @@
 <meta itemprop="name" content="Skynet笔记（十二）集群">
 <meta itemprop="description" content="　　skynet 中支持 harbor 和 cluster 两种方式实现集群，本篇主要讨论 cluster，原因是我个人比较喜欢 cluster 这种方式，XD"><meta itemprop="datePublished" content="2022-02-26T18:11:13+08:00" />
 <meta itemprop="dateModified" content="2022-02-26T18:11:13+08:00" />
-<meta itemprop="wordCount" content="210">
+<meta itemprop="wordCount" content="758">
 <meta itemprop="keywords" content="skynet," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Skynet笔记（十二）集群"/>
 <meta name="twitter:description" content="　　skynet 中支持 harbor 和 cluster 两种方式实现集群，本篇主要讨论 cluster，原因是我个人比较喜欢 cluster 这种方式，XD"/>
@@ -133,8 +133,8 @@
         <div class="post-category">
             <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
             </div>
-          <span class="more-meta"> 约 210 字 </span>
-          <span class="more-meta"> 预计阅读 1 分钟 </span>
+          <span class="more-meta"> 约 758 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
         
       </div>
     </header>
@@ -147,7 +147,10 @@
     <li>
       <ul>
         <li><a href="#配置">配置</a></li>
-        <li><a href="#clusterd">clusterd</a></li>
+        <li><a href="#服务">服务</a></li>
+        <li><a href="#监听">监听</a></li>
+        <li><a href="#对外服务名字">对外服务名字</a></li>
+        <li><a href="#连接管理">连接管理</a></li>
       </ul>
     </li>
   </ul>
@@ -167,9 +170,21 @@
 <pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="p">{</span><span class="n">NodeName</span> <span class="o">=</span> <span class="s2">&#34;[xxx.xxx.xxx.xxx]:xxxx&#34;</span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="clusterd">clusterd</h2>
-<p>　　clusterd 是一个通过 skynet.uniqueservice 创建出来的进程唯一服务。它在 cluster 被 require 的时候启动。<br>
-　　clusterd 提供集群的管理服务，常用的集群接口 cluster.xxx 大部分都是在向 clusterd 发送消息，</p>
+</div><h2 id="服务">服务</h2>
+<p>　　实现 cluster 时使用了很多服务，整个逻辑个人感觉有一点绕。这里先简单讲一下使用到的各个服务大概做了什么事情。<br>
+　　clusterd 是一个通过 skynet.uniqueservice 创建出来的进程唯一服务。它在 cluster 第一次被 require 的时候就会启动。clusterd 提供集群的管理服务，常用的集群接口 cluster.xxx 大部分都是在向 clusterd 发送消息。<br>
+　　网关服务 gate 集群相关的部分每个进程一个，由 clusterd 创建，主要负责网络相关的集群节点的端口监听，数据发送，数据接收等操作。<br>
+　　clustersender 由 clusterd 创建，每个对外的连接都有一个，在发起对外连接的时候创建，主要是负责向本服务关联的连接发送数据。</p>
+<h2 id="监听">监听</h2>
+<p>　　集群中的每个进程都要有一个对外的端口，cluster.open 可以打开端口监听，可以传端口，也可以传配置中有的节点名字。<br>
+　　实际上处理监听的逻辑在 clusterd 中，当调用 listen 的时候，会启动一个新的网关服务 gate 来处理网络相关操作。启动好 gate 以后，通过 skynet.call 让 gate 服务执行 open 操作，开启端口监听。</p>
+<h2 id="对外服务名字">对外服务名字</h2>
+<p>　　服务可以注册一个对外的名字，一定要注册名字以后才能接收远程的消息。通过 cluster.register 可以注册名字。<br>
+　　cluster.register 会发消息给 clusterd 来保存名字和地址的对应关系，同时 clusterd 还提供了根据名字查询服务地址的功能。</p>
+<h2 id="连接管理">连接管理</h2>
+<p>　　集群节点之间对外连接是长连接，连接上以后不会主动断开。在节点第一次对外发送消息的时候会向对方发起连接。<br>
+　　node_channel 中保存了全部节点的连接，它的元方法 __index 会调用 open_channel 开启一个对外连接。对外连接是通过另一个服务 clustersender 实现的。<br>
+　　clustersender 是每个对外连接都会有的服务，它负责通过 socket_channel 发起对外连接，并且负责后续针对这个节点的所有发送消息的操作。</p>
     </div>
 
     
@@ -203,8 +218,8 @@
 
     <footer id="footer" class="footer">
       <div class="social-links">
-      <a href="mailto:your@email.com" class="iconfont icon-email" title="email"></a>
-      <a href="http://localhost:1313" class="iconfont icon-github" title="github"></a>
+      <a href="mailto:i@wmf.im" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Homurua" class="iconfont icon-github" title="github"></a>
   <a href="https://wmf.im/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
 </div>
 
