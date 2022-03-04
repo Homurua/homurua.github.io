@@ -1,48 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>放学后茶会</title>
-    <link>https://wmf.im/</link>
-    <description>Recent content on 放学后茶会</description>
+    <title>skynet on 放学后茶会</title>
+    <link>https://wmf.im/tags/skynet/</link>
+    <description>Recent content in skynet on 放学后茶会</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 02 Mar 2022 19:24:25 +0800</lastBuildDate><atom:link href="https://wmf.im/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Skynet笔记（十六）内存管理</title>
-      <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</link>
-      <pubDate>Wed, 02 Mar 2022 19:24:25 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Skynet笔记（十五）热更新的实现</title>
-      <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94%E7%83%AD%E6%9B%B4%E6%96%B0%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
-      <pubDate>Wed, 02 Mar 2022 19:22:28 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94%E7%83%AD%E6%9B%B4%E6%96%B0%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Skynet笔记（十四）协程的使用</title>
-      <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</link>
-      <pubDate>Sat, 26 Feb 2022 18:12:59 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Skynet笔记（十三）计时器实现</title>
-      <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</link>
-      <pubDate>Sat, 26 Feb 2022 18:11:47 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</guid>
-      <description></description>
-    </item>
-    
+    <lastBuildDate>Sat, 26 Feb 2022 18:11:13 +0800</lastBuildDate><atom:link href="https://wmf.im/tags/skynet/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Skynet笔记（十二）集群</title>
       <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/</link>
@@ -149,15 +113,6 @@
       
       <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</guid>
       <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布。云风大佬还是很认真的把文件进行了分类的，方便了学习。本篇会对各个文件夹做一个大致的说明。&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>为什么又要写博客</title>
-      <link>https://wmf.im/post/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</link>
-      <pubDate>Thu, 10 Feb 2022 03:19:19 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</guid>
-      <description>&lt;p&gt;　　是的，在经历了这些年多次的开坑和弃坑之后，终于又又又一次决定要写博客了。作为再开坑的第一作，首先来写一写这些年写博客折腾的历史以及为什么又要写博客。&lt;/p&gt;</description>
     </item>
     
   </channel>
