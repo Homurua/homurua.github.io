@@ -50,7 +50,7 @@
 <meta itemprop="name" content="Skynet笔记（十二）集群">
 <meta itemprop="description" content="　　skynet 中支持 harbor 和 cluster 两种方式实现集群，本篇主要讨论 cluster，原因是我个人比较喜欢 cluster 这种方式，XD"><meta itemprop="datePublished" content="2022-02-26T18:11:13+08:00" />
 <meta itemprop="dateModified" content="2022-02-26T18:11:13+08:00" />
-<meta itemprop="wordCount" content="758">
+<meta itemprop="wordCount" content="1306">
 <meta itemprop="keywords" content="skynet," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Skynet笔记（十二）集群"/>
 <meta name="twitter:description" content="　　skynet 中支持 harbor 和 cluster 两种方式实现集群，本篇主要讨论 cluster，原因是我个人比较喜欢 cluster 这种方式，XD"/>
@@ -133,8 +133,8 @@
         <div class="post-category">
             <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
             </div>
-          <span class="more-meta"> 约 758 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
+          <span class="more-meta"> 约 1306 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
         
       </div>
     </header>
@@ -148,9 +148,12 @@
       <ul>
         <li><a href="#配置">配置</a></li>
         <li><a href="#服务">服务</a></li>
-        <li><a href="#监听">监听</a></li>
+        <li><a href="#listen">listen</a></li>
+        <li><a href="#accept">accept</a></li>
+        <li><a href="#connect">connect</a></li>
         <li><a href="#对外服务名字">对外服务名字</a></li>
-        <li><a href="#连接管理">连接管理</a></li>
+        <li><a href="#发送数据">发送数据</a></li>
+        <li><a href="#接收数据">接收数据</a></li>
       </ul>
     </li>
   </ul>
@@ -174,17 +177,28 @@
 <p>　　实现 cluster 时使用了很多服务，整个逻辑个人感觉有一点绕。这里先简单讲一下使用到的各个服务大概做了什么事情。<br>
 　　clusterd 是一个通过 skynet.uniqueservice 创建出来的进程唯一服务。它在 cluster 第一次被 require 的时候就会启动。clusterd 提供集群的管理服务，常用的集群接口 cluster.xxx 大部分都是在向 clusterd 发送消息。<br>
 　　网关服务 gate 集群相关的部分每个进程一个，由 clusterd 创建，主要负责网络相关的集群节点的端口监听，数据发送，数据接收等操作。<br>
-　　clustersender 由 clusterd 创建，每个对外的连接都有一个，在发起对外连接的时候创建，主要是负责向本服务关联的连接发送数据。</p>
-<h2 id="监听">监听</h2>
+　　clustersender 由 clusterd 创建，每个对外的连接都有一个，在发起对外连接的时候创建，主要是负责向本服务关联的连接发送数据。<br>
+　　clusteragent 由 clusterd 创建，每次 accept 的时候会为新的连接创建一个，用于处理该连接的后续数据。</p>
+<h2 id="listen">listen</h2>
 <p>　　集群中的每个进程都要有一个对外的端口，cluster.open 可以打开端口监听，可以传端口，也可以传配置中有的节点名字。<br>
-　　实际上处理监听的逻辑在 clusterd 中，当调用 listen 的时候，会启动一个新的网关服务 gate 来处理网络相关操作。启动好 gate 以后，通过 skynet.call 让 gate 服务执行 open 操作，开启端口监听。</p>
-<h2 id="对外服务名字">对外服务名字</h2>
-<p>　　服务可以注册一个对外的名字，一定要注册名字以后才能接收远程的消息。通过 cluster.register 可以注册名字。<br>
-　　cluster.register 会发消息给 clusterd 来保存名字和地址的对应关系，同时 clusterd 还提供了根据名字查询服务地址的功能。</p>
-<h2 id="连接管理">连接管理</h2>
+　　实际上处理监听的逻辑在 clusterd 中，当调用 listen 的时候，会启动一个新的网关服务 gate 来处理网络相关操作。启动好 gate 以后，通过 skynet.call 让 gate 服务执行 open 操作，开启端口的监听。</p>
+<h2 id="accept">accept</h2>
+<p>　　clusterd 作为了 gate 的 watchdog 提供服务。当有外部连接时，watchdog 的 socket 命令中的 open 子命令会被执行。<br>
+　　clusterd 会为每个新连接创建一个 clusteragent 服务来处理本连接的数据。clusteragent 会注册 client 的消息类型，然后对 gate 服务调用 forward 操作，把本服务设为连接的 agent 来接管后续的数据。</p>
+<h2 id="connect">connect</h2>
 <p>　　集群节点之间对外连接是长连接，连接上以后不会主动断开。在节点第一次对外发送消息的时候会向对方发起连接。<br>
 　　node_channel 中保存了全部节点的连接，它的元方法 __index 会调用 open_channel 开启一个对外连接。对外连接是通过另一个服务 clustersender 实现的。<br>
 　　clustersender 是每个对外连接都会有的服务，它负责通过 socket_channel 发起对外连接，并且负责后续针对这个节点的所有发送消息的操作。</p>
+<h2 id="对外服务名字">对外服务名字</h2>
+<p>　　服务可以注册一个对外的名字，一定要注册名字以后才能接收远程的消息。通过 cluster.register 可以注册名字。<br>
+　　cluster.register 会发消息给 clusterd 来保存名字和地址的对应关系，同时 clusterd 还提供了根据名字查询服务地址的功能。</p>
+<h2 id="发送数据">发送数据</h2>
+<p>　　与同节点的不同服务间发送消息的接口类似，cluster.send 可以向指定节点的指定服务发送数据。cluster.call 向指定节点的指定服务执行一个调用。<br>
+　　消息通过在连接时启动的 clustersender 服务进行处理。发送之前需要进行数据打包，都是通过 lua-cluster.c 中的 packrequest 进行打包的。打包好的数据通过之前服务启动时建立的 socket 连接发送出去。</p>
+<h2 id="接收数据">接收数据</h2>
+<p>　　接收到新数据的时候，gate 会把数据转发给连接的 agent 也就是上面提到的 clusteragent 服务来进行处理。<br>
+　　clusteragent 使用 lua-cluster.c 中的 lunpackrequest 进行数据解包。解包以后的数据交给消息分发函数进行处理。<br>
+　　在消息分发函数中，第一次向某个服务发消息之前会去 clusterd 中根据名字查询服务地址，查到以后会保存下来，以后不会再次查询。当名字有变更的时候，clusterd 会发送 namechange 消息给 clusteragent 来变更名字。因为数据已经打包过了，所以这一步的发送不再需要打包数据了，发送消息使用的是 rawsend 和 rawcall 即可。使用对应方法直接把消息转给通过服务名字查询到的服务地址。</p>
     </div>
 
     
@@ -193,11 +207,7 @@
           <a href="/tags/skynet/">skynet</a>
           </div>
       <nav class="post-nav">
-        <a class="prev" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">Skynet笔记（十三）计时器实现</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
+        
         <a class="next" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/">
             <span class="next-text nav-default">Skynet笔记（十一）netpack分析</span>
             <span class="next-text nav-mobile">下一篇</span>
