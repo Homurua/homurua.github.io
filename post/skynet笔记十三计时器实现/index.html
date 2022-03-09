@@ -50,7 +50,7 @@
 <meta itemprop="name" content="Skynet笔记（十三）计时器实现">
 <meta itemprop="description" content="　　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。"><meta itemprop="datePublished" content="2022-02-26T18:11:47+08:00" />
 <meta itemprop="dateModified" content="2022-02-26T18:11:47+08:00" />
-<meta itemprop="wordCount" content="2307">
+<meta itemprop="wordCount" content="2390">
 <meta itemprop="keywords" content="skynet," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Skynet笔记（十三）计时器实现"/>
 <meta name="twitter:description" content="　　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。"/>
@@ -133,7 +133,7 @@
         <div class="post-category">
             <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
             </div>
-          <span class="more-meta"> 约 2307 字 </span>
+          <span class="more-meta"> 约 2390 字 </span>
           <span class="more-meta"> 预计阅读 5 分钟 </span>
         
       </div>
@@ -250,7 +250,7 @@
 </code></pre></td></tr></table>
 </div>
 </div><h3 id="增加定时事件">增加定时事件</h3>
-<p>　　当调用 skynet.timeout 的时候，会向时间轮中加入一个定时节点。处理过程中会首先创建一个 timer_event 结构的变量，然后调用 timer_add 创建一个 timer_node 结构变量，并且把 timer_event 变量的内存直接追加到了 timer_node 变量的内存后面。timer_node 的 expire 会设为 timer.time + 定时的时间。</p>
+<p>　　timer_node 结构体用来保存单个定时事件，它是每个定时队列的组成部分。timer_event 用来保存发起定时事件的源服务 handle 和与定时事件绑定的 session 这两部分数据。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -275,7 +275,9 @@
 </span><span class="c1"></span><span class="p">};</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　增加定时节点时，首先要做的是找到合适的定时队列。skynet 一共为队列分了五层，以到期时间距离当前的时间偏移量计算，分别时如下五档。</p>
+</div><p>　　当调用 skynet.timeout 的时候，会向时间轮中加入一个定时节点。处理过程中会首先创建一个 timer_event 结构的变量，然后调用 timer_add 创建一个 timer_node 结构变量，并且把 timer_event 变量的内存直接追加到了 timer_node 变量的内存后面。timer_node 的 expire 会设为 timer.time + 定时的时间。</p>
+<p><img src="/images/skynet/timer_node.png" alt="timer_node"></p>
+<p>　　增加定时节点时，首先要做的是找到合适的定时队列。skynet 一共为队列分了五层，以到期时间距离当前的时间偏移量计算，分别时如下五档。</p>
 <table>
 <thead>
 <tr>
@@ -320,7 +322,7 @@
 　　更新时间的时候，需要检查是否要移动分层队列中节点的层级。这个并不是每次都要检查，而是每当时间轮的计时累加了 256 次以后才会检查一次。相当于是产生了一次进位，进位以后，当前时间在下一层对应的队列中的节点要被移动到 near 里。<br>
 　　为了便于理解，这里举例说明一下进位操作。比如当前的 T-&gt;time 为 511，当前在 near 队列中的数据为 [256, 511]，此时再次累加，T-&gt;time 变为 512，这时一个 near 单位也就是 256 被处理完毕了，这个时候就要把 [512, 767] 的数据从分层队列中移除，加入到 near 队列中。这部分数据就在第 0 层的 2 节点中，通过将 (time &raquo; 8) &amp; 63 即可计算得出。</p>
 <h3 id="执行事件">执行事件</h3>
-<p>　　执行事件的时候通过 time &amp; 256 即可拿到当前时间对应的事件链表，从头到尾依次对事件调用 dispatch_list 即可。在 dispatch_list 中，timer 线程会拿到一开始加入定时事件时保存的源服务的 handle 和关联的消息 session，向源服务发送一条有对应 session 的消息即可，定时事件的回调函数会在后面被 worker 线程调用。<br>
+<p>　　执行事件的时候通过 time &amp; 255 即可拿到当前时间对应的事件链表，如果事件链表不为空，则从头到尾依次对事件调用 dispatch_list 即可。在 dispatch_list 中，timer 线程会拿到一开始加入定时事件时保存的源服务的 handle 和关联的消息 session，向源服务发送一条有对应 session 的消息即可，定时事件的回调函数会在后面被 worker 线程调用。<br>
 　　执行事件本身并没有什么复杂的地方，但是看源码会发现，skynet 在一次 timer_update 里面执行了两次 timer_execute 方法，第一次是在 timer_shift 之前，第二次是在 timer_shift 之后。第二次调用很正常，没什么疑问，但是第一次的调用可能会有点疑惑的地方。<br>
 　　之所以要在 timer_shift 之前也调用一次，是为了处理在上一次 timer_update 之后，到这次 timer_update 之间，加入的 timeout 为 0 的事件，如果没有在 timer_shift 之前的 timer_execute 调用，则这部分事件会被漏掉。<br>
 　　但是，其实如果是通过 skynet 提供的接口创建的定时事件的话，应该是用不到前面的那一次 timer_execute 的，因为 skynet 提供的接口的入口是 skynet_timeout，在这个里面当 time &lt;= 0 时，已经过滤掉了这部分的调用，没有经过定时器，而是直接向源服务发送了触发的消息。那么为什么还要保留这个前置调用呢，这里有一个 <a href="https://github.com/cloudwu/skynet/issues/1191">issue</a> 说了这个原因，timer 不需要关注 skynet 的用法实现。</p>

@@ -16,7 +16,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
 
-<meta name="author" content="wmf" /><meta name="description" content="" /><meta name="keywords" content="Hugo, theme, even" />
+<meta name="author" content="wmf" /><meta name="description" content="　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。
+" /><meta name="keywords" content="Hugo, theme, even" />
 
 
 
@@ -40,19 +41,19 @@
 
 
 <meta property="og:title" content="Skynet笔记（十四）协程的使用" />
-<meta property="og:description" content="" />
+<meta property="og:description" content="　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-02-26T18:12:59+08:00" />
 <meta property="article:modified_time" content="2022-02-26T18:12:59+08:00" />
 
 <meta itemprop="name" content="Skynet笔记（十四）协程的使用">
-<meta itemprop="description" content=""><meta itemprop="datePublished" content="2022-02-26T18:12:59+08:00" />
+<meta itemprop="description" content="　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。"><meta itemprop="datePublished" content="2022-02-26T18:12:59+08:00" />
 <meta itemprop="dateModified" content="2022-02-26T18:12:59+08:00" />
-<meta itemprop="wordCount" content="0">
-<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta itemprop="wordCount" content="231">
+<meta itemprop="keywords" content="skynet," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Skynet笔记（十四）协程的使用"/>
-<meta name="twitter:description" content=""/>
+<meta name="twitter:description" content="　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。"/>
 
 <!--[if lte IE 9]>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
@@ -129,9 +130,11 @@
 
       <div class="post-meta">
         <span class="post-time"> 2022-02-26 </span>
-        
-          <span class="more-meta"> 约 0 字 </span>
-          <span class="more-meta"> 预计阅读 0 分钟 </span>
+        <div class="post-category">
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
+            </div>
+          <span class="more-meta"> 约 231 字 </span>
+          <span class="more-meta"> 预计阅读 1 分钟 </span>
         
       </div>
     </header>
@@ -139,16 +142,32 @@
     <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
-    <nav id="TableOfContents"></nav>
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#协程池">协程池</a></li>
+        <li><a href="#创建协程">创建协程</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
   </div>
 </div>
     <div class="post-content">
-      
+      <p>　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。</p>
+<h2 id="协程池">协程池</h2>
+<p>　　一般基于 Lua 的框架都会提供协程的复用，复用可以减少不断创建和销毁协程的开销。协程池是大部分框架的选择，在 skynet 中也是通过协程池实现的协程复用。<br>
+　　协程池的结构就是一个 table 而已，被当作队列来使用，需要协程时通过 table.remove 从队首取出，用完以后放在队尾。协程池一开始是空的，并不会初始化一些协程备用。</p>
+<h2 id="创建协程">创建协程</h2>
+<p>　　通过的是 skynet 自定义的方法 co_create(func) 可以创建一个包裹了指定函数的协程。</p>
     </div>
 
     
 <footer class="post-footer">
-      
+      <div class="post-tags">
+          <a href="/tags/skynet/">skynet</a>
+          </div>
       <nav class="post-nav">
         <a class="prev" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94%E7%83%AD%E6%9B%B4%E6%96%B0%E7%9A%84%E5%AE%9E%E7%8E%B0/">
             <i class="iconfont icon-left"></i>
