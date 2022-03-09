@@ -276,7 +276,7 @@
 </code></pre></td></tr></table>
 </div>
 </div><p>　　当调用 skynet.timeout 的时候，会向时间轮中加入一个定时节点。处理过程中会首先创建一个 timer_event 结构的变量，然后调用 timer_add 创建一个 timer_node 结构变量，并且把 timer_event 变量的内存直接追加到了 timer_node 变量的内存后面。timer_node 的 expire 会设为 timer.time + 定时的时间。</p>
-<p><img src="/images/skynet/timer_node.png" alt="timer_node"></p>
+<p><img src="/images/skynet/timer_node.jpg" alt="timer_node"></p>
 <p>　　增加定时节点时，首先要做的是找到合适的定时队列。skynet 一共为队列分了五层，以到期时间距离当前的时间偏移量计算，分别时如下五档。</p>
 <table>
 <thead>
