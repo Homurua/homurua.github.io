@@ -50,7 +50,7 @@
 <meta itemprop="name" content="Skynet笔记（十四）协程的使用">
 <meta itemprop="description" content="　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。"><meta itemprop="datePublished" content="2022-02-26T18:12:59+08:00" />
 <meta itemprop="dateModified" content="2022-02-26T18:12:59+08:00" />
-<meta itemprop="wordCount" content="231">
+<meta itemprop="wordCount" content="1602">
 <meta itemprop="keywords" content="skynet," /><meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Skynet笔记（十四）协程的使用"/>
 <meta name="twitter:description" content="　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。"/>
@@ -133,8 +133,8 @@
         <div class="post-category">
             <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
             </div>
-          <span class="more-meta"> 约 231 字 </span>
-          <span class="more-meta"> 预计阅读 1 分钟 </span>
+          <span class="more-meta"> 约 1602 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
         
       </div>
     </header>
@@ -146,8 +146,14 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#协程池">协程池</a></li>
-        <li><a href="#创建协程">创建协程</a></li>
+        <li><a href="#协程池">协程池</a>
+          <ul>
+            <li><a href="#创建协程">创建协程</a></li>
+          </ul>
+        </li>
+        <li><a href="#协程与消息">协程与消息</a></li>
+        <li><a href="#fork">fork</a></li>
+        <li><a href="#睡眠和唤醒">睡眠和唤醒</a></li>
       </ul>
     </li>
   </ul>
@@ -159,8 +165,35 @@
 <h2 id="协程池">协程池</h2>
 <p>　　一般基于 Lua 的框架都会提供协程的复用，复用可以减少不断创建和销毁协程的开销。协程池是大部分框架的选择，在 skynet 中也是通过协程池实现的协程复用。<br>
 　　协程池的结构就是一个 table 而已，被当作队列来使用，需要协程时通过 table.remove 从队首取出，用完以后放在队尾。协程池一开始是空的，并不会初始化一些协程备用。</p>
-<h2 id="创建协程">创建协程</h2>
-<p>　　通过的是 skynet 自定义的方法 co_create(func) 可以创建一个包裹了指定函数的协程。</p>
+<h3 id="创建协程">创建协程</h3>
+<p>　　在 skynet 中创建协程的接口是 co_create(func)，它会首先尝试从协程池中拿取一个协程，如果拿不到，会自己创建一个协程出来。<br>
+　　因为协程在用完以后要放回协程池中，所以在创建的时候包裹中的函数除了要执行参数 func 以外，还需要一个无限循环。循环中可以接受新的函数，并且再次执行。<br>
+　　skynet 通过使用 yield 和 resume 配合，实现了给一个创建好的协程传入要执行的函数。在协程的循环中，协程 yield 了两次，第一次 yield 等待目标函数的传入，第二次 yield 是等待第一次传入的函数的参数。co_create 的调用会把目标函数当作参数对协程调用 resume 完成第一步，并且返回协程，等待第二次调用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="n">f</span> <span class="o">=</span> <span class="n">coroutine_yield</span> <span class="s2">&#34;SUSPEND&#34;</span>
+<span class="n">f</span><span class="p">(</span><span class="n">coroutine_yield</span><span class="p">())</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="协程与消息">协程与消息</h2>
+<p>　　协程在 skynet 中的大部分使用场景都是用来处理消息的。skyent 中有几个 table 用来记录协程和消息的关系，其中 session_id_coroutine 是 session 到 协程的映射，session_coroutine_id 是协程到 session 的映射，session_coroutine_address 是协程到消息的源服务地址的映射。<br>
+　　在处理接收到的消息时，会感觉消息类型获取其 dispatch 函数，并且为 dispatch 函数创建一个协程。创建以后会在 session_coroutine_id 和 session_coroutine_address 增加数据。当协程被 resume 执行完消息处理函数之后，协程的循环中会删除掉 session_coroutine_id 和 session_coroutine_address 的记录，并且把协程重新投入协程池中去。<br>
+　　在发送消息时，如果是通过 skynet.send 发消息的话，不需要做记录，如果是通过 skynet.call 发消息的话，需要向 session_id_coroutine 中新增记录，保存 session 到协程的映射。有了这个映射关系，在处理回复的消息的时候，才能根据 session 拿到在等待它返回的协程，然后清除掉 session_id_coroutine 中的记录，并且把返回的消息交给等待的协程处理。<br>
+　　session_coroutine_id 还有一个作用，可以判断是不是忘记回复消息的源服务了。如果在处理消息的时候使用 skynet.ret 回复了源服务的话，则会清掉 session_coroutine_id 中的数据。在协程的循环中，当消息的处理函数调用结束以后，会检查 session_coroutine_id 中本协程对应的 session，如果还没有清掉并且不为 0 的话，则说明这是一条需要回复但是并没有进行回复的消息。</p>
+<h2 id="fork">fork</h2>
+<p>　　skynet.fork 可以创建一个协程来执行一个函数，一般用在逻辑中需要调用阻塞接口，但是又不想阻塞在这里的情况，比如需要连续多次的 call 调用的情况就可以为每个 call 调用创建一个协程。另外在通过循环 sleep 实现连续的定时调用时也可以用 fork 来包裹需要不断调用的函数。<br>
+　　它的实现就是用 co_create 创建了一个协程，包裹住目标函数。然后将其投入到了一个叫做 fork_queue 的队列中去，等待被调用。<br>
+　　fork_queue 的调用时机其实很快，就在处理完本条消息以后，skynet.dispatch_message 就会为 fork_queue 中所有等待的协程执行 resume 来处理它。<br>
+　　云风说可以把 skynet.fork 当作是更加高效的 skynet.timeout(0) 来看待，通过实现也可以看出，fork 确实比 timeout 要省略了很多步骤。</p>
+<h2 id="睡眠和唤醒">睡眠和唤醒</h2>
+<p>　　skynet.wait 和 skynet.sleep 都可以让出当前协程，都是需要传入一个 token 来标识挂起的协程。区别是 skynet.sleep 需要指定一个唤醒的定时，如果在到期之前还没有被 skynet.wake 唤醒的话，则会由 timer 线程发送消息来唤醒。skynet.yield 也可以让出当前协程，不过它只是对 skynet.sleep(0) 的简单封装，这里不再赘述。<br>
+　　wait 和 sleep 的实现没太大区别，最主要的区别是 session 的获取。wait 是直接调用 session 分配接口获得的，sleep 则是注册定时事件，通过定时事件返回 session 获得的。它们都通过同一个接口 suspend_sleep 将自己阻塞，并且把 session 和协程的映射关系保存在了 session_id_coroutine 中，把 token 和 session 的映射关系保存在了 sleep_session 中。<br>
+　　skynet.wakeup 可以唤醒这两种睡眠的协程，包括还未到期的通过 sleep 接口睡眠的协程。但是逻辑并不在这个函数中，它负责的只是把要唤醒的协程的 token 插入到了 wakeup_queue 中。<br>
+　　wakeup_queue 中等待唤醒的协程会在消息的处理协程挂起以后，通过 dispatch_wakeup 根据 wakeup 的调用顺序被依次唤醒。</p>
     </div>
 
     
@@ -169,11 +202,7 @@
           <a href="/tags/skynet/">skynet</a>
           </div>
       <nav class="post-nav">
-        <a class="prev" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94%E7%83%AD%E6%9B%B4%E6%96%B0%E7%9A%84%E5%AE%9E%E7%8E%B0/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">Skynet笔记（十五）热更新的实现</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
+        
         <a class="next" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">
             <span class="next-text nav-default">Skynet笔记（十三）计时器实现</span>
             <span class="next-text nav-mobile">下一篇</span>
