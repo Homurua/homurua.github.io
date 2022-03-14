@@ -6,7 +6,16 @@
     <description>Recent content in Posts on 放学后茶会</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 26 Feb 2022 18:12:59 +0800</lastBuildDate><atom:link href="https://wmf.im/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 02 Mar 2022 19:22:28 +0800</lastBuildDate><atom:link href="https://wmf.im/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Skynet笔记（十五）CodeCache的实现</title>
+      <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+      <pubDate>Wed, 02 Mar 2022 19:22:28 +0800</pubDate>
+      
+      <guid>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+      <description>&lt;p&gt;　　CodeCache 应该算是 skynet 的一个特色功能了，是用来优化不同 LuaState 加载同一份代码的速度。因为 skynet 大量启动了 LuaState 来作为 Acotr 使用，所以才在重复加载代码上需要这样的优化。本篇会尝试分析 CodeCache 的实现。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>Skynet笔记（十四）协程的使用</title>
       <link>https://wmf.im/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</link>
