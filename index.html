@@ -122,6 +122,29 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">Skynet笔记（十六）内存管理</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-03-02 </span>
+      <div class="post-category">
+          <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
+          </div>
+        <span class="more-meta"> 约 1137 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      <p>　　skynet 在默认情况下使用了 jemalloc 进行内存分配，这种情况下 skynet 提供了自定义的内存管理函数，本篇会尝试讲解这部分功能的实现。</p>
+    </div>
+    <div class="read-more">
+      <a href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">Skynet笔记（十五）CodeCache的实现</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2022-03-02 </span>
@@ -323,29 +346,6 @@
     </div>
     <div class="read-more">
       <a href="/post/skynet%E7%AC%94%E8%AE%B0%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/">Skynet笔记（六）handle的管理</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-02-12 </span>
-      <div class="post-category">
-          <a href="/categories/skynet%E7%AC%94%E8%AE%B0/"> skynet笔记 </a>
-          </div>
-        <span class="more-meta"> 约 1309 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      <p>　　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。</p>
-    </div>
-    <div class="read-more">
-      <a href="/post/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
