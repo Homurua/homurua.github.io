@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。
+'><title>Skynet笔记（六）handle的管理</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='Skynet笔记（六）handle的管理'>
+<meta property='og:description' content='　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-12T03:10:43&#43;08:00'/><meta property='article:modified_time' content='2022-02-12T03:10:43&#43;08:00'/>
+<meta name="twitter:title" content="Skynet笔记（六）handle的管理">
+<meta name="twitter:description" content="　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。
+">
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>Home</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>Archives</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>About</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" >
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/">Skynet笔记（六）handle的管理</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 12, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。</p>
+<h2 id="管理器结构">管理器结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">handle_name</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">handle_storage</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">rwlock</span> <span class="n">lock</span><span class="p">;</span> <span class="c1">// 读写锁，因为读取的频率远远高于写入
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">harbor</span><span class="p">;</span> <span class="c1">// 本节点的 harbor id
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">handle_index</span><span class="p">;</span> <span class="c1">// 当前的索引值，会累加
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">slot_size</span><span class="p">;</span> <span class="c1">// slot 的长度
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">**</span><span class="n">slot</span><span class="p">;</span> <span class="c1">// 全部 ctx
+</span><span class="c1"></span>
+    <span class="kt">int</span> <span class="n">name_cap</span><span class="p">;</span> <span class="c1">// 名字列表的容量
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">name_count</span><span class="p">;</span> <span class="c1">// 名字列表的总数
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">handle_name</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span> <span class="c1">// 保存全部的名字
+</span><span class="c1"></span><span class="p">};</span>
+
+<span class="k">static</span> <span class="k">struct</span> <span class="n">handle_storage</span> <span class="o">*</span><span class="n">H</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　每个 skynet 进程都有一个全局的 handle 管理器，会在进程启动时被初始化。它是个带有读写锁的结构，因为大部分的操作都是查询操作，所以读写锁保证了查询的效率。保存 <strong>handle的哈希→服务</strong> 键值对的 <strong>slot</strong> 是一个动态数组，不够了会扩容，初始长度是 4，每次扩容会在原长度上翻倍。<strong>name</strong> 用来保存全部的 handle 和名字的对应关系，是一个有序的动态数组，按 <strong>handle_name</strong> 的 <strong>name</strong> 字段的字符顺序进行排序，初始长度是 2，每次扩容在原长度上翻倍。</p>
+<h2 id="通过-handle-查询服务地址">通过 handle 查询服务地址</h2>
+<h3 id="注册-handle">注册 handle</h3>
+<p>　　想要查询首先要注册数据。服务在创建的时候会调用 <strong>skynet_handle_register</strong> 为服务注册一个 handle 并且插入到 <strong>slot</strong> 中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="kt">uint32_t</span> <span class="n">skynet_handle_register</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　插入数据的部分值得讲一讲，<strong>slot</strong> 的 key 是通过 handle 对 <strong>slot_size</strong> 取余数的来的。handle 有一个 <strong>handle_index</strong> 做标记量，是从 1 开始的。如果不考虑服务退出的话，其实 handle 就一直累加就好了，也不需要取余数了，不够了就扩容。实际在服务退出的时候，handle 不会回收，但是 <strong>slot</strong> 中占据的位置要清掉。这就造成了 <strong>slot</strong> 的空洞问题，插入数据就变得麻烦了起来，因为要找到空洞安放数据。</p>
+<ul>
+<li>以写模式锁住读写锁</li>
+<li>把 handle 赋值为 handle_index 的值</li>
+<li>用 handle 对 slot_size 取余，拿到一个位置</li>
+<li>如果这个位置是空的，则找到了合适的位置，保存在 slot 中，解开读写锁，返回 handle 即可</li>
+<li>如果这个位置不为空，则累加 handle，再检查，一直累加整个 slot_size 的数值，此时所有 slot 的位置都被检查了一遍了</li>
+<li>如果还没找到，那就要扩容了，把 slot 扩容到原先的两倍，然后重复遍历检查的步骤</li>
+</ul>
+<p>　　这里有两个小限制，首先 slot_size 不能超过 16777215，还有就是当 handle 超过 16777215 以后，handle 会从 1 再次开始，理论上来说有重复的风险。</p>
+<h3 id="释放-handle">释放 handle</h3>
+<p>　　skynet 会在服务退出后移除掉 <strong>slot</strong> 中对应的项。在 <strong>slot</strong> 中形成空洞，这也是为什么在插入的时候要遍历整个 <strong>slot</strong> 找空位置的原因。</p>
+<h3 id="查询">查询</h3>
+<p>　　可以通过 handle 直接查询到服务的地址。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">skynet_handle_grab</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　有了上面的注册以后，这个查询就很简单了，算出 handle 的哈希，直接从 <strong>slot</strong> 里面取出来服务的地址返回即可。因为不涉及到修改，所以查询只锁读锁就行了。</p>
+<h2 id="通过服务名字查询-handle">通过服务名字查询 handle</h2>
+<h3 id="注册名字">注册名字</h3>
+<p>　　可以通过调用 skynet.name 来注册一个指定服务的名字。该接口最终会调用到 C 层的</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">skynet_handle_namehandle</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 <strong>name</strong> 数组中去。因为 <strong>name</strong> 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 <strong>name</strong> 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。</p>
+<h3 id="查询-1">查询</h3>
+<p>　　因为 <strong>name</strong> 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十三）计时器实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十二）集群</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#管理器结构">管理器结构</a></li>
+    <li><a href="#通过-handle-查询服务地址">通过 handle 查询服务地址</a>
+      <ol>
+        <li><a href="#注册-handle">注册 handle</a></li>
+        <li><a href="#释放-handle">释放 handle</a></li>
+        <li><a href="#查询">查询</a></li>
+      </ol>
+    </li>
+    <li><a href="#通过服务名字查询-handle">通过服务名字查询 handle</a>
+      <ol>
+        <li><a href="#注册名字">注册名字</a></li>
+        <li><a href="#查询-1">查询</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

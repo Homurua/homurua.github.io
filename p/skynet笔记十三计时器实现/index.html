@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。
+'><title>Skynet笔记（十三）计时器实现</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='Skynet笔记（十三）计时器实现'>
+<meta property='og:description' content='　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-26T18:11:47&#43;08:00'/><meta property='article:modified_time' content='2022-02-26T18:11:47&#43;08:00'/>
+<meta name="twitter:title" content="Skynet笔记（十三）计时器实现">
+<meta name="twitter:description" content="　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。
+">
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>Home</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>Archives</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>About</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" >
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">Skynet笔记（十三）计时器实现</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 26, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 5 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。</p>
+<h2 id="时间轮算法">时间轮算法</h2>
+<p>　　时间轮是实现高效率定时器的常见算法。虽然经常被形容的很高大上，但是其实时间轮非常好理解，因为它就是取自生活中的例子。<br>
+　　一个简单的例子，如果要在 2022 年 2 月 22 日 22 点 22 分 22 秒做一件事情，那么首先会看年份是不是对应，年份对应了再看月份，月份对应了再看几号，一级一级的向下看，直到秒也可以对应的上，这时候就是要做这件事情了。<br>
+　　可以看到如果是参考现实计时法的时间轮的话，那实现的其实就是一个类似闹钟的功能。当有需要定时执行的事件时，将它加入到目标时间对应的事件队列中。然后每秒执行一次时间累计，不断累加时间。每次累加时间以后，检查当前时间对应的事件队列，如果不为空，则依次执行。<br>
+　　与另一种常见的定时器实现算法最小堆比较，时间轮算法最大的好处是其加入一个新定时事件时的复杂度是 O(1) 的，删除一个事件虽然不是 O(1) 但是大概率也比最小堆要快一些。</p>
+<h2 id="用法">用法</h2>
+<p>　　skynet 只提供了创建一个定时事件的接口 skynet.timeout，并没有取消这个事件的接口。通过调用 skynet.timeout(ti, func) 即可启动一个定时调用。<br>
+　　因为没办法取消定时，但是有时候又确实需要取消，所以 skynet 的文档中给了一个通过修改闭包函数变量把 func 置空的操作。虽然不是真正的从时间轮中移除，但是也算是一份折中的实现。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="kr">function</span> <span class="nf">cancelable_timeout</span><span class="p">(</span><span class="n">ti</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="kr">function</span> <span class="nf">cb</span><span class="p">()</span>
+        <span class="kr">if</span> <span class="n">func</span> <span class="kr">then</span>
+            <span class="n">func</span><span class="p">()</span>
+        <span class="kr">end</span>
+    <span class="kr">end</span>
+    <span class="kd">local</span> <span class="kr">function</span> <span class="nf">cancel</span><span class="p">()</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="kc">nil</span>
+    <span class="kr">end</span>
+    <span class="n">skynet.timeout</span><span class="p">(</span><span class="n">ti</span><span class="p">,</span> <span class="n">cb</span><span class="p">)</span>
+    <span class="kr">return</span> <span class="n">cancel</span>
+<span class="kr">end</span>
+
+<span class="kd">local</span> <span class="n">cancel</span> <span class="o">=</span> <span class="n">cancelable_timeout</span><span class="p">(</span><span class="n">ti</span><span class="p">,</span> <span class="n">dosomething</span><span class="p">)</span>
+
+<span class="n">cancel</span><span class="p">()</span>  <span class="c1">-- canel dosomething</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="实现">实现</h2>
+<h3 id="时间轮结构">时间轮结构</h3>
+<p>　　虽然上面举例使用的是现实中钟表的例子，但是实际上时间轮的实现基本不会是类似钟表的设计，因为在代码中，使用准确的日期其实并不便于计算。<br>
+　　skynet 的实现是一个分层时间轮，一共分了五层。最接近要执行的时间点在 near 里，其余的分层在 t 里，有 4 层。每一层用链表实现，事件执行时从头部取，增加事件时从尾部增加。<br>
+　　因为存在并发的情况，所以时间轮在修改的时候是需要加锁的。这里还是采用了 skynet 中常见的自旋锁来处理。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">link_list</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">timer_node</span> <span class="n">head</span><span class="p">;</span> <span class="c1">// 头节点
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">timer_node</span> <span class="o">*</span><span class="n">tail</span><span class="p">;</span> <span class="c1">// 尾指针
+</span><span class="c1"></span><span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">timer</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">link_list</span> <span class="n">near</span><span class="p">[</span><span class="n">TIME_NEAR</span><span class="p">];</span> <span class="c1">// TIME_NEAR 256，工作队列
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">link_list</span> <span class="n">t</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="n">TIME_LEVEL</span><span class="p">];</span> <span class="c1">// TIME_LEVEL 64，分层等待队列，最后一层为溢出队列
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">lock</span><span class="p">;</span> <span class="c1">// 时间轮的自旋锁
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">time</span><span class="p">;</span> <span class="c1">// 时间轮转动次数，会一直累加到 uint32_t 的上限，然后变成 0 以后继续累加
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">starttime</span><span class="p">;</span> <span class="c1">// 开始时间
+</span><span class="c1"></span>    <span class="kt">uint64_t</span> <span class="n">current</span><span class="p">;</span> <span class="c1">// 从 starttime 开始到现在运行了多久
+</span><span class="c1"></span>    <span class="kt">uint64_t</span> <span class="n">current_point</span><span class="p">;</span> <span class="c1">// 以操作系统启动时间为基准的时间戳，单位为厘秒
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="增加定时事件">增加定时事件</h3>
+<p>　　timer_node 结构体用来保存单个定时事件，它是每个定时队列的组成部分。timer_event 用来保存发起定时事件的源服务 handle 和与定时事件绑定的 session 这两部分数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">timer_event</span> <span class="p">{</span>
+    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span> <span class="c1">// 定时的服务 handle
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">session</span><span class="p">;</span> <span class="c1">// 定时事件的 session
+</span><span class="c1"></span><span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">timer_node</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">timer_node</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">// 链表的下个节点
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">expire</span><span class="p">;</span> <span class="c1">// 过期时间，单位为厘秒
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　当调用 skynet.timeout 的时候，会向时间轮中加入一个定时节点。处理过程中会首先创建一个 timer_event 结构的变量，然后调用 timer_add 创建一个 timer_node 结构变量，并且把 timer_event 变量的内存直接追加到了 timer_node 变量的内存后面。timer_node 的 expire 会设为 timer.time + 定时的时间。</p>
+<p><img src="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node.jpg"
+	width="643"
+	height="296"
+	srcset="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_480x0_resize_q75_box.jpg 480w, /p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="timer_node"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="217"
+		data-flex-basis="521px"
+	
+></p>
+<p>　　增加定时节点时，首先要做的是找到合适的定时队列。skynet 一共为队列分了五层，以到期时间距离当前的时间偏移量计算，分别时如下五档。</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:left">过期时间</th>
+<th style="text-align:left">分层</th>
+<th style="text-align:left">差异位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">0 - 255</td>
+<td style="text-align:left">near</td>
+<td style="text-align:left">0-8 bit</td>
+</tr>
+<tr>
+<td style="text-align:left">256 - 16383</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">9-14 bit</td>
+</tr>
+<tr>
+<td style="text-align:left">16384 - 1048575</td>
+<td style="text-align:left">1</td>
+<td style="text-align:left">15-20 bit</td>
+</tr>
+<tr>
+<td style="text-align:left">1048576 - 67108863</td>
+<td style="text-align:left">2</td>
+<td style="text-align:left">21-26 bit</td>
+</tr>
+<tr>
+<td style="text-align:left">67108864 - 正无穷</td>
+<td style="text-align:left">3</td>
+<td style="text-align:left">27-32 bit</td>
+</tr>
+</tbody>
+</table></div>
+<p>　　查找适合队列的时候是用 (A | mask) == (B | mask) 的方式计算的，比计算两数相减差值比较上下限要快一点。确定一个时间应该在哪个队列中的方法是，从 0-8 bit 开始比较目标时间和当前时间，如果差异在 0-8 bit 内，则说明距离当前时间不超过 255 秒，则应该放在 near 层中。如果不在当前层，则将掩码左移 6 位继续比较两个值。如果前四层都确定不了的话，则把剩下的全部加到最后一层中。<br>
+　　找到了合适的队列以后，直接把 timer_node 链接到 link_list 的最后即可。</p>
+<h3 id="更新时间">更新时间</h3>
+<p>　　timer 线程会每隔 2.5 毫秒更新一次时间。由于 skynet 定时器的最小精度是厘秒，也就是 10 毫秒，所以并不是每次调用的时候都会真正触发时间更新。<br>
+　　当可以触发时间更新时，会计算当前时间和上次时间的偏移量，然后为每个偏移量调用 timer_update 更新定时器。虽然理论上来说不太可能连续多次触发，但是为了防止特殊情况造成的定时被忽略，所以要对每个偏移量执行 timer_update 操作。<br>
+　　更新时间的时候，需要检查是否要移动分层队列中节点的层级。这个并不是每次都要检查，而是每当时间轮的计时累加了 256 次以后才会检查一次。相当于是产生了一次进位，进位以后，当前时间在下一层对应的队列中的节点要被移动到 near 里。<br>
+　　为了便于理解，这里举例说明一下进位操作。比如当前的 T-&gt;time 为 511，当前在 near 队列中的数据为 [256, 511]，此时再次累加，T-&gt;time 变为 512，这时一个 near 单位也就是 256 被处理完毕了，这个时候就要把 [512, 767] 的数据从分层队列中移除，加入到 near 队列中。这部分数据就在第 0 层的 2 节点中，通过将 (time &raquo; 8) &amp; 63 即可计算得出。</p>
+<h3 id="执行事件">执行事件</h3>
+<p>　　执行事件的时候通过 time &amp; 255 即可拿到当前时间对应的事件链表，如果事件链表不为空，则从头到尾依次对事件调用 dispatch_list 即可。在 dispatch_list 中，timer 线程会拿到一开始加入定时事件时保存的源服务的 handle 和关联的消息 session，向源服务发送一条有对应 session 的消息即可，定时事件的回调函数会在后面被 worker 线程调用。<br>
+　　执行事件本身并没有什么复杂的地方，但是看源码会发现，skynet 在一次 timer_update 里面执行了两次 timer_execute 方法，第一次是在 timer_shift 之前，第二次是在 timer_shift 之后。第二次调用很正常，没什么疑问，但是第一次的调用可能会有点疑惑的地方。<br>
+　　之所以要在 timer_shift 之前也调用一次，是为了处理在上一次 timer_update 之后，到这次 timer_update 之间，加入的 timeout 为 0 的事件，如果没有在 timer_shift 之前的 timer_execute 调用，则这部分事件会被漏掉。<br>
+　　但是，其实如果是通过 skynet 提供的接口创建的定时事件的话，应该是用不到前面的那一次 timer_execute 的，因为 skynet 提供的接口的入口是 skynet_timeout，在这个里面当 time &lt;= 0 时，已经过滤掉了这部分的调用，没有经过定时器，而是直接向源服务发送了触发的消息。那么为什么还要保留这个前置调用呢，这里有一个 <a class="link" href="https://github.com/cloudwu/skynet/issues/1191"  target="_blank" rel="noopener"
+    >issue</a> 说了这个原因，timer 不需要关注 skynet 的用法实现。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十二）集群</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十一）netpack分析</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#时间轮算法">时间轮算法</a></li>
+    <li><a href="#用法">用法</a></li>
+    <li><a href="#实现">实现</a>
+      <ol>
+        <li><a href="#时间轮结构">时间轮结构</a></li>
+        <li><a href="#增加定时事件">增加定时事件</a></li>
+        <li><a href="#更新时间">更新时间</a></li>
+        <li><a href="#执行事件">执行事件</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

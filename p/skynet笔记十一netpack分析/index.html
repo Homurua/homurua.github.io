@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　netpack 提供的是网络基础数据包的打包和解包功能，是网络输出传输绕不开的一个点。本篇会尝试分析一下 netpack 的实现。
+'><title>Skynet笔记（十一）netpack分析</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='Skynet笔记（十一）netpack分析'>
+<meta property='og:description' content='　netpack 提供的是网络基础数据包的打包和解包功能，是网络输出传输绕不开的一个点。本篇会尝试分析一下 netpack 的实现。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-26T18:08:38&#43;08:00'/><meta property='article:modified_time' content='2022-02-26T18:08:38&#43;08:00'/>
+<meta name="twitter:title" content="Skynet笔记（十一）netpack分析">
+<meta name="twitter:description" content="　netpack 提供的是网络基础数据包的打包和解包功能，是网络输出传输绕不开的一个点。本篇会尝试分析一下 netpack 的实现。
+">
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>Home</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>Archives</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/search/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="10" cy="10" r="7" />
+  <line x1="21" y1="21" x2="15" y2="15" />
+</svg>
+
+
+
+                
+                <span>Search</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/about/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>About</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" >
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/">Skynet笔记（十一）netpack分析</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 26, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　netpack 提供的是网络基础数据包的打包和解包功能，是网络输出传输绕不开的一个点。本篇会尝试分析一下 netpack 的实现。</p>
+<h2 id="概述">概述</h2>
+<p>　　netpack 中一共提供了 5 个 Lua 接口。pack 用来打包数据，tostring 用来将一个二进制数据转化为字符串，filter 用来将数据按照类型整理，clear 用来清空待处理数据的队列，pop 用来从待处理队列中弹出一个网络包。</p>
+<h2 id="pack">pack</h2>
+<p>　　pack 可以把一个二进制数据或者是一个字符串打包成一个二进制数据包。<br>
+　　包头占两个字节，是数据的长度，因为只有两个字节，所以单个数据包的长度需要小于 65536 个字节。值得注意的是，数据的字节序固定采用了大端方式，第一个字节是长度的高 8 位，第二个字节是长度的低 8 位。之所以这样写而不是直接保存长度，主要是担心夸字节序主机之间的交流。包头后面紧跟了数据内容。</p>
+<h2 id="tostring">tostring</h2>
+<p>　　tostring 负责将一个二进制数据转化为字符串格式。接受一个 userdata 和一个长度参数，返回转化后的字符串。实现上全都是通过 Lua 的 api 实现的，比较简单。<br>
+　　有一点需要注意的是，netpack.tostring 会释放掉本来的 userdata 的内存。</p>
+<h2 id="filter">filter</h2>
+<p>　　lfilter 在处理大部分类型的命令时都只是简单的传递了一下参数而已，此处不再赘述。需要重点关注的点是，当处理 SKYNET_SOCKET_TYPE_DATA 类型的网络数据的时候，会执行的对数据进行分包的操作。</p>
+<h3 id="结构">结构</h3>
+<p>　　每个服务有一个网络数据队列，它包含了两部分，一部分是每个套接字的未完成部分 hash，它是一个 uncomplete 结构体的哈希桶，存放着每一个连接的一份未完成数据。另一个部分是已经完成分包的数据包队列，它是一个动态长度的环形数组，可以动态扩容，每次扩容 QUEUESIZE 个数据长度，存放着每一个连接的全部待处理网络包，等待消息分发函数调用 pop 来拿取网络包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define QUEUESIZE 1024
+</span><span class="cp">#define HASHSIZE 4096
+</span><span class="cp"></span>
+<span class="k">struct</span> <span class="n">netpack</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 套接字 id
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
+</span><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span> <span class="c1">// 数据
+</span><span class="c1"></span><span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">uncomplete</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">pack</span><span class="p">;</span> <span class="c1">// 未完成数据对应的网络包结构
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">// 哈希桶的下一个
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的长度
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">header</span><span class="p">;</span> <span class="c1">// 当只有 1 字节的数据读取到时，用这个记录一下
+</span><span class="c1"></span><span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">queue</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">cap</span><span class="p">;</span> <span class="c1">// queue 的长度
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">head</span><span class="p">;</span> <span class="c1">// queue 的头节点索引
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">tail</span><span class="p">;</span> <span class="c1">// queue 的尾节点索引
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">hash</span><span class="p">[</span><span class="n">HASHSIZE</span><span class="p">];</span> <span class="c1">// 未完成分包的数据
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">queue</span><span class="p">[</span><span class="n">QUEUESIZE</span><span class="p">];</span> <span class="c1">// 已经完成分包的网络包队列
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="分包">分包</h3>
+<p>　　分包的最终处理函数是 filter_data_，这里就会用上上面提到的结构体，根据不同的情况，分别填充不同的数据，最后返回给 Lua 层的调用。<br>
+　　函数会首先尝试通过 find_uncomplete 拿到 socket id 对应的 uncomplate 结构体。这里因为保存的数据结构是个哈希桶，所以找到对应哈希节点以后要遍历链表进行查找。<br>
+　　如果存在对应的 uncomplate 结构体，则说明上次还有未完全读取的数据包。首先判断已读取长度 read 的大小，如果 read 小于 0，说明上次只读取到了本数据包的一个字节数据，这时候会读第二个字节的数据来得到完成的数据包长度。通过 uncompalte 结构体中的数据包总长度 pack.size 和已读取长度 read 可以计算出还需要的数据长度 need 来。<br>
+　　通过比较还需要的长度和本次处理的数据长度，可以知道本次处理的情况。如果本次的长度还是不够拼出全部的数据，则把本次的数据加到 uncomplate 中即可。如果本次的数据正好可以完成当前的数据包，则直接把数据加到 uncomplate 中并且返回它即可。如果本次的数据会超出当前需要的数据，则首先把本数据包的内容加入到 queue.queue 中去，然后递归调用 push_more 处理剩下的内容，直到数据长度不再够组成一个完整数据包。<br>
+　　一开始不存在 uncomplate 结构体的处理方法基本一样，只是要额外处理一下本次读取的数据长度为 1 的情况，这种情况不仅要保存 uncompalte 结构体，还要把 read 置为 -1 来作为这种特殊情况的标识。</p>
+<h2 id="pop">pop</h2>
+<p>　　用来从已完成组装的队列中拿取最早的那一个数据包。上面说了分包的时候如果数据一次读取的比较多，超出了一条消息的范围，则会依次处理并且把每条消息都 push 到 queue 的 queue 数组中去。要处理消息的时候，就调用 netpack.pop 从队列中拿取一条消息出来。</p>
+<h2 id="clear">clear</h2>
+<p>　　用来清空整个队列的方法，在 gateserver 中被放在了 CMD 的 __gc 元方法中。会遍历清空 queue 中的 hash 和 queue 这两个结构，释放每一个数据的内存。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十三）计时器实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十二）集群</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#概述">概述</a></li>
+    <li><a href="#pack">pack</a></li>
+    <li><a href="#tostring">tostring</a></li>
+    <li><a href="#filter">filter</a>
+      <ol>
+        <li><a href="#结构">结构</a></li>
+        <li><a href="#分包">分包</a></li>
+      </ol>
+    </li>
+    <li><a href="#pop">pop</a></li>
+    <li><a href="#clear">clear</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
+
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
+
+    </body>
+</html>

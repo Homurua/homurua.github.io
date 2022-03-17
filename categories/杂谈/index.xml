@@ -1,20 +1,38 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>杂谈 on 放学后茶会</title>
-    <link>https://wmf.im/categories/%E6%9D%82%E8%B0%88/</link>
-    <description>Recent content in 杂谈 on 放学后茶会</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en</language>
-    <lastBuildDate>Thu, 10 Feb 2022 03:19:19 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/%E6%9D%82%E8%B0%88/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>为什么又要写博客</title>
-      <link>https://wmf.im/post/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</link>
-      <pubDate>Thu, 10 Feb 2022 03:19:19 +0800</pubDate>
-      
-      <guid>https://wmf.im/post/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</guid>
-      <description>&lt;p&gt;　　是的，在经历了这些年多次的开坑和弃坑之后，终于又又又一次决定要写博客了。作为再开坑的第一作，首先来写一写这些年写博客折腾的历史以及为什么又要写博客。&lt;/p&gt;</description>
-    </item>
-    
-  </channel>
+    <channel>
+        <title>杂谈 on 放学后茶会</title>
+        <link>https://wmf.im/categories/%E6%9D%82%E8%B0%88/</link>
+        <description>Recent content in 杂谈 on 放学后茶会</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Thu, 10 Feb 2022 03:19:19 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/%E6%9D%82%E8%B0%88/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>为什么又要写博客</title>
+        <link>https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</link>
+        <pubDate>Thu, 10 Feb 2022 03:19:19 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%88%E8%A6%81%E5%86%99%E5%8D%9A%E5%AE%A2/</guid>
+        <description>&lt;p&gt;　　是的，在经历了这些年多次的开坑和弃坑之后，终于又又又一次决定要写博客了。作为再开坑的第一作，首先来写一写这些年写博客折腾的历史以及为什么又要写博客。&lt;/p&gt;
+&lt;h2 id=&#34;折腾的历史&#34;&gt;折腾的历史&lt;/h2&gt;
+&lt;h3 id=&#34;wordpress-时代&#34;&gt;WordPress 时代&lt;/h3&gt;
+&lt;p&gt;　　学生时代的时候，查资料看到别人的博客，觉得挺好的，想给自己也整一个。那时候感觉有个自己的网站挺牛逼的，大概算是个可以吹的点了，就兴冲冲的开始查资料怎么建站。从一开始完全不懂，开始看视频学，买了一个喜欢的域名，又买了一个云服务器。事后证明那视频巨坑，就是商家搞出来忽悠人的，域名托管在了一个不知名的服务商那里，不能转出，操作界面突出一个烂，还经常上不去。这还不是最惨的，最惨的是云服务器也是他家的，一百来块钱一年，配置忘了，反正就是各种卡，各种慢。不过折腾了半天，终于是搞定了，在一个烂服务器上搭了一套 LAMP，可以想象有多卡了，再加上服务器的网络也不行，导致访问完全随缘，写东西更是痛苦。在这种情况下，断断续续写了一点东西，后来就完全懒得上了。写的内容都完全忘记了，只记得当时用的那个小猫主题挺好的。&lt;/p&gt;
+&lt;h3 id=&#34;csdn-时代&#34;&gt;CSDN 时代&lt;/h3&gt;
+&lt;p&gt;　　毕业以后，在我还在家里摸鱼没找工作，还在准备做一个 Cocos2d-x 前端打工仔的时候，看了不少大佬的博客，学到了挺多有用的知识。那一年的 CSDN 还不是现在的 CSDN，所以就有样学样在 CSDN 开了个坑记一些学习中碰到的问题。写了应该有几十篇，以 Cocos2d-x 有关的内容为主，可能也有几篇 C++ 的。后来工作了，各种阴差阳错，转来做后端了，再加上 Cocos 式微，Cocos 基本再也没碰过了。那时候工作轻松，下了班天天忙着打游戏，博客就弃坑了。&lt;/p&gt;
+&lt;h3 id=&#34;hexo-时代&#34;&gt;HEXO 时代&lt;/h3&gt;
+&lt;p&gt;　　工作了一段时候以后，有次上网发现了 hexo，感觉挺好的，直接把 Markdown 编译成静态页面访问，做博客完全够用了。那时候正好因为科学上网手里一个搬瓦工的服务器，只用来跑 SS Server 也浪费了点，就开始折腾 hexo 了。hexo 确实比之前那套 LAMP 的方便多了。挑了半天还是选了那个用的人最多的 next 主题。这次学聪明了，从一个大服务商那里买了个域名。凭心而论 hexo 还是不错的，部署方便，主题多，使用也简单，除了文章多了以后生成一次很慢以外别的没什么问题。这次开坑大概也写了几十篇，然后再次沉迷打游戏，慢慢就弃坑了。&lt;/p&gt;
+&lt;h3 id=&#34;hugo-旧时代&#34;&gt;HUGO 旧时代&lt;/h3&gt;
+&lt;p&gt;　　又有一次上网的时候，看到有人在讨论 hugo，go 语言写的，速度比 hexo 不知快到哪里去了，而且从 hexo 迁移过去很方便。看到这个的时候，我又想起了自己弃坑好久的博客，想重新捡起来，于是又投入到了折腾 hugo 中。hugo 确实快，不过那时候主题还很少，挑来挑去才找到一个没什么 bug 的主题。但是这时候我科学上网已经不自己部署了，改用机场了，所以就去学了学，把博客部署在了 Github Pages 上。这次又写了一些，然后再次沉迷游戏弃坑了博客。&lt;/p&gt;
+&lt;h3 id=&#34;笔记时代&#34;&gt;笔记时代&lt;/h3&gt;
+&lt;p&gt;　　有次跟一个朋友讨论问题，他说这个东西他记过笔记，然后给我截了个图。我感觉挺方便的，完全没有了部署的问题，随想随写，而且反正是完全给自己写的，写起来很随意，就感觉挺喜欢的。而且笔记软件支持的功能比 Markdown 要丰富的多，链接，块编辑等等。我就花了一些时间，把市面上常见的笔记软件都试了试，估计试了十来款，最后挑了一个最喜欢的，把之前博客的 Markdown 文件都导入了进去。这次写了很久，一直写到了前几天。结果碰到了一个软件 bug，把我辛辛苦苦写的几百字给搞没了。当时就有一种游戏没存档结果闪退了的感觉。想来想去，还是继续把博客搞起来吧，这样跟别人讨论问题的时候，可以直接发链接了，而且之前买了一个自己名字的域名，正好也可以用起来。就又把文章都导出成了 Markdown，不过那些时间、标签之类的标记都丢失了，有一些文档的格式也出了点问题。&lt;/p&gt;
+&lt;h3 id=&#34;hugo-新时代&#34;&gt;HUGO 新时代&lt;/h3&gt;
+&lt;p&gt;　　因为之前就喜欢 hugo，所以这次还是选的 hugo 来搞。轻车熟路部署好，剩下的就是整理笔记了。笔记写的很随意，而且导出的时候有一些格式出了问题，所以就不准备原样导入成博文了。准备花点时间把笔记整理一下，感觉已经没用或者写的不好的就不再贴上来了，只把感觉有价值的文章整理成博文发出来。&lt;/p&gt;
+&lt;h2 id=&#34;为什么要写博客&#34;&gt;为什么要写博客&lt;/h2&gt;
+&lt;p&gt;　　回到标题，之所以写博客，对我来说主要是出于记录这个需求，其次才是分享，再次是为了用上一直闲置的域名。在学习过程中总结还是很重要的，不然看了的东西总是看两眼就以为自己会了，但是其实不会。总结的过程会让自己变成一个讲述人，一个东西能有条理的讲清楚的时候，大概就可以算得上是真正掌握了吧。&lt;br&gt;
+　　总之，希望这次开坑可以一直写下去。博客的名字就用放学后茶会吧。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Please don&amp;rsquo;t say &amp;ldquo;You are lazy&amp;rdquo;&lt;/p&gt;
+&lt;/blockquote&gt;</description>
+        </item>
+        
+    </channel>
 </rss>
