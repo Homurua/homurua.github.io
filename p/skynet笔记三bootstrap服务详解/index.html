@@ -277,20 +277,20 @@
     <p>　　上文写到在 skynet 进程启动过程中，bootstrap 函数会读取传入的配置文件中 bootstrap 对应的项加载启动脚本，其中 bootstrap 一般的配置为 &ldquo;snlua bootstrap&rdquo;, 在执行中实际操作就是启动一个 snlua 服务，启动参数为 bootstrap.</p>
 <h2 id="执行步骤">执行步骤</h2>
 <ol>
-<li>启动了 <strong>launcher</strong> 服务</li>
-<li>读取 <strong>harbor</strong> 配置处理 harbor 模式，如果没有使用 harbor 则启动一个 <strong>cdummy</strong> 服务负责拦截对外广播的全局名字变更，如果使用了 harbor 则在主节点启动 <strong>cmaster</strong> 服务，并且不管是否主节点都启动 <strong>cslave</strong> 服务</li>
-<li>如果是未使用 <strong>harbor</strong> 的情况下，启动 <strong>datacenterd</strong> 服务</li>
-<li>启动 <strong>server_mgr</strong> 服务</li>
-<li>如果配置了 <strong>enablessl</strong> 则会加载 ltls 模块</li>
+<li>启动了 launcher 服务</li>
+<li>读取 harbor 配置处理 harbor 模式，如果没有使用 harbor 则启动一个 cdummy 服务负责拦截对外广播的全局名字变更，如果使用了 harbor 则在主节点启动 cmaster 服务，并且不管是否主节点都启动 cslave 服务</li>
+<li>如果是未使用 harbor 的情况下，启动 datacenterd 服务</li>
+<li>启动 server_mgr 服务</li>
+<li>如果配置了 enablessl 则会加载 ltls 模块</li>
 <li>启动配置文件中 start 配置指定的入口服务</li>
 </ol>
 <h2 id="launcher-服务">launcher 服务</h2>
 <p>　　虽然名字是叫 launcher, 但是负责的任务除了启动器的责任还多了一点，主要是给 debug 后台提供一些针对服务的操作接口。比如执行 GC, 查看内存，杀死某个服务之类的。<br>
-　　服务支持两种类型的协议，<strong>&ldquo;lua&rdquo;</strong> 和 <strong>&ldquo;text&rdquo;</strong>, 其中 lua 协议是给 lua 层的各种接口用的，text 的唯一用途是，snlua 启动错误的时候，会给 launcher 发送一个 &ldquo;ERROR&rdquo; 消息来报告错误。<br>
+　　服务支持两种类型的协议，&ldquo;lua&rdquo; 和 &ldquo;text&rdquo;, 其中 lua 协议是给 lua 层的各种接口用的，text 的唯一用途是，snlua 启动错误的时候，会给 launcher 发送一个 &ldquo;ERROR&rdquo; 消息来报告错误。<br>
 　　绝大部分支持的命令可以参考 wiki 中 <a class="link" href="https://github.com/cloudwu/skynet/wiki/DebugConsole"  target="_blank" rel="noopener"
     >DebugConsole</a> 的部分。其余命令中，最常用的，也是 launcher 的本职工作的是 LAUNCH 它负责调用 skynet.launch 启动一个服务，并且把服务的 handle 保存，以备别的服务查询。</p>
 <h2 id="datacenterd-服务">datacenterd 服务</h2>
-<p>　　datacenterd 只能用来给 <strong>harbor</strong> 模式下的服务器架构提供一个数据中心的功能。提供的操作支持很有限，会启动在主节点上，并且 cluster 模式下不可用。可以参考 <a class="link" href="https://github.com/cloudwu/skynet/wiki/DataCenter"  target="_blank" rel="noopener"
+<p>　　datacenterd 只能用来给 harbor 模式下的服务器架构提供一个数据中心的功能。提供的操作支持很有限，会启动在主节点上，并且 cluster 模式下不可用。可以参考 <a class="link" href="https://github.com/cloudwu/skynet/wiki/DataCenter"  target="_blank" rel="noopener"
     >DataCenter</a> 的内容。</p>
 <ul>
 <li>datacenter.get 获取指定 key 的值</li>
@@ -298,7 +298,7 @@
 <li>datacenter.wait 等待一个值被设置，设置后会返回</li>
 </ul>
 <h2 id="service_mgr-服务">service_mgr 服务</h2>
-<p>　　主要为两个功能提供服务，第一个是 <strong>UniqueService</strong>, 第二个是 <strong>snax</strong>. 它会把自己注册成 <strong>&quot;.service&quot;</strong> 的名字，可以提供全局服务的名字查询和全局服务创建的功能</p>
+<p>　　主要为两个功能提供服务，第一个是 UniqueService, 第二个是 snax. 它会把自己注册成 &ldquo;.service&rdquo; 的名字，可以提供全局服务的名字查询和全局服务创建的功能</p>
 </section>
 
 

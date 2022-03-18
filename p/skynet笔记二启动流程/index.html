@@ -278,43 +278,43 @@
 <h2 id="main">main</h2>
 <ol>
 <li>根据参数拿到配置文件的路径</li>
-<li>初始化全局数据结构 <strong>skynet_node *G_NODE</strong></li>
-<li>初始化全局环境变量 <strong>skynet_env *E</strong></li>
-<li>忽略信号 <strong>SIGPIPE</strong></li>
+<li>初始化全局数据结构 skynet_node *G_NODE</li>
+<li>初始化全局环境变量 skynet_env *E</li>
+<li>忽略信号 SIGPIPE</li>
 <li>创建一个虚拟机加载一段硬代码（hard code）进去并且加载配置文件</li>
 <li>把读取到的配置文件的内容写入到环境变量中</li>
-<li>从环境变量中拿到 <strong>skynet_config config</strong> 需要的值初始化它</li>
+<li>从环境变量中拿到 skynet_config config 需要的值初始化它</li>
 <li>把加载配置创建出来的虚拟机关闭</li>
-<li>把 <strong>config</strong> 的地址作为参数传给 <strong>skynet_start</strong> 函数继续后面的步骤</li>
+<li>把 config 的地址作为参数传给 skynet_start 函数继续后面的步骤</li>
 </ol>
 <h2 id="skynet_start">skynet_start</h2>
 <ol>
-<li>处理信号 <strong>SIGHUP</strong></li>
-<li>处理 <strong>daemon</strong> 相关的配置，如果配置了 <strong>daemon</strong> 启动的话，调用 <strong>daemon_init</strong> 处理 daemon 相关的操作</li>
-<li>初始化 <strong>harbor</strong> 节点数量</li>
-<li>初始化 <strong>handle</strong> 管理器 <strong>handle_storage *H</strong></li>
-<li>初始化全局消息队列 <strong>global_queue *Q</strong></li>
-<li>初始化 C 模块管理器 <strong>modules *M</strong></li>
-<li>初始化全局时间管理器 <strong>timer *TI</strong></li>
-<li>初始化全局 socket 管理器 <strong>socket_server *SOCKET_SERVER</strong></li>
+<li>处理信号 SIGHUP</li>
+<li>处理 daemon 相关的配置，如果配置了 daemon 启动的话，调用 daemon_init 处理 daemon 相关的操作</li>
+<li>初始化 harbor 节点数量</li>
+<li>初始化 handle 管理器 handle_storage *H</li>
+<li>初始化全局消息队列 global_queue *Q</li>
+<li>初始化 C 模块管理器 modules *M</li>
+<li>初始化全局时间管理器 timer *TI</li>
+<li>初始化全局 socket 管理器 socket_server *SOCKET_SERVER</li>
 <li>标记性能测试标志</li>
-<li>创建 config 中的 <strong>logger</strong> 服务</li>
-<li>调用 <strong>bootstrap</strong>函数，传入配置中的 bootstrap 字段内容</li>
-<li>调用 <strong>start</strong> 函数，传入配置中的 <strong>thread</strong> 字段</li>
+<li>创建 config 中的 logger 服务</li>
+<li>调用 bootstrap函数，传入配置中的 bootstrap 字段内容</li>
+<li>调用 start 函数，传入配置中的 thread 字段</li>
 </ol>
 <h2 id="bootstrap">bootstrap</h2>
 <ol>
-<li>根据配置中的 bootstrap 字段内容，启动一个服务，一般皆为 <strong>snlua bootstrap</strong>, 即为启动一个 <strong>bootstrap</strong> 服务。该服务会启动 lua 层相关的基础服务，并且最后启动配置中 <strong>start</strong> 指定的服务。</li>
+<li>根据配置中的 bootstrap 字段内容，启动一个服务，一般皆为 snlua bootstrap, 即为启动一个 bootstrap 服务。该服务会启动 lua 层相关的基础服务，并且最后启动配置中 start 指定的服务。</li>
 </ol>
 <h2 id="start">start</h2>
 <ol>
-<li>创建一个 <strong>pthread_t</strong> 结构的数组 <strong>pid</strong> 来保存所有线程的 pid</li>
-<li>创建 <strong>monitor *m</strong>, 这个变量用来管理全部线程的 monitor</li>
-<li>创建 <strong>monitor</strong> 线程</li>
-<li>创建 <strong>timer</strong> 线程</li>
-<li>创建 <strong>socket</strong> 线程</li>
-<li>创建所有的 <strong>worker</strong> 线程</li>
-<li>调用 <strong>pthread_join</strong> 等待全部线程的结束</li>
+<li>创建一个 pthread_t 结构的数组 pid 来保存所有线程的 pid</li>
+<li>创建 monitor *m, 这个变量用来管理全部线程的 monitor</li>
+<li>创建 monitor 线程</li>
+<li>创建 timer 线程</li>
+<li>创建 socket 线程</li>
+<li>创建所有的 worker 线程</li>
+<li>调用 pthread_join 等待全部线程的结束</li>
 </ol>
 </section>
 
