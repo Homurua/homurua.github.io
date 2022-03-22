@@ -364,7 +364,8 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">skynet_handle_namehandle</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 <strong>name</strong> 数组中去。因为 <strong>name</strong> 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 <strong>name</strong> 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。</p>
+</div><p>　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 <strong>name</strong> 数组中去。因为 <strong>name</strong> 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 <strong>name</strong> 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。<br>
+　　注册名字是如果是本地名字则应该在前面加上一个点号，类似 &ldquo;.xxx&rdquo; 来区别本地名字和 harbor 的全局名字。本地名字没限制，harbor 的服务名字不能超过 16 个字符。</p>
 <h3 id="查询-1">查询</h3>
 <p>　　因为 <strong>name</strong> 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。</p>
 </section>
@@ -405,6 +406,18 @@
     <h2 class="section-title">相关文章</h2>
     <div class="related-contents">
         <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Skynet笔记（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
             
                 
 <article class="">
@@ -450,18 +463,6 @@
 
         <div class="article-details">
             <h2 class="article-title">Skynet笔记（十三）计时器实现</h2>
-        </div>
-    </a>
-</article>
-            
-                
-<article class="">
-    <a href="/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/">
-        
-        
-
-        <div class="article-details">
-            <h2 class="article-title">Skynet笔记（十二）集群</h2>
         </div>
     </a>
 </article>
