@@ -149,11 +149,11 @@ sudo systemctl status clash
 　　可以通过修改小乌龟的设置，让它使用自带的 ssh 软件，这样可以直接用上命令行配置好的密钥。通过修改 setting-&amp;gt;network-&amp;gt;ssh client 的软件指向已经安装的 git-&amp;gt;usr-&amp;gt;bin-&amp;gt;ssh.exe 即可完成设置。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>About</title>
-        <link>https://wmf.im/about/</link>
+        <title>放学后茶会</title>
+        <link>https://wmf.im/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/</link>
         <pubDate>Thu, 17 Mar 2022 00:00:00 +0000</pubDate>
         
-        <guid>https://wmf.im/about/</guid>
+        <guid>https://wmf.im/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/</guid>
         <description>&lt;p&gt;　　90后，游戏后端开发&lt;br&gt;
 　　主要技术栈：C、Lua、Linux&lt;br&gt;
 　　邮箱：&lt;a class=&#34;link&#34; href=&#34;mailto:i@wmf.im&#34; &gt;i@wmf.im&lt;/a&gt;&lt;/p&gt;
@@ -2099,7 +2099,7 @@ Q query info&lt;/p&gt;
         <pubDate>Thu, 10 Feb 2022 15:33:55 +0800</pubDate>
         
         <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</guid>
-        <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布。云风大佬还是很认真的把文件进行了分类的，方便了学习。本篇会对各个文件夹做一个大致的说明。&lt;/p&gt;
+        <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布，skynet 的源码排布还是很有规范的，利于了学习。本篇会以 1.4.0 版本的 skynet 源码为准，对各个文件夹其中包含的代码做一个大致的说明。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;3rd&lt;/strong&gt; 使用的第三方库
 &lt;ul&gt;
@@ -2237,7 +2237,7 @@ Q query info&lt;/p&gt;
 　　总之，希望这次开坑可以一直写下去。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Archives</title>
+        <title>放学后茶会</title>
         <link>https://wmf.im/archives/</link>
         <pubDate>Tue, 28 May 2019 00:00:00 +0000</pubDate>
         
@@ -2245,7 +2245,7 @@ Q query info&lt;/p&gt;
         <description></description>
         </item>
         <item>
-        <title>Search</title>
+        <title>搜索</title>
         <link>https://wmf.im/search/</link>
         <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
         

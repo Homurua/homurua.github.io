@@ -2088,7 +2088,7 @@ Q query info&lt;/p&gt;
         <pubDate>Thu, 10 Feb 2022 15:33:55 +0800</pubDate>
         
         <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</guid>
-        <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布。云风大佬还是很认真的把文件进行了分类的，方便了学习。本篇会对各个文件夹做一个大致的说明。&lt;/p&gt;
+        <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布，skynet 的源码排布还是很有规范的，利于了学习。本篇会以 1.4.0 版本的 skynet 源码为准，对各个文件夹其中包含的代码做一个大致的说明。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;3rd&lt;/strong&gt; 使用的第三方库
 &lt;ul&gt;
