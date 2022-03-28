@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-cn" dir="ltr">
     <head><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　Lua 是一门小巧精炼的语言，虽然功能不太强大，但是该有的倒也都有，关键是代码量很少，只有不到两万行，非常适合通过阅读代码来学习带虚拟机的脚本语言的实现。本篇以 Lua-5.4.3 的源码为准，参考官方手册。
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。
 '><title>Lua源码笔记（二）数据类型</title>
 
 <link rel='canonical' href='https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/'>
 
 <link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='Lua源码笔记（二）数据类型'>
-<meta property='og:description' content='　Lua 是一门小巧精炼的语言，虽然功能不太强大，但是该有的倒也都有，关键是代码量很少，只有不到两万行，非常适合通过阅读代码来学习带虚拟机的脚本语言的实现。本篇以 Lua-5.4.3 的源码为准，参考官方手册。
+<meta property='og:description' content='　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。
 '>
 <meta property='og:url' content='https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/'>
 <meta property='og:site_name' content='放学后茶会'>
-<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='lua' /><meta property='article:published_time' content='2022-03-24T02:18:47&#43;08:00'/><meta property='article:modified_time' content='2022-03-24T02:18:47&#43;08:00'/>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='lua' /><meta property='article:published_time' content='2022-03-25T02:18:47&#43;08:00'/><meta property='article:modified_time' content='2022-03-25T02:18:47&#43;08:00'/>
 <meta name="twitter:title" content="Lua源码笔记（二）数据类型">
-<meta name="twitter:description" content="　Lua 是一门小巧精炼的语言，虽然功能不太强大，但是该有的倒也都有，关键是代码量很少，只有不到两万行，非常适合通过阅读代码来学习带虚拟机的脚本语言的实现。本篇以 Lua-5.4.3 的源码为准，参考官方手册。
+<meta name="twitter:description" content="　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。
 ">
     <link rel="shortcut icon" href="/img/dango.svg" />
 
@@ -197,7 +197,7 @@
     
     <header class="article-category">
         
-            <a href="/categories/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0/" >
+            <a href="/categories/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0/" style="background-color: #2a9d8f; color: #fff;">
                 Lua源码笔记
             </a>
         
@@ -225,7 +225,7 @@
   <path d="M3 11h16" />
   <path d="M18 16.496v1.504l1 1" />
 </svg>
-                <time class="article-time--published">Mar 24, 2022</time>
+                <time class="article-time--published">Mar 25, 2022</time>
             </div>
         
 
@@ -240,7 +240,7 @@
 
 
                 <time class="article-time--reading">
-                    阅读时长: 3 分钟
+                    阅读时长: 5 分钟
                 </time>
             </div>
         
@@ -254,76 +254,287 @@
     <section class="article-content">
     
     
-    <p>　　Lua 是一门小巧精炼的语言，虽然功能不太强大，但是该有的倒也都有，关键是代码量很少，只有不到两万行，非常适合通过阅读代码来学习带虚拟机的脚本语言的实现。本篇以 <a class="link" href="https://www.lua.org/ftp/lua-5.4.3.tar.gz"  target="_blank" rel="noopener"
-    >Lua-5.4.3</a> 的源码为准，参考<a class="link" href="https://www.lua.org/manual/5.4/"  target="_blank" rel="noopener"
-    >官方手册</a>。</p>
-<h2 id="库函数">库函数</h2>
-<p>　　Lua 的库函数的源码文件分布基本是按照官方手册<a class="link" href="https://www.lua.org/manual/5.4/#index"  target="_blank" rel="noopener"
-    >索引页</a>给出的分类进行划分的，有了索引页的结构做参照，代码分布就会比较清晰。</p>
-<p><img src="/manual_index.jpg"
-	
-	
-	
+    <p>　　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。</p>
+<h2 id="tvalue">TValue</h2>
+<p>　　Lua 中不管是什么类型的值，在 C 层都是用同一个 TValue 结构体变量表示的。这样的实现与为不同数据类型定义不同的结构体相比，可以统一处理接口。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
+</span><span class="cm">** Union of all Lua values
+</span><span class="cm">*/</span>
+<span class="k">typedef</span> <span class="k">union</span> <span class="n">Value</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">GCObject</span> <span class="o">*</span><span class="n">gc</span><span class="p">;</span>    <span class="cm">/* collectable objects */</span>
+    <span class="kt">void</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>         <span class="cm">/* light userdata */</span>
+    <span class="n">lua_CFunction</span> <span class="n">f</span><span class="p">;</span> <span class="cm">/* light C functions */</span>
+    <span class="n">lua_Integer</span> <span class="n">i</span><span class="p">;</span>   <span class="cm">/* integer numbers */</span>
+    <span class="n">lua_Number</span> <span class="n">n</span><span class="p">;</span>    <span class="cm">/* float numbers */</span>
+<span class="p">}</span> <span class="n">Value</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">lu_byte</span><span class="p">;</span>
+
+<span class="cm">/*
+</span><span class="cm">** Tagged Values. This is the basic representation of values in Lua:
+</span><span class="cm">** an actual value plus a tag with its type.
+</span><span class="cm">*/</span>
+<span class="cp">#define TValuefields    Value value_; lu_byte tt_
+</span><span class="cp"></span>
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">TValue</span> <span class="p">{</span>
+    <span class="n">TValuefields</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">TValue</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到 TValue 中的结构很简单，只包含了一个宏定义 TValuefields，它里面又包含了一个表示值数据的 value_ 和一个表示值类型的 tt_ 。<br>
+　　value_ 是一个 union Value 联合体变量，它可以表示 Lua 中所有类型值的数据，不同字段对应的类型注释中已经给出，其中所有需要进行 GC 的数据类型的指针都会保存在 gc 字段中。<br>
+　　tt_ 是一个 unsigned char 类型，它的不同位表示了不同的涵义，如图所示。</p>
+<p><img src="/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits.jpg"
+	width="1362"
+	height="392"
+	srcset="/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits_huab49f0fc1fa8b26efd229d5780b871eb_39345_480x0_resize_q75_box.jpg 480w, /p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits_huab49f0fc1fa8b26efd229d5780b871eb_39345_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
-		alt="manual_index"
+		alt="tt_bits"
 	
+	
+		class="gallery-image" 
+		data-flex-grow="347"
+		data-flex-basis="833px"
 	
 ></p>
+<p>　　可以看到值的类型由两部分组成，一部分是表示基础类型，比如数字类型就是 LUA_TNUMBER，还有一部分表示变种类型，Lua 中叫 variant，比如数字类型又分成了两类，整数和浮点数，分别用 LUA_VNUMINT 和 LUA_VNUMFLT 表示。下面是全部的基础类型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
+</span><span class="cm">** basic types
+</span><span class="cm">*/</span>
+<span class="cp">#define LUA_TNONE           (-1)
+</span><span class="cp"></span>
+<span class="cp">#define LUA_TNIL            0
+</span><span class="cp">#define LUA_TBOOLEAN        1
+</span><span class="cp">#define LUA_TLIGHTUSERDATA  2
+</span><span class="cp">#define LUA_TNUMBER         3
+</span><span class="cp">#define LUA_TSTRING         4
+</span><span class="cp">#define LUA_TTABLE          5
+</span><span class="cp">#define LUA_TFUNCTION       6
+</span><span class="cp">#define LUA_TUSERDATA       7
+</span><span class="cp">#define LUA_TTHREAD         8 </span><span class="c1">// LX, LG
+</span><span class="c1"></span>
+<span class="cp">#define LUA_NUMTYPES        9
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="gcunion--gcobject">GCUnion &amp;&amp; GCObject</h2>
+<p>　　在了解 GCObject 之前首先要看一下 GCUnion 这个联合体，它是所有 GC 对象真正保存的位置。在 GCUnion 中，有一个 GCObject gc 的字段，它并不真正代表某一种类型，而是一个抽象的公共字段，来提供类型转换。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">union</span> <span class="n">GCUnion</span> <span class="p">{</span>
+    <span class="n">GCObject</span> <span class="n">gc</span><span class="p">;</span>  <span class="cm">/* common header */</span>
+    <span class="k">struct</span> <span class="n">TString</span> <span class="n">ts</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">Udata</span> <span class="n">u</span><span class="p">;</span>
+    <span class="k">union</span> <span class="n">Closure</span> <span class="n">cl</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">Table</span> <span class="n">h</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">Proto</span> <span class="n">p</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">lua_State</span> <span class="n">th</span><span class="p">;</span>  <span class="cm">/* thread */</span>
+    <span class="k">struct</span> <span class="n">UpVal</span> <span class="n">upv</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　需要 GC 的值虽然有各自的结构，但是对外的时候都是统一以 GCObject 为标准的。GCObject 中包含了三部分的内容，next 是整个 GC 链表的一部分，所有需要 GC 的对象都通过 next 连接了起来。tt 又是数据类型，它跟上面的 tt_ 的用法是一样的，只不过它里面表示的是 GC 对象的类型。marked 用于在 GC 阶段的标识。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
+</span><span class="cm">** Common Header for all collectable objects (in macro form, to be
+</span><span class="cm">** included in other objects)
+</span><span class="cm">*/</span>
+<span class="cp">#define CommonHeader    struct GCObject *next; lu_byte tt; lu_byte marked
+</span><span class="cp"></span>
+<span class="cm">/* Common type for all collectable objects */</span>
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">GCObject</span> <span class="p">{</span>
+    <span class="n">CommonHeader</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">GCObject</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　Lua 中定义了很多 GCUnion 到 GCObject 之间互相转换的方法。gco2xx 用来将 GCObject 转为目标类型的 Lua 变量，obj2gco 用来将 Lua 变量转为 GCObject 类型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define cast_u(o)    cast(union GCUnion *, (o))
+</span><span class="cp"></span>
+<span class="cp">#define gco2ts(o)   check_exp(novariant((o)-&gt;tt) == LUA_TSTRING, &amp;((cast_u(o))-&gt;ts))
+</span><span class="cp">#define gco2u(o)    check_exp((o)-&gt;tt == LUA_VUSERDATA, &amp;((cast_u(o))-&gt;u))
+</span><span class="cp">#define gco2lcl(o)  check_exp((o)-&gt;tt == LUA_VLCL, &amp;((cast_u(o))-&gt;cl.l))
+</span><span class="cp">#define gco2ccl(o)  check_exp((o)-&gt;tt == LUA_VCCL, &amp;((cast_u(o))-&gt;cl.c))
+</span><span class="cp">#define gco2cl(o)   check_exp(novariant((o)-&gt;tt) == LUA_TFUNCTION, &amp;((cast_u(o))-&gt;cl))
+</span><span class="cp">#define gco2t(o)    check_exp((o)-&gt;tt == LUA_VTABLE, &amp;((cast_u(o))-&gt;h))
+</span><span class="cp">#define gco2p(o)    check_exp((o)-&gt;tt == LUA_VPROTO, &amp;((cast_u(o))-&gt;p))
+</span><span class="cp">#define gco2th(o)   check_exp((o)-&gt;tt == LUA_VTHREAD, &amp;((cast_u(o))-&gt;th))
+</span><span class="cp">#define gco2upv(o)  check_exp((o)-&gt;tt == LUA_VUPVAL, &amp;((cast_u(o))-&gt;upv))
+</span><span class="cp"></span>
+<span class="cp">#define obj2gco(v)    check_exp((v)-&gt;tt &gt;= LUA_TSTRING, &amp;(cast_u(v)-&gt;gc))
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="创建-gcobject">创建 GCObject</h2>
+<p>　　可以通过调用 luaC_newobj 接口创建一个 GCObject 变量。它会首先为 GCObject 分配所需大小的内存，然后把 GCObject 的 marked 标记为白色，保存数据类型 tt，最后将自己加入到全局的 global_State 的 allgc 链表的最前面。</p>
+<h2 id="nil">nil</h2>
+<p>　　nil 在 Lua 中表示空，因为没有值的缘故，它不需要在 Value 中有对应的字段，只要正确设置了它的类型 tt_ 即可。同时在判断值是否为 nil 的时候，直接判断类型即可。<br>
+　　它的基础类型都是 LUA_TNIL，有三个变种类型，分别用在三种不同情况下。</p>
 <ul>
-<li>基础库<br>
-基础库就是索引中 base 下面的方法，提供的是最基础的功能，比如加载文件，打印输出这种功能。这部分的代码实现是在 lbaselib.c 中。</li>
-<li>协程库<br>
-索引中 coroutine 下面的部分是 Lua 所有的协程接口，协程是 Lua 中非常重要的组成部分，它们的实现在 lcorolib.c 中。</li>
-<li>调试库<br>
-索引中 debug 下面的部分是 Lua 所有的调试接口，这些接口有时在查 debug 的时候有很好的效果，不过有一些函数运行速度不太好，应该尽量避免在业务逻辑中使用调试库中的函数。调试库的实现是在 ldblia.c 中。</li>
-<li>IO 库<br>
-io 下面的函数是 Lua 提供的处理文件输入输出的接口，有两套风格的接口，一套使用隐式的文件句柄，另一套使用显式的文件句柄。IO 库的实现在 liolib.c 中。</li>
-<li>数学库<br>
-math 库提供了一些基础的数学方法，Lua 提供的数学库不算很完善，倒也基本上够用，这部分的代码在 lmathlib.c 中实现。</li>
-<li>os 库<br>
-系统库中封装了提供了一些系统接口的封装，平时开发中用的最多的就是时间和日期相关的接口了，系统库的函数在 loslib.c 中实现。</li>
-<li>package 库<br>
-package 库提供的是 Lua 的模块加载功能，其中 require 是直接导出到了全局变量中，其它的函数都在 package 表中。package 表中的函数在开发中不怎么常用，实现是在 loadlib.c 中。</li>
-<li>字符串库<br>
-string 库中包含了所有针对字符串操作的函数，库中的函数不仅可以直接调用，同时也被设为了字符串元表的 __index 域，所以也可以通过面向对象的方式调用。这部分的实现在 lstrlib.c 中。</li>
-<li>table 库<br>
-table 库中是所有针对 table 的操作，提供的操作其实比较少，不太够用，一般需要自己扩展一下。这部分的实现在 ltablib.c 中。</li>
-<li>utf8 库<br>
-utf8 库提供的是对 Unicode 编码数据的支持，除了特殊情况，开发中应该很少用到。这部分的实现在 lutf8lib.c 中。</li>
-<li>C API<br>
-由于 Lua 胶水语言的定位，所以提供了很多 C API 供 C/C++ 直接调用。在官方手册中，Index 下所有 C API 下的函数的实现都在 lapi.c 中实现。</li>
-<li>辅助库<br>
-辅助库也就是索引中 auxiliary library 下面的方法，文档中说辅助库是为用户提供一些编写 C 方法时常用的便利函数，相较于 C API 提供的函数来说，辅助库中的函数是 &ldquo;higher-level functions&rdquo;，这些函数都是在 lauxlib.c 中实现的。</li>
+<li>LUA_VNIL 的 variant 字段为 0，表示这个值是一个空值。</li>
+<li>LUA_VEMPTY 的 variant 字段为 1，表示这是 table 中的一个空 slot 值。</li>
+<li>LUA_VABSTKEY 的 variant 字段为 2，表示这是索引 table 中一个不存在的 key 的返回值。</li>
 </ul>
-<h2 id="数据类型">数据类型</h2>
-<p>　　需要有自定义结构的数据类型，它们的结构定义都在 lobject.h 中，还有大量的与数据类型相关的宏方法也在其中。</p>
+<h2 id="boolean">boolean</h2>
+<p>　　boolean 在 Lua 中有 true 和 false 两个值，这里也是没有保存值，而是直接把两种值保存为了两个变种类型。<br>
+　　它的基础类型是 LUA_TBOOLEAN，变种类型有两种。</p>
 <ul>
-<li>字符串<br>
-字符串的结构定义在 lobject.h 中，此外还有 lstring.h 和 lstring.c 两个文件，实现了对字符串的创建等一系列底层操作。</li>
-<li>函数<br>
-Lua 中的函数全部以闭包的形式存在，结构定义在 lobject.h 中，在 lfunc.h 和 lfunc.c 中还有一些针对闭包和函数原型的辅助函数。</li>
-<li>表<br>
-table 除了结构定义在 lobject.h 中以外，其余的逻辑在 ltable.h 和 ltable.c 中，实现了包括 table 创建，修改等一些列操作。</li>
+<li>LUA_VFALSE 的 variant 字段为 0，表示 false。</li>
+<li>LUA_VTRUE 的 variant 字段为 1，表示 true。</li>
 </ul>
-<h2 id="虚拟机">虚拟机</h2>
-<p>　　虚拟机的 opcode 部分在 lopcodes.h 和 lopcodes.c 里面定义和实现，VM 中的操作在 lvm.h 和 lvm.c 里面定义和实现，语法解析在 lparser.h 和 lparser.c 里面定义和实现，词法解析在 llex.h 和 llex.c 中定义和实现。<br>
-　　每个进程中有一个 global_state 和很多个 lua_State 变量，这两个的定义和实现在 lstate.h 和 lstate.c 中。</p>
-<h2 id="其它">其它</h2>
+<h2 id="userdata">userdata</h2>
+<p>　　Lua 中的 userdata 分为两类，lightuserdata 和 userdata，其中 lightuserdata 是指内存不需要 Lua 管理的指针，userdata 是需要 Lua 负责管理内存的数据指针。<br>
+　　在基础类型定义中，lightuserdata 被定义为了 LUA_TLIGHTUSERDATA，userdata 被定义为了 LUA_TUSERDATA，虽然分了两个基础类型，但是在 Lua5.4 中的注释里提到了，应该把 lightuserdata 看作是 userdata 的一个变种类型，只是为了兼容性才保留了两个基础类型。<br>
+　　lightuserdata 因为不需要保存数据，所以只保存一个指针变量即可，上文提到的 union Value 中的 p 字段就是用来保存 lightuserdata 的指针的。<br>
+　　userdata 需要管理数据，相比 lightuserdata 它需要额外创建一个 Udata 变量用来保存自己的数据，同时它属于需要 GC 的类型，会通过 luaC_newobj 进行创建。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
+</span><span class="cm">** Header for userdata with user values;
+</span><span class="cm">** memory area follows the end of this structure.
+</span><span class="cm">*/</span>
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">Udata</span> <span class="p">{</span>
+    <span class="n">CommonHeader</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">nuvalue</span><span class="p">;</span>  <span class="cm">/* number of user values */</span>
+    <span class="n">size_t</span> <span class="n">len</span><span class="p">;</span>  <span class="cm">/* number of bytes */</span>
+    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span>
+    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
+    <span class="n">UValue</span> <span class="n">uv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* user values */</span>
+<span class="p">}</span> <span class="n">Udata</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="number">number</h2>
+<p>　　数字的基础类型为 LUA_TNUMBER，有两个变种类型，分别代表了整数和浮点数。</p>
 <ul>
-<li>保存 chunk
-把脚本编译成字节码保存在二进制文件里的实现在 ldump.c 中。</li>
-<li>初始化库
-库的加载方法在 linit.c 中实现。</li>
-<li>内存分配
-内存分配的接口在 lmem.h 和 lmem.c 中。</li>
-<li>GC
-GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
-<li>元方法
-元方法相关的内容在 ltm.h 和 ltm.c 中。</li>
-<li>字符类型
-在 lctype.h 和 lctype.c 中实现了一套通过打表快速判断字符类型的方法，比如判断字符是否是空格，是否是数字。这个用在词法解析阶段。</li>
+<li>LUA_VNUMINT 的 variant 字段为 0，表示整数。</li>
+<li>LUA_VNUMFLT 的 variant 字段为 1，表示浮点数。</li>
 </ul>
+<p>　　数据保存在 union Value 中，整数使用的是 long long 类型的 i 字段，浮点数使用的是 double 类型的 n 字段。</p>
+<h2 id="string">string</h2>
+<p>　　字符串的基础类型为 LUA_TSTRING，有两个变种类型，分别代表了短字符串和长字符串，当字符串长度小于等于 40 个字节的时候，属于短字符串，反之则属于长字符串。</p>
+<ul>
+<li>LUA_VSHRSTR 的 variant 字段为 0，表示短字符串。</li>
+<li>LUA_VLNGSTR 的 variant 字段为 1，表示长字符串。</li>
+</ul>
+<h3 id="短字符串">短字符串</h3>
+<p>　　短字符串在 Lua 中是被内化的，在全局的 global_State 中保存了一个哈希桶，所有短字符串都保存在哈希桶中，哈希桶的结构如下。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">stringtable</span> <span class="p">{</span>
+    <span class="n">TString</span> <span class="o">**</span><span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希桶
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">nuse</span><span class="p">;</span>  <span class="cm">/* number of elements */</span>
+    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
+</span><span class="c1"></span><span class="p">}</span> <span class="n">stringtable</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　短字符串是通过 internshrstr 函数创建的，创建的过程中，首先拿到 global_State 的哈希桶变量 strt，然后通过 luaS_hash 计算当前字符串的哈希值。这里会发现 global_State 中有一个随机种子变量 seed，它会参与到本进程中字符串哈希值的计算里。</p>
 </section>
 
 
@@ -499,10 +710,18 @@ GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
         <div class="widget--toc">
             <nav id="TableOfContents">
   <ol>
-    <li><a href="#库函数">库函数</a></li>
-    <li><a href="#数据类型">数据类型</a></li>
-    <li><a href="#虚拟机">虚拟机</a></li>
-    <li><a href="#其它">其它</a></li>
+    <li><a href="#tvalue">TValue</a></li>
+    <li><a href="#gcunion--gcobject">GCUnion &amp;&amp; GCObject</a></li>
+    <li><a href="#创建-gcobject">创建 GCObject</a></li>
+    <li><a href="#nil">nil</a></li>
+    <li><a href="#boolean">boolean</a></li>
+    <li><a href="#userdata">userdata</a></li>
+    <li><a href="#number">number</a></li>
+    <li><a href="#string">string</a>
+      <ol>
+        <li><a href="#短字符串">短字符串</a></li>
+      </ol>
+    </li>
   </ol>
 </nav>
         </div>
@@ -519,17 +738,24 @@ GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
 <script>
-    (function () {
-        const customFont = document.createElement('link');
-        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
-
-        customFont.type = "text/css";
-        customFont.rel = "stylesheet";
-
-        document.head.appendChild(customFont);
-    }());
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
 </script>
+
 
     </body>
 </html>

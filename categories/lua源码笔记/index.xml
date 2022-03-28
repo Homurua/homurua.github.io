@@ -6,7 +6,295 @@
         <description>Recent content in Lua源码笔记 on 放学后茶会</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
-        <lastBuildDate>Thu, 24 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Fri, 25 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Lua源码笔记（二）数据类型</title>
+        <link>https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/</link>
+        <pubDate>Fri, 25 Mar 2022 02:18:47 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/</guid>
+        <description>&lt;p&gt;　　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。&lt;/p&gt;
+&lt;h2 id=&#34;tvalue&#34;&gt;TValue&lt;/h2&gt;
+&lt;p&gt;　　Lua 中不管是什么类型的值，在 C 层都是用同一个 TValue 结构体变量表示的。这样的实现与为不同数据类型定义不同的结构体相比，可以统一处理接口。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Union of all Lua values
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Value&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;    &lt;span class=&#34;cm&#34;&gt;/* collectable objects */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;void&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;         &lt;span class=&#34;cm&#34;&gt;/* light userdata */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lua_CFunction&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;cm&#34;&gt;/* light C functions */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lua_Integer&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;   &lt;span class=&#34;cm&#34;&gt;/* integer numbers */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lua_Number&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;n&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;    &lt;span class=&#34;cm&#34;&gt;/* float numbers */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Tagged Values. This is the basic representation of values in Lua:
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** an actual value plus a tag with its type.
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define TValuefields    Value value_; lu_byte tt_
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TValuefields&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　可以看到 TValue 中的结构很简单，只包含了一个宏定义 TValuefields，它里面又包含了一个表示值数据的 value_ 和一个表示值类型的 tt_ 。&lt;br&gt;
+　　value_ 是一个 union Value 联合体变量，它可以表示 Lua 中所有类型值的数据，不同字段对应的类型注释中已经给出，其中所有需要进行 GC 的数据类型的指针都会保存在 gc 字段中。&lt;br&gt;
+　　tt_ 是一个 unsigned char 类型，它的不同位表示了不同的涵义，如图所示。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits.jpg&#34;
+	width=&#34;1362&#34;
+	height=&#34;392&#34;
+	srcset=&#34;https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits_huab49f0fc1fa8b26efd229d5780b871eb_39345_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/tt_bits_huab49f0fc1fa8b26efd229d5780b871eb_39345_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;tt_bits&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;347&#34;
+		data-flex-basis=&#34;833px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　可以看到值的类型由两部分组成，一部分是表示基础类型，比如数字类型就是 LUA_TNUMBER，还有一部分表示变种类型，Lua 中叫 variant，比如数字类型又分成了两类，整数和浮点数，分别用 LUA_VNUMINT 和 LUA_VNUMFLT 表示。下面是全部的基础类型。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** basic types
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define LUA_TNONE           (-1)
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define LUA_TNIL            0
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TBOOLEAN        1
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TLIGHTUSERDATA  2
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TNUMBER         3
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TSTRING         4
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TTABLE          5
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TFUNCTION       6
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TUSERDATA       7
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TTHREAD         8 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// LX, LG
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define LUA_NUMTYPES        9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;gcunion--gcobject&#34;&gt;GCUnion &amp;amp;&amp;amp; GCObject&lt;/h2&gt;
+&lt;p&gt;　　在了解 GCObject 之前首先要看一下 GCUnion 这个联合体，它是所有 GC 对象真正保存的位置。在 GCUnion 中，有一个 GCObject gc 的字段，它并不真正代表某一种类型，而是一个抽象的公共字段，来提供类型转换。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;GCUnion&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;gc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* common header */&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;ts&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Udata&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;u&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Closure&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;cl&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Table&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;h&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Proto&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lua_State&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;th&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* thread */&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;upv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　需要 GC 的值虽然有各自的结构，但是对外的时候都是统一以 GCObject 为标准的。GCObject 中包含了三部分的内容，next 是整个 GC 链表的一部分，所有需要 GC 的对象都通过 next 连接了起来。tt 又是数据类型，它跟上面的 tt_ 的用法是一样的，只不过它里面表示的是 GC 对象的类型。marked 用于在 GC 阶段的标识。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Common Header for all collectable objects (in macro form, to be
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** included in other objects)
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define CommonHeader    struct GCObject *next; lu_byte tt; lu_byte marked
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cm&#34;&gt;/* Common type for all collectable objects */&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　Lua 中定义了很多 GCUnion 到 GCObject 之间互相转换的方法。gco2xx 用来将 GCObject 转为目标类型的 Lua 变量，obj2gco 用来将 Lua 变量转为 GCObject 类型。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#define cast_u(o)    cast(union GCUnion *, (o))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define gco2ts(o)   check_exp(novariant((o)-&amp;gt;tt) == LUA_TSTRING, &amp;amp;((cast_u(o))-&amp;gt;ts))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2u(o)    check_exp((o)-&amp;gt;tt == LUA_VUSERDATA, &amp;amp;((cast_u(o))-&amp;gt;u))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2lcl(o)  check_exp((o)-&amp;gt;tt == LUA_VLCL, &amp;amp;((cast_u(o))-&amp;gt;cl.l))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2ccl(o)  check_exp((o)-&amp;gt;tt == LUA_VCCL, &amp;amp;((cast_u(o))-&amp;gt;cl.c))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2cl(o)   check_exp(novariant((o)-&amp;gt;tt) == LUA_TFUNCTION, &amp;amp;((cast_u(o))-&amp;gt;cl))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2t(o)    check_exp((o)-&amp;gt;tt == LUA_VTABLE, &amp;amp;((cast_u(o))-&amp;gt;h))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2p(o)    check_exp((o)-&amp;gt;tt == LUA_VPROTO, &amp;amp;((cast_u(o))-&amp;gt;p))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2th(o)   check_exp((o)-&amp;gt;tt == LUA_VTHREAD, &amp;amp;((cast_u(o))-&amp;gt;th))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define gco2upv(o)  check_exp((o)-&amp;gt;tt == LUA_VUPVAL, &amp;amp;((cast_u(o))-&amp;gt;upv))
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define obj2gco(v)    check_exp((v)-&amp;gt;tt &amp;gt;= LUA_TSTRING, &amp;amp;(cast_u(v)-&amp;gt;gc))
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;创建-gcobject&#34;&gt;创建 GCObject&lt;/h2&gt;
+&lt;p&gt;　　可以通过调用 luaC_newobj 接口创建一个 GCObject 变量。它会首先为 GCObject 分配所需大小的内存，然后把 GCObject 的 marked 标记为白色，保存数据类型 tt，最后将自己加入到全局的 global_State 的 allgc 链表的最前面。&lt;/p&gt;
+&lt;h2 id=&#34;nil&#34;&gt;nil&lt;/h2&gt;
+&lt;p&gt;　　nil 在 Lua 中表示空，因为没有值的缘故，它不需要在 Value 中有对应的字段，只要正确设置了它的类型 tt_ 即可。同时在判断值是否为 nil 的时候，直接判断类型即可。&lt;br&gt;
+　　它的基础类型都是 LUA_TNIL，有三个变种类型，分别用在三种不同情况下。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VNIL 的 variant 字段为 0，表示这个值是一个空值。&lt;/li&gt;
+&lt;li&gt;LUA_VEMPTY 的 variant 字段为 1，表示这是 table 中的一个空 slot 值。&lt;/li&gt;
+&lt;li&gt;LUA_VABSTKEY 的 variant 字段为 2，表示这是索引 table 中一个不存在的 key 的返回值。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;boolean&#34;&gt;boolean&lt;/h2&gt;
+&lt;p&gt;　　boolean 在 Lua 中有 true 和 false 两个值，这里也是没有保存值，而是直接把两种值保存为了两个变种类型。&lt;br&gt;
+　　它的基础类型是 LUA_TBOOLEAN，变种类型有两种。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VFALSE 的 variant 字段为 0，表示 false。&lt;/li&gt;
+&lt;li&gt;LUA_VTRUE 的 variant 字段为 1，表示 true。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;userdata&#34;&gt;userdata&lt;/h2&gt;
+&lt;p&gt;　　Lua 中的 userdata 分为两类，lightuserdata 和 userdata，其中 lightuserdata 是指内存不需要 Lua 管理的指针，userdata 是需要 Lua 负责管理内存的数据指针。&lt;br&gt;
+　　在基础类型定义中，lightuserdata 被定义为了 LUA_TLIGHTUSERDATA，userdata 被定义为了 LUA_TUSERDATA，虽然分了两个基础类型，但是在 Lua5.4 中的注释里提到了，应该把 lightuserdata 看作是 userdata 的一个变种类型，只是为了兼容性才保留了两个基础类型。&lt;br&gt;
+　　lightuserdata 因为不需要保存数据，所以只保存一个指针变量即可，上文提到的 union Value 中的 p 字段就是用来保存 lightuserdata 的指针的。&lt;br&gt;
+　　userdata 需要管理数据，相比 lightuserdata 它需要额外创建一个 Udata 变量用来保存自己的数据，同时它属于需要 GC 的类型，会通过 luaC_newobj 进行创建。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Header for userdata with user values;
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** memory area follows the end of this structure.
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Udata&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;short&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nuvalue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* number of user values */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;size_t&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;len&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* number of bytes */&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Table&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;metatable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gclist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;UValue&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;uv&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;];&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* user values */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Udata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;number&#34;&gt;number&lt;/h2&gt;
+&lt;p&gt;　　数字的基础类型为 LUA_TNUMBER，有两个变种类型，分别代表了整数和浮点数。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VNUMINT 的 variant 字段为 0，表示整数。&lt;/li&gt;
+&lt;li&gt;LUA_VNUMFLT 的 variant 字段为 1，表示浮点数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;　　数据保存在 union Value 中，整数使用的是 long long 类型的 i 字段，浮点数使用的是 double 类型的 n 字段。&lt;/p&gt;
+&lt;h2 id=&#34;string&#34;&gt;string&lt;/h2&gt;
+&lt;p&gt;　　字符串的基础类型为 LUA_TSTRING，有两个变种类型，分别代表了短字符串和长字符串，当字符串长度小于等于 40 个字节的时候，属于短字符串，反之则属于长字符串。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VSHRSTR 的 variant 字段为 0，表示短字符串。&lt;/li&gt;
+&lt;li&gt;LUA_VLNGSTR 的 variant 字段为 1，表示长字符串。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;短字符串&#34;&gt;短字符串&lt;/h3&gt;
+&lt;p&gt;　　短字符串在 Lua 中是被内化的，在全局的 global_State 中保存了一个哈希桶，所有短字符串都保存在哈希桶中，哈希桶的结构如下。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stringtable&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;hash&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 哈希桶
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;nuse&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* number of elements */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;size&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 长度
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stringtable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　短字符串是通过 internshrstr 函数创建的，创建的过程中，首先拿到 global_State 的哈希桶变量 strt，然后通过 luaS_hash 计算当前字符串的哈希值。这里会发现 global_State 中有一个随机种子变量 seed，它会参与到本进程中字符串哈希值的计算里。&lt;/p&gt;</description>
+        </item>
+        <item>
         <title>Lua源码笔记（一）代码结构</title>
         <link>https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%B8%80%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84/</link>
         <pubDate>Thu, 24 Mar 2022 02:18:47 +0800</pubDate>
@@ -73,17 +361,17 @@ table 除了结构定义在 lobject.h 中以外，其余的逻辑在 ltable.h �
 　　每个进程中有一个 global_state 和很多个 lua_State 变量，这两个的定义和实现在 lstate.h 和 lstate.c 中。&lt;/p&gt;
 &lt;h2 id=&#34;其它&#34;&gt;其它&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;保存 chunk
+&lt;li&gt;保存 chunk&lt;br&gt;
 把脚本编译成字节码保存在二进制文件里的实现在 ldump.c 中。&lt;/li&gt;
-&lt;li&gt;初始化库
+&lt;li&gt;初始化库&lt;br&gt;
 库的加载方法在 linit.c 中实现。&lt;/li&gt;
-&lt;li&gt;内存分配
+&lt;li&gt;内存分配&lt;br&gt;
 内存分配的接口在 lmem.h 和 lmem.c 中。&lt;/li&gt;
-&lt;li&gt;GC
+&lt;li&gt;GC&lt;br&gt;
 GC 方法的定义和实现在 lgc.h 和 lgc.c 中。&lt;/li&gt;
-&lt;li&gt;元方法
+&lt;li&gt;元方法&lt;br&gt;
 元方法相关的内容在 ltm.h 和 ltm.c 中。&lt;/li&gt;
-&lt;li&gt;字符类型
+&lt;li&gt;字符类型&lt;br&gt;
 在 lctype.h 和 lctype.c 中实现了一套通过打表快速判断字符类型的方法，比如判断字符是否是空格，是否是数字。这个用在词法解析阶段。&lt;/li&gt;
 &lt;/ul&gt;</description>
         </item>

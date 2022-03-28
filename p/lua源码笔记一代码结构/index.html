@@ -315,17 +315,17 @@ table 除了结构定义在 lobject.h 中以外，其余的逻辑在 ltable.h �
 　　每个进程中有一个 global_state 和很多个 lua_State 变量，这两个的定义和实现在 lstate.h 和 lstate.c 中。</p>
 <h2 id="其它">其它</h2>
 <ul>
-<li>保存 chunk
+<li>保存 chunk<br>
 把脚本编译成字节码保存在二进制文件里的实现在 ldump.c 中。</li>
-<li>初始化库
+<li>初始化库<br>
 库的加载方法在 linit.c 中实现。</li>
-<li>内存分配
+<li>内存分配<br>
 内存分配的接口在 lmem.h 和 lmem.c 中。</li>
-<li>GC
+<li>GC<br>
 GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
-<li>元方法
+<li>元方法<br>
 元方法相关的内容在 ltm.h 和 ltm.c 中。</li>
-<li>字符类型
+<li>字符类型<br>
 在 lctype.h 和 lctype.c 中实现了一套通过打表快速判断字符类型的方法，比如判断字符是否是空格，是否是数字。这个用在词法解析阶段。</li>
 </ul>
 </section>
@@ -361,6 +361,27 @@ GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
     
 
     
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Lua源码笔记（二）数据类型</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
 
      
     
@@ -502,17 +523,24 @@ GC 方法的定义和实现在 lgc.h 和 lgc.c 中。</li>
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
 <script>
-    (function () {
-        const customFont = document.createElement('link');
-        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
-
-        customFont.type = "text/css";
-        customFont.rel = "stylesheet";
-
-        document.head.appendChild(customFont);
-    }());
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
 </script>
+
 
     </body>
 </html>
