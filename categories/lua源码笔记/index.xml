@@ -12,7 +12,7 @@
         <pubDate>Fri, 25 Mar 2022 02:18:47 +0800</pubDate>
         
         <guid>https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/</guid>
-        <description>&lt;p&gt;　　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，string，function，userdata，thread 和 table，本篇会分析这些数据类型的实现。&lt;/p&gt;
+        <description>&lt;p&gt;　　Lua 是动态类型语言，变量本身不带有类型，有值了才有类型。当前版本的 Lua 中有八种数据类型，分别是 nil，boolean，number，userdata，thread，string，function 和 table，本篇会分析这些数据类型的实现。&lt;/p&gt;
 &lt;h2 id=&#34;tvalue&#34;&gt;TValue&lt;/h2&gt;
 &lt;p&gt;　　Lua 中不管是什么类型的值，在 C 层都是用同一个 TValue 结构体变量表示的。这样的实现与为不同数据类型定义不同的结构体相比，可以统一处理接口。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -101,6 +101,18 @@
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
 &lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
 &lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
@@ -119,6 +131,18 @@
 &lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TTHREAD         8 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;// LX, LG
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;
 &lt;span class=&#34;cp&#34;&gt;#define LUA_NUMTYPES        9
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Extra types for collectable non-values
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define LUA_TUPVAL    LUA_NUMTYPES  &lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;/* upvalues */&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TPROTO    (LUA_NUMTYPES+1)  &lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;/* function prototypes */&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;#define LUA_TDEADKEY    (LUA_NUMTYPES+2)  &lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;/* removed keys in tables */&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** number of all possible types (including LUA_TNONE but excluding DEADKEY)
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;cp&#34;&gt;#define LUA_TOTALTYPES        (LUA_TPROTO + 2)
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;gcunion--gcobject&#34;&gt;GCUnion &amp;amp;&amp;amp; GCObject&lt;/h2&gt;
@@ -226,6 +250,13 @@
 &lt;li&gt;LUA_VFALSE 的 variant 字段为 0，表示 false。&lt;/li&gt;
 &lt;li&gt;LUA_VTRUE 的 variant 字段为 1，表示 true。&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h2 id=&#34;number&#34;&gt;number&lt;/h2&gt;
+&lt;p&gt;　　数字的基础类型为 LUA_TNUMBER，有两个变种类型，分别代表了整数和浮点数。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VNUMINT 的 variant 字段为 0，表示整数。&lt;/li&gt;
+&lt;li&gt;LUA_VNUMFLT 的 variant 字段为 1，表示浮点数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;　　数据保存在 union Value 中，整数使用的是 long long 类型的 i 字段，浮点数使用的是 double 类型的 n 字段。&lt;/p&gt;
 &lt;h2 id=&#34;userdata&#34;&gt;userdata&lt;/h2&gt;
 &lt;p&gt;　　Lua 中的 userdata 分为两类，lightuserdata 和 userdata，其中 lightuserdata 是指内存不需要 Lua 管理的指针，userdata 是需要 Lua 负责管理内存的数据指针。&lt;br&gt;
 　　在基础类型定义中，lightuserdata 被定义为了 LUA_TLIGHTUSERDATA，userdata 被定义为了 LUA_TUSERDATA，虽然分了两个基础类型，但是在 Lua5.4 中的注释里提到了，应该把 lightuserdata 看作是 userdata 的一个变种类型，只是为了兼容性才保留了两个基础类型。&lt;br&gt;
@@ -261,21 +292,53 @@
 &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Udata&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;h2 id=&#34;number&#34;&gt;number&lt;/h2&gt;
-&lt;p&gt;　　数字的基础类型为 LUA_TNUMBER，有两个变种类型，分别代表了整数和浮点数。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;LUA_VNUMINT 的 variant 字段为 0，表示整数。&lt;/li&gt;
-&lt;li&gt;LUA_VNUMFLT 的 variant 字段为 1，表示浮点数。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;　　数据保存在 union Value 中，整数使用的是 long long 类型的 i 字段，浮点数使用的是 double 类型的 n 字段。&lt;/p&gt;
+&lt;/div&gt;&lt;h2 id=&#34;thread&#34;&gt;thread&lt;/h2&gt;
+&lt;p&gt;　　thread 在 Lua 中用来指代协程，所有协程的类型都是 LUA_TTHREAD，只有这一个基础类型。变种类型也只有一个 LUA_VTHREAD，它的 variant 值为 0。&lt;br&gt;
+　　协程在 Lua 中是 lua_State 结构体的变量，由于它不仅仅是一个简单的数据类型，还跟 Lua 的虚拟机有很大关系，所以不在这里做展开了，后面会专门开一篇写这个。&lt;/p&gt;
 &lt;h2 id=&#34;string&#34;&gt;string&lt;/h2&gt;
 &lt;p&gt;　　字符串的基础类型为 LUA_TSTRING，有两个变种类型，分别代表了短字符串和长字符串，当字符串长度小于等于 40 个字节的时候，属于短字符串，反之则属于长字符串。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;LUA_VSHRSTR 的 variant 字段为 0，表示短字符串。&lt;/li&gt;
 &lt;li&gt;LUA_VLNGSTR 的 variant 字段为 1，表示长字符串。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&#34;短字符串&#34;&gt;短字符串&lt;/h3&gt;
-&lt;p&gt;　　短字符串在 Lua 中是被内化的，在全局的 global_State 中保存了一个哈希桶，所有短字符串都保存在哈希桶中，哈希桶的结构如下。&lt;/p&gt;
+&lt;h3 id=&#34;结构&#34;&gt;结构&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cm&#34;&gt;/*
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;** Header for a string value.
+&lt;/span&gt;&lt;span class=&#34;cm&#34;&gt;*/&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// struct GCObject *next; lu_byte tt; lu_byte marked
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;extra&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* reserved words for short strings; &amp;#34;has hash&amp;#34; for longs */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;shrlen&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* length for short strings */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;hash&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 哈希值
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;size_t&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lnglen&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* length for long strings */&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;hnext&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* linked list for hash table */&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;u&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;contents&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;];&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 保存字符串的内容
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　短字符串与长字符串使用同一种结构体表示。除了所有 GCObject 都有的 CommonHeader 以外，extra 在短字符串中表示是否是保留字，在长字符串中表示是否已经计算过了哈希值。shrlen 表示短字符串的长度，hash 表示本字符串的哈希值，union u 中的 lnglen 表示长字符串的长度，hnext 用来当作短字符串哈希桶的链表指针，contents 保存了字符串的内容。&lt;/p&gt;
+&lt;h3 id=&#34;全局字符串表&#34;&gt;全局字符串表&lt;/h3&gt;
+&lt;p&gt;　　Lua 将短字符串进行了内化处理，相同内容的字符串只会保存一份。在全局的 global_State 中有一个哈希桶用来保存全部的短字符串指针，它的结构如下。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -292,7 +355,329 @@
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;stringtable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　短字符串是通过 internshrstr 函数创建的，创建的过程中，首先拿到 global_State 的哈希桶变量 strt，然后通过 luaS_hash 计算当前字符串的哈希值。这里会发现 global_State 中有一个随机种子变量 seed，它会参与到本进程中字符串哈希值的计算里。&lt;/p&gt;</description>
+&lt;/div&gt;&lt;p&gt;　　它的 nuse 表示的是当前哈希桶中总共的元素个数，size 表示的是哈希桶的长度。&lt;br&gt;
+　　全局字符串表会在 luaS_init 中被初始化，它的初始长度是 128，给哈希桶分配内存以后，会调用 tablerehash 填充哈希桶。&lt;br&gt;
+　　tablerehash 是用来执行哈希桶的 rehash 的，在需要修改哈希桶的长度的时候就会执行，它会遍历之前所有字符串，把它们按新的长度重新计算在哈希桶中的位置。&lt;/p&gt;
+&lt;h3 id=&#34;创建字符串&#34;&gt;创建字符串&lt;/h3&gt;
+&lt;p&gt;　　luaS_newlstr 是创建字符串变量的接口，不管长字符串还是短字符串都通过这个函数创建。它在实现的时候通过字符串长度判断，如果长度小于等于 40 则调用 internshrstr 创建一个短字符串，反之则调用 luaS_createlngstrobj 创建一个长字符串。&lt;br&gt;
+　　不管是 internshrstr 还是 luaS_createlngstrobj，在处理完自己特化的工作以后，最后都会调用到 createstrobj 来创建一个字符串变量，它会首先计算出本变量所需的全部内存大小，然后调用上文提到的 luaC_newobj 创建一个 GCObject 出来，通过 gco2ts 把它转为 TString 结构，使用 hash 字段保存它的哈希值，把 extra 字段设为 0，并且会在 contents 最后补上一个 &amp;lsquo;\0&amp;rsquo; 表示结束。&lt;/p&gt;
+&lt;h3 id=&#34;短字符串&#34;&gt;短字符串&lt;/h3&gt;
+&lt;p&gt;　　短字符串在创建的过程中，会修改全局字符串表，首先拿到 global_State 的哈希桶变量 strt，然后通过 luaS_hash 计算当前字符串的哈希值。这里会发现 global_State 中有一个随机种子变量 seed，它会参与到本进程中字符串哈希值的计算里。&lt;br&gt;
+　　通过将字符串的哈希结果对哈希桶的 size 取模得到目标桶的位置，依次遍历桶中的数据，通过比较长度和数据，查找是否有跟目标字符串一样的字符串，如果找到了，直接返回它的指针即可。如果没有找到字符串，则通过 createstrobj 创建一个字符串变量，然后使用 memcpy 把待创建字符串复制进来。短字符串使用 shrlen 保存字符串长度，使用 union u 的 hnext 保存哈希桶中链表的下一个值。&lt;br&gt;
+　　当需要删除一个短字符串时，除了需要处理内存回收，还要把全局哈希桶中的值也移除掉。移除的时候通过字符串的 hash 值计算出对应的链表，然后需要遍历链表查找字符串，找到以后从链表中移除，并且将哈希桶的 nuse 减一。&lt;/p&gt;
+&lt;h3 id=&#34;长字符串&#34;&gt;长字符串&lt;/h3&gt;
+&lt;p&gt;　　长字符串在 Lua 中当作普通的 GCObject 处理，在创建的时候，会把字符串的长度保存在 union u 的 lnglen 中。从这里可以看出 Lua 对内存使用的优化是很到位的，如果不是为了内存优化，完全可以把长字符串的长度也保存在 shrlen 中，这里跟短字符串的 hnext 共用一个 union，是为了可以把短字符串的长度类型变为 unsigned char 类型。&lt;br&gt;
+　　长字符串在调用 createstrobj 创建 TString 时，不会计算哈希值，而是把 global_State 的 seed 保存在了 TString 的 hash 字段中。在 TString 创建完成以后，一样使用 memcpy 把待创建字符串的内容复制进来。&lt;br&gt;
+　　长字符串的哈希值只有在需要使用的时候才会通过 luaS_hashlongstr 计算，比如说查找 table 的 key 的时候就会需要字符串的哈希值，计算方法与短字符串一样。在计算哈希之前长字符串的 extra 为 0，表示没有计算过哈希值，并且此时 TString 的 hash 中保存的是 global_State 的 seed，计算完以后，会将 hash 改为保存真正的哈希值，并且将 extra 改为 1 表示已经计算过哈希值，下次需要计算的时候，如果 extra 等于 1，则可以直接返回 hash 中的值了。&lt;/p&gt;
+&lt;h3 id=&#34;比较字符串&#34;&gt;比较字符串&lt;/h3&gt;
+&lt;p&gt;　　在 lvm.c 的 luaV_equalobj 中可以看到，当双方都是短字符串时，比较使用的方法是 eqshrstr，当都是长字符串时，比较使用的是 luaS_eqlngstr 函数。&lt;br&gt;
+　　因为短字符串是内化的，所以 eqshrstr 的实现很简单，直接比较两个参数的内存地址即可，相同短字符串都是引用的同一个 TString 变量，地址相同即相等，反之则不等。&lt;br&gt;
+　　由于长字符串并没有进行内化，所以 luaS_eqlngstr 就麻烦一些，会先比较内存地址，如果不等的话，则比较长度，长度相等再使用 memecmp 比较内容。&lt;/p&gt;
+&lt;h3 id=&#34;保留字符串&#34;&gt;保留字符串&lt;/h3&gt;
+&lt;p&gt;　　Lua 中有一些保留字符串，基本上都是关键字。保留字符串都是短字符串，TString 中的 extra 字段就是用来标识保留字符串的。&lt;br&gt;
+　　保留字符串会在初始化的时候被全部创建，extra 会被顺序递增。同时所有保留字符串都会通过 luaC_fix 将其固定下来，永远不会被回收。&lt;/p&gt;
+&lt;h2 id=&#34;proto&#34;&gt;proto&lt;/h2&gt;
+&lt;p&gt;　　proto 是 prototype 的简写，表示函数原型。它的基础类型是 LUA_TPROTO，只有一个变种类型是 LUA_VPROTO，它本身并不是 Lua 对外提供的一类值，但是它是单独的一类 GCObject，并且也是 function 变量的重要组成部分，所以在 function 之前先讲一下 proto 的结构。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Upvaldesc&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* upvalue name (for debug information) */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;instack&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* whether it is in stack (register) */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;idx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* index of upvalue (in stack or in outer function&amp;#39;s list) */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;kind&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* kind of corresponding variable */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Upvaldesc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LocVar&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;varname&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;startpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* first point where variable is active */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;endpc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;    &lt;span class=&#34;cm&#34;&gt;/* first point where variable is dead */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LocVar&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;AbsLineInfo&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;pc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;line&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;AbsLineInfo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Proto&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;numparams&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* number of fixed (named) parameters */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;is_vararg&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 是否用了可变参数
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;maxstacksize&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* number of registers needed by this function */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizeupvalues&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* size of &amp;#39;upvalues&amp;#39; */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizek&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* size of &amp;#39;k&amp;#39; */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizecode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// code 的长度
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizelineinfo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// lineinfo 的长度
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizep&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* size of &amp;#39;p&amp;#39; */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizelocvars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// locvars 的长度
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;sizeabslineinfo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* size of &amp;#39;abslineinfo&amp;#39; */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;linedefined&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* debug information  */&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 函数定义的起始位置行数
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lastlinedefined&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* debug information  */&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 函数定义的末尾位置行数
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;k&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* constants used by the function */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;Instruction&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;code&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* opcodes */&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 字节码保存的位置
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Proto&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* functions defined inside the function */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;Upvaldesc&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;upvalues&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* upvalue information */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;ls_byte&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lineinfo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* information about source lines (debug information) */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;AbsLineInfo&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;abslineinfo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* idem */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;LocVar&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;locvars&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* information about local variables (debug information) */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TString&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;source&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* used for debug information */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gclist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Proto&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　可以看到 proto 的结构中数据还是比较多的，除了所有 GCObject 都有的 CommonHeader 以外，其余的数据大概可以分为几种类型。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;参数相关&lt;br&gt;
+函数的参数可以包括若干个固定参数和一组不定参数，因为 Lua 规定了固定参数必须放在不定参数之前，不存在交叉的可能性，所以只需要使用 numparams 记录固定参数的个数，使用 is_vararg 来记录函数是否接受不定参数即可。&lt;/li&gt;
+&lt;li&gt;调试信息&lt;br&gt;
+debug 接口需要获得一些关于函数的调试信息，比如定义的位置等，这些也都在 proto 结构里。linedefined 记录了函数定义开始的行数，lastlinedefined 记录了函数定义结束的行数，source 记录了源文件的地址。不仅这三个，只要需要，其它变量也可以通过 debug 接口来读取。&lt;/li&gt;
+&lt;li&gt;upvalue&lt;br&gt;
+函数使用的 upvalue 在一个数组 upvalues 中，同时使用 sizeupvalues 变量记录数组的长度。upvalue 有一个自己的结构体 Upvaldesc，每个 Upvaldesc 由名字 name，是否在栈中的状态 instack，索引 idx 和类型 kind 组成。&lt;/li&gt;
+&lt;li&gt;常量&lt;br&gt;
+函数中使用到的常量会保存在 k 中，每个常量使用 Lua 值的 TValue 来表示。k 是一个数组，它的长度保存在 sizek 中。&lt;/li&gt;
+&lt;li&gt;指令码&lt;br&gt;
+code 中保存的是函数的指令码，是一个 Instruction 类型的数组，Instruction 本身是 Lua 中指令码的类型，是一个 unsigned int 类型。sizecode 是 code 的长度。&lt;/li&gt;
+&lt;li&gt;调用位置&lt;br&gt;
+在 lineinfo 中记录了调用本函数的行数，sizelineinfo 记录了 lineinfo 的长度。&lt;/li&gt;
+&lt;li&gt;子函数&lt;br&gt;
+函数中的子函数的原型记录在 p 中，是一个 Proto 指针的数组，它的长度在 sizep 里记录。&lt;/li&gt;
+&lt;li&gt;local 变量&lt;br&gt;
+函数中的局部变量存放在 locvars 中，它是一个 LocVar 结构的数组，sizelocvars 保存了它的长度。每个 LocVar 变量又自己的变量名，开始生效的点和失效的点。&lt;/li&gt;
+&lt;li&gt;绝对行数&lt;br&gt;
+abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的数组，sizeabslineinfo 保存了它的长度。每个 AbsLineInfo 中保存了一个 pc 和一个行数。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;function&#34;&gt;function&lt;/h2&gt;
+&lt;p&gt;　　函数的基础类型是 LUA_TFUNCTION，有三个变种类型。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LUA_VLCL 表示 Lua 闭包，variant 值为 0&lt;/li&gt;
+&lt;li&gt;LUA_VLCF 表示轻量 C 函数，variant 值为 1&lt;/li&gt;
+&lt;li&gt;LUA_VCCL 表示 C 闭包，variant 值为 2&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;　　三种类型的变量都是使用同一个联合体 union Closure 来表示的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Closure&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CClosure&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;LClosure&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;l&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Closure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;lua-闭包&#34;&gt;Lua 闭包&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#define ClosureHeader CommonHeader; lu_byte nupvalues; GCObject *gclist
+&lt;/span&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;tbc&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* true if it represents a to-be-closed variable */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;v&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* points to stack or to its own value */&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* (when open) */&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* linked list */&lt;/span&gt;
+            &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;**&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;previous&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+        &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;open&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;value&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* the value (when closed) */&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;u&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LClosure&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;ClosureHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// gc 相关字段
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Proto&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;p&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 函数原型
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;UpVal&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;upvals&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;];&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* list of upvalues */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;LClosure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　每个 Lua 闭包是一个 LClosure 变量，它主要包括了一个函数原型和一个 upvalue 的数组。这个 upvalue 是函数所在位置的 upvalue，要注意跟函数原型所在位置的 upvalue 区分。&lt;br&gt;
+　　UpVal 中值保存的情况有两种，open 和 closed，open 代表的是原值没有被释放的情况，比如当子函数在父函数中运行时，父函数里 upvalue 就是 open 状态，在 open 状态下的 upvalue 并不会保存它的值，而是只使用 TValue *v 保存了一个指针。&lt;br&gt;
+　　closed 代表原值已经被释放的情况，比如子函数被当作返回值返回，然后在外部拿到返回值以后执行的情况，这时候父函数中的 upvalue 已经释放了，不能再保存指针了，要自己保存这个值，此时会被保存在 union u 的 TValue value 中，这也就是常见的可以用闭包实现计数器的原理。&lt;/p&gt;
+&lt;h3 id=&#34;c-闭包&#34;&gt;C 闭包&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;CClosure&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;ClosureHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// gc 相关字段
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;lua_CFunction&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 函数
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;upvalue&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;1&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;];&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* list of upvalues */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;CClosure&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　不管是轻量 C 函数还是 C 闭包，都是使用 CClosure 变量表示。upvalue 全部是由 TValue 的值组成的，不存在用指针的情况。当闭包不需要 upvalue 时，也就是只有函数指针的时候，就是轻量 C 函数了。&lt;/p&gt;
+&lt;h2 id=&#34;table&#34;&gt;table&lt;/h2&gt;
+&lt;p&gt;　　table 是 Lua 中唯一提供的数据结构，它方便易用，很强大，但是因为把 array 和 hashmap 和在了一起，所以在使用的时候也有很多需要注意的地方。&lt;br&gt;
+　　table 的基础类型是 LUA_TTABLE，它只有一个变种类型 LUA_VTABLE，variant 的值为 0。&lt;/p&gt;
+&lt;h3 id=&#34;结构-1&#34;&gt;结构&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;union&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Node&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;NodeKey&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;TValuefields&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* fields for value */&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;key_tt&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* key type */&lt;/span&gt;
+        &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;next&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* for chaining (offset for next node)*/&lt;/span&gt;
+        &lt;span class=&#34;n&#34;&gt;Value&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;key_val&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* key value */&lt;/span&gt;
+    &lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;u&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i_val&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* direct access to node&amp;#39;s value as a proper &amp;#39;TValue&amp;#39; */&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Node&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+
+&lt;span class=&#34;k&#34;&gt;typedef&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Table&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;CommonHeader&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;flags&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* 1&amp;lt;&amp;lt;p means tagmethod(p) is not present */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;lu_byte&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;lsizenode&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* log2 of size of &amp;#39;node&amp;#39; array */&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;unsigned&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;alimit&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* &amp;#34;limit&amp;#34; of &amp;#39;array&amp;#39; array */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;TValue&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;array&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* array part */&lt;/span&gt;
+    &lt;span class=&#34;n&#34;&gt;Node&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;node&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 哈希表
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;Node&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;lastfree&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;  &lt;span class=&#34;cm&#34;&gt;/* any free position is before this position */&lt;/span&gt;
+    &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Table&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;metatable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;// 元表
+&lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;GCObject&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;gclist&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;Table&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　由于在 table 中数组和哈希表的混用，所以在结构体中会包含这两类的数据。&lt;br&gt;
+　　数组部分包括了 array 和 alimit 这两个值，array 是一个 TValue 结构体的数组，alimit 是它的长度上限，不一定是真实的长度。&lt;br&gt;
+　　哈希表包括了 node，lsizenode 和 lastfree 三个值，node 是一个 Node 结构体的数组，lsizenode 是它的长度以 2 为底的对数值，这个值也说明了哈希表的长度一定是 2 的幂，lastfree 指向了哈希表最后一个位置。&lt;br&gt;
+　　flags 是一个 unsigned char 类型的值，它里面的每一个 bit 对应了一种元方法是否存在，1 表示不存在，0 表示存在，同时 bit 7 保存了 alimit 是否是 array 的真实长度。&lt;br&gt;
+&lt;img src=&#34;https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/table_flags.jpg&#34;
+	width=&#34;1662&#34;
+	height=&#34;362&#34;
+	srcset=&#34;https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/table_flags_hu70e95380fe12c39cb02630813633b88d_43859_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/table_flags_hu70e95380fe12c39cb02630813633b88d_43859_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;table_flags&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;459&#34;
+		data-flex-basis=&#34;1101px&#34;
+	
+&gt;
+　　metatable 指向了该 table 的元表，因为元表也是一个 table，所以是一个 Table 结构体的指针。&lt;br&gt;
+　　哈希表中的每个节点使用 Node 结构体变量表示，它主要分为了两部分，NodeKey u 和 TValue i_val 分别是键值对的键和值。&lt;/p&gt;
+&lt;h3 id=&#34;创建&#34;&gt;创建&lt;/h3&gt;
+&lt;p&gt;　　table 也是 GCObject，所以创建一样使用 luaC_newobj 即可。&lt;br&gt;
+　　对象创建好以后，使用 gco2t 将其转化为 Table 结构的变量，然后将 matetable 设为 NULL，flags 的每一位都设为 1，array 设为 NULL，alimit 设为 0。&lt;br&gt;
+　　还要初始化哈希表，因为一开始哈希表也是空的，所以 node 只需要指向一个占位用的数据即可，Lua 已经创建好了一个静态变量 dummynode 来做这个工作。同时 lsizenode 设为 0，且将 lastfree 设为 NULL，这个可以表示当前使用的是占位 node，方便后续修改。&lt;/p&gt;
+&lt;h3 id=&#34;插入&#34;&gt;插入&lt;/h3&gt;
+&lt;p&gt;　　可以从 C Api 的 lua_settable 入手看一下向 table 中插入一个值的操作。&lt;br&gt;
+　　在设置一个值的时候会先尝试用 luaH_get 去取这个值，如果可以取到的话，则直接修改它就行了，如果取不到，则会首先把 slot 指向用来占位的 static 变量 absentkey，然后调用 luaV_finishset 新增一个值。&lt;br&gt;
+　　在 luaV_finishset 中，会先通过检查 metatable 和 flags 判断 table 是否有 __newindex 元方法，如果没有的话，则使用 luaH_finishset 设置键值对，当 slot 是 absentkey 时，最后会使用 luaH_newkey 创建一个新键值对。&lt;br&gt;
+　　table 的哈希部分解决冲突使用的是开放定址法，有一个 mainposition 的概念，它是通过计算 key 的哈希值，与当前 table 的 lsizenode 取模的出来的。&lt;br&gt;
+　　当通过 key 拿到 mainposition 以后把它保存在 mp 中，然后会判断 mp 是否为空，如果是，则直接把要存的值存在 mp 上即可。如果不是，则会拿 mp 的 key 再去计算一次 mainpositon 保存为 othern，这一步是要判断当前在本位制上的值是不是通过哈希计算来的。&lt;br&gt;
+　　如果是通过哈希计算来的，那就是在本位置上发生了冲突，从 table 的 lastfree 上找到一个空余的点 f，将 f 的 next 设为 mp 的 next，然后将 mp 的 next 设为 f，也就是将 f 链接到了 mp 的后面，最后将值保存在 f 中即可完成。&lt;br&gt;
+　　如果不是哈希计算来的，则说明它是通过 getfreepos 获取的，也就是说它占了我们现在要存的这个 key 的位置，这时候要将它移动到一个新的 freepos 中。因为它的 mainposition 是 othern，所以它现在的位置 mp 是一定在 othern 的 next 链上的，因为它之所以在这里，就是因为跟 othern 的位置冲突导致的。通过 othern 不断向后遍历找到 mp 的位置，然后将 othern 的 next 指向 f，将 *mp 复制到 *f 上，这样就完成了 mp 上的数据转移，然后将数据保存在 mp 上即可。&lt;br&gt;
+　　上面完成的是键值对的新增，至于数组部分，当 key 是一个整数或者是可以转化为整数的浮点数时，在查找 key 的时候会检查 key 的范围，如果 key 在 [1, t-&amp;gt;alimit] 中，则直接返回 table 中 array 数组对应的值。如果当前 t 的 array 长度跟 alimit 不等的话，key 等于 alimit + 1，或者 key 小于 luaH_realasize 计算出的值，同样返回 array 中对应的值，并且把 alimit 设置为 key 的值。key 满足在数组部分的时候，直接修改即可。&lt;/p&gt;
+&lt;h3 id=&#34;查询&#34;&gt;查询&lt;/h3&gt;
+&lt;p&gt;　　从 lua_gettable 入手来看一下在 table 中查询一个指定 key 的值的操作。&lt;br&gt;
+　　首先通过 luaH_get 来查找 key 对应的值，如果找到了，则直接返回即可。如果没有找到，则会调用 luaV_finishget，其中会检查 __index 元方法，如果没有该元方法的话，则直接返回 nil 即可。&lt;br&gt;
+　　如果 __index 元方法是一个函数，则调用它，将结果返回。如果是一个 table 则再次使用 luaH_get 尝试返回元表中 key 对应的值。&lt;/p&gt;
+&lt;h3 id=&#34;长度&#34;&gt;长度&lt;/h3&gt;
+&lt;p&gt;　　Lua 中如果对 table 取长度，则只会拿到数组部分的长度，而且如果 table 是数组和哈希表混用的情况下，这个长度可能会有点问题。从 lua_len 入手来看一下取 table 长度的操作。&lt;br&gt;
+　　lua_len 会调用 luaV_objlen 对变量取长度。当类型是 table 的时候，首先会取其 __len 元方法，如果有的话，调用它返回结果即可。如果没有的话，会调用 luaH_getn 来计算 table 的长度。&lt;br&gt;
+　　luaH_getn 的逻辑不长，但是思路比较复杂，Lua 的源码中在函数头给出了 30 行的注释来描述这个函数的作用原理，我尝试把它的大意翻译出来。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;　　尝试找到 table t 的边界，边界是一个整数索引，例如 t[i] 存在但是 t[i+1] 不存在时 i 就是 t 的边界，或者当 t[1] 不存在时 0 就是 t 的边界，当 t[maxinteger] 存在时，maxinteger 就是 t 的边界。&lt;br&gt;
+　　(1). 如果 t[limit] 为空，则它一定有一个在它前面的边界，这时候可以检查 limit - 1 是否存在，如果存在则它是 t 的边界。如果不存在，则在 [0, limit] 上做一个二分查找来寻找边界。这两种情况下找到边界以后都要更新 t 的 alimit 字段。&lt;br&gt;
+　　(2). 如果 t[limit] 不为空，同时数组中有在 limit 之后的数据时，也可以找出 t 的边界。如果 t[limit + 1] 为空，则 limit 就是边界，否则检查数组部分的最后一个元素，如果它是空，则边界一定存在于 limit 和最后一个元素之间，通过二分查找找出来。&lt;br&gt;
+　　(3). 最后一种情况是 t 的数组部分为空，或者它的最后一个元素存在。这两种情况下需要检查哈希部分。如果哈希部分也为空，或者 limit + 1 不存在，则 limit 为边界。否则通过 hash_search 查找在哈希部分的边界。&lt;/p&gt;
+&lt;/blockquote&gt;</description>
         </item>
         <item>
         <title>Lua源码笔记（一）代码结构</title>

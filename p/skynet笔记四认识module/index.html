@@ -329,8 +329,8 @@
 </code></pre></td></tr></table>
 </div>
 </div><h2 id="module-的加载">module 的加载</h2>
-<p>　　在创建一个新服务的时候，创建函数会调用 <strong>skynet_module_query</strong> 来查找指定名字的 module 地址, 这一步会遍历所有已经加载的 module 来查询，因为总数很少，所以遍历并没有什么问题。如果查到了，则直接返回 module 的地址给查询方。<br>
-　　如果没查到，则需要走 module 的加载流程。因为 <strong>path</strong> 是支持多地址的，多地址用 <strong>&quot;;&quot;</strong> 分隔，所以加载的过程其实就是依次在每个地址下找对应名字的动态库，如果找到了，就使用系统调用 <strong>dlopen</strong> 加载动态库拿到加载后的地址，然后用系统调用 <strong>dlsym</strong> 来分别拿到 <strong>xxx_create/xxx_init/xxx_release/xxx_signal</strong> 的地址，最后将 api 函数的地址，module 的地址，module 的名字保存到管理器的 module 数组的最新一个数据，并且把 <strong>count</strong> 累加。到这里 module 的加载就完成了。返回 module 的地址给查询方即可。</p>
+<p>　　在创建一个新服务的时候，创建函数会调用 skynet_module_query 来查找指定名字的 module 地址, 这一步会遍历所有已经加载的 module 来查询，因为总数很少，所以遍历并没有什么问题。如果查到了，则直接返回 module 的地址给查询方。<br>
+　　如果没查到，则需要走 module 的加载流程。因为 path 是支持多地址的，多地址用 &ldquo;;&rdquo; 分隔，所以加载的过程其实就是依次在每个地址下找对应名字的动态库，如果找到了，就使用系统调用 dlopen 加载动态库拿到加载后的地址，然后用系统调用 dlsym 来分别拿到 xxx_create/xxx_init/xxx_release/xxx_signal 的地址，最后将 api 函数的地址，module 的地址，module 的名字保存到管理器的 module 数组的最新一个数据，并且把 count 累加。到这里 module 的加载就完成了。返回 module 的地址给查询方即可。</p>
 <h2 id="module-实例的创建">module 实例的创建</h2>
 <p>　　创建一个 module 的实例，本质上就是创建一个 module 的私有数据结构体，这份数据在不同的 module 中结构不一样，比如在 snlua 中，结构体就是 struct snlua, 其中包含了 lua 虚拟机等数据。同一个 module 创建出的不同实例之间共享 module 提供的接口，但是数据是互相独立的。<br>
 　　创建过程中，会首先调用 module 的 create 接口创建出一份私有数据，然后再调用 init 接口初始化这份数据。在释放的时候会调用 release 接口释放这份数据。</p>

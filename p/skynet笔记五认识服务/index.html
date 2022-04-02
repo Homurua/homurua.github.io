@@ -314,17 +314,17 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">skynet_context_new</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">param</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　不管是从 C 层还是从 Lua 层创建一个新的服务，最后的创建函数都是 <strong>skynet_context_new</strong>，这个函数接受一个 module 名字和一个传给 module 的 init 函数的额外参数，返回一个 <strong>struct skynet_context</strong> 变量指针。<br>
+</div><p>　　不管是从 C 层还是从 Lua 层创建一个新的服务，最后的创建函数都是 skynet_context_new，这个函数接受一个 module 名字和一个传给 module 的 init 函数的额外参数，返回一个 struct skynet_context 变量指针。<br>
 　　服务在创建的时候有几个关键步骤：</p>
 <ul>
-<li>通过 module 名字去查找 module 的地址，然后调用 module 的 <strong>create</strong> 接口创建一个数据副本，这两个值会保存在 <strong>skynet_context</strong> 的 <strong>mod</strong> 和 <strong>instance</strong> 字段中。</li>
-<li>注册服务的 handle，服务的 handle 是用来完成 <strong>名字 → handle</strong> 和 <strong>handle → 服务</strong> 的映射。</li>
+<li>通过 module 名字去查找 module 的地址，然后调用 module 的 create 接口创建一个数据副本，这两个值会保存在 skynet_context 的 mod 和 instance 字段中。</li>
+<li>注册服务的 handle，服务的 handle 是用来完成 名字 → handle 和 handle → 服务 的映射。</li>
 <li>创建服务的消息队列。</li>
-<li>调用 module 的 <strong>init</strong> 函数初始化之前创建好的 module 数据副本。</li>
+<li>调用 module 的 init 函数初始化之前创建好的 module 数据副本。</li>
 <li>把服务的消息队列 push 到全局的消息队列中去。</li>
 </ul>
 <h2 id="引用计数">引用计数</h2>
-<p>　　每个服务都有一个原子类型的引用计数变量 <strong>ref</strong>，当有地方引用一个服务时，调用 <strong>skynet_context_grab</strong> 来增加服务的引用计数，在引用结束以后需要手动调用 <strong>skynet_context_release</strong> 来减少服务的引用计数。</p>
+<p>　　每个服务都有一个原子类型的引用计数变量 ref，当有地方引用一个服务时，调用 skynet_context_grab 来增加服务的引用计数，在引用结束以后需要手动调用 skynet_context_release 来减少服务的引用计数。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -335,7 +335,7 @@
 <span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">skynet_context_release</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　<strong>ref</strong> 在服务创建完毕以后会的值为 1，正常的引用和解引用是不会使 <strong>ref</strong> 变为 0 的，如果需要删除一个服务，可以在服务的逻辑中调用 skynet.exit 或者是通过后台命令来减少服务的引用次数，然后等别的地方的引用全部结束了，<strong>ref</strong> 会变为 0 来触发删除服务的函数 <strong>delete_context</strong>.</p>
+</div><p>　　ref 在服务创建完毕以后会的值为 1，正常的引用和解引用是不会使 ref 变为 0 的，如果需要删除一个服务，可以在服务的逻辑中调用 skynet.exit 或者是通过后台命令来减少服务的引用次数，然后等别的地方的引用全部结束了，ref 会变为 0 来触发删除服务的函数 delete_context.</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -378,9 +378,9 @@
 </span><span class="c1"></span><span class="p">};</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　每个服务都有属于自己的一个 <strong>struct message_queue</strong> 结构的消息队列。消息队列是有锁结构，实现方式是一个<strong>动态环形数组</strong>，使用 <strong>head</strong> 表示目前队列中最早的一条消息的索引值，<strong>tail</strong> 表示目前队列中最晚的一条消息的索引值。在 push 消息进来的时候会检查是否还有剩余位置，如果没有了会调用 <strong>expand_queue</strong> 扩容这个数组，容量初始的时候是 64，每次扩容会把当前容量直接翻倍。</p>
+</div><p>　　每个服务都有属于自己的一个 struct message_queue 结构的消息队列。消息队列是有锁结构，实现方式是一个动态环形数组，使用 head 表示目前队列中最早的一条消息的索引值，tail 表示目前队列中最晚的一条消息的索引值。在 push 消息进来的时候会检查是否还有剩余位置，如果没有了会调用 expand_queue 扩容这个数组，容量初始的时候是 64，每次扩容会把当前容量直接翻倍。</p>
 <h2 id="handle">handle</h2>
-<p>　　上文提到了，handle 的作用是用来完成 <strong>名字 → handle</strong> 和 <strong>handle → 服务</strong> 的映射。首先，skynet 中同进程不同服务之间发送消息的本质就是<strong>把消息 push 到目标服务的消息队列中</strong>，这个操作中最重要的一个步骤就是拿到目标服务的消息队列的地址，又因为有了目标服务的地址就能拿到其消息队列的地址，所以这个步骤变为了拿到目标服务的地址。<br>
+<p>　　上文提到了，handle 的作用是用来完成 名字 → handle 和 handle → 服务 的映射。首先，skynet 中同进程不同服务之间发送消息的本质就是把消息 push 到目标服务的消息队列中，这个操作中最重要的一个步骤就是拿到目标服务的消息队列的地址，又因为有了目标服务的地址就能拿到其消息队列的地址，所以这个步骤变为了拿到目标服务的地址。<br>
 　　skynet 中发送消息的时候，指定目标可以通过服务的名字或是 handle，如果目标的参数是名字，需要两步转换，首先要根据服务的名字拿到服务的 handle，然后再根据 handle 拿到服务的地址。如果参数是 handle 则直接根据 handle 拿到服务的地址即可。<br>
 　　这个过程能不能简化呢？在 C 语言中很难实现，如果是 C++ 的话，可以考虑强制要求服务一定要有名字，然后使用一个 unordered_map 把服务的名字和地址对应起来，发送消息的时候也只能通过名字来指定目标服务，这样可以简化掉 handle 这个转化过程，但是也加了不小的限制。</p>
 </section>

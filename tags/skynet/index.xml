@@ -1702,17 +1702,17 @@ Q query info&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_context&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;skynet_context_new&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;param&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　不管是从 C 层还是从 Lua 层创建一个新的服务，最后的创建函数都是 &lt;strong&gt;skynet_context_new&lt;/strong&gt;，这个函数接受一个 module 名字和一个传给 module 的 init 函数的额外参数，返回一个 &lt;strong&gt;struct skynet_context&lt;/strong&gt; 变量指针。&lt;br&gt;
+&lt;/div&gt;&lt;p&gt;　　不管是从 C 层还是从 Lua 层创建一个新的服务，最后的创建函数都是 skynet_context_new，这个函数接受一个 module 名字和一个传给 module 的 init 函数的额外参数，返回一个 struct skynet_context 变量指针。&lt;br&gt;
 　　服务在创建的时候有几个关键步骤：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;通过 module 名字去查找 module 的地址，然后调用 module 的 &lt;strong&gt;create&lt;/strong&gt; 接口创建一个数据副本，这两个值会保存在 &lt;strong&gt;skynet_context&lt;/strong&gt; 的 &lt;strong&gt;mod&lt;/strong&gt; 和 &lt;strong&gt;instance&lt;/strong&gt; 字段中。&lt;/li&gt;
-&lt;li&gt;注册服务的 handle，服务的 handle 是用来完成 &lt;strong&gt;名字 → handle&lt;/strong&gt; 和 &lt;strong&gt;handle → 服务&lt;/strong&gt; 的映射。&lt;/li&gt;
+&lt;li&gt;通过 module 名字去查找 module 的地址，然后调用 module 的 create 接口创建一个数据副本，这两个值会保存在 skynet_context 的 mod 和 instance 字段中。&lt;/li&gt;
+&lt;li&gt;注册服务的 handle，服务的 handle 是用来完成 名字 → handle 和 handle → 服务 的映射。&lt;/li&gt;
 &lt;li&gt;创建服务的消息队列。&lt;/li&gt;
-&lt;li&gt;调用 module 的 &lt;strong&gt;init&lt;/strong&gt; 函数初始化之前创建好的 module 数据副本。&lt;/li&gt;
+&lt;li&gt;调用 module 的 init 函数初始化之前创建好的 module 数据副本。&lt;/li&gt;
 &lt;li&gt;把服务的消息队列 push 到全局的消息队列中去。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;引用计数&#34;&gt;引用计数&lt;/h2&gt;
-&lt;p&gt;　　每个服务都有一个原子类型的引用计数变量 &lt;strong&gt;ref&lt;/strong&gt;，当有地方引用一个服务时，调用 &lt;strong&gt;skynet_context_grab&lt;/strong&gt; 来增加服务的引用计数，在引用结束以后需要手动调用 &lt;strong&gt;skynet_context_release&lt;/strong&gt; 来减少服务的引用计数。&lt;/p&gt;
+&lt;p&gt;　　每个服务都有一个原子类型的引用计数变量 ref，当有地方引用一个服务时，调用 skynet_context_grab 来增加服务的引用计数，在引用结束以后需要手动调用 skynet_context_release 来减少服务的引用计数。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -1723,7 +1723,7 @@ Q query info&lt;/p&gt;
 &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_context&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;skynet_context_release&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_context&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　&lt;strong&gt;ref&lt;/strong&gt; 在服务创建完毕以后会的值为 1，正常的引用和解引用是不会使 &lt;strong&gt;ref&lt;/strong&gt; 变为 0 的，如果需要删除一个服务，可以在服务的逻辑中调用 skynet.exit 或者是通过后台命令来减少服务的引用次数，然后等别的地方的引用全部结束了，&lt;strong&gt;ref&lt;/strong&gt; 会变为 0 来触发删除服务的函数 &lt;strong&gt;delete_context&lt;/strong&gt;.&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　ref 在服务创建完毕以后会的值为 1，正常的引用和解引用是不会使 ref 变为 0 的，如果需要删除一个服务，可以在服务的逻辑中调用 skynet.exit 或者是通过后台命令来减少服务的引用次数，然后等别的地方的引用全部结束了，ref 会变为 0 来触发删除服务的函数 delete_context.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -1766,9 +1766,9 @@ Q query info&lt;/p&gt;
 &lt;/span&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　每个服务都有属于自己的一个 &lt;strong&gt;struct message_queue&lt;/strong&gt; 结构的消息队列。消息队列是有锁结构，实现方式是一个&lt;strong&gt;动态环形数组&lt;/strong&gt;，使用 &lt;strong&gt;head&lt;/strong&gt; 表示目前队列中最早的一条消息的索引值，&lt;strong&gt;tail&lt;/strong&gt; 表示目前队列中最晚的一条消息的索引值。在 push 消息进来的时候会检查是否还有剩余位置，如果没有了会调用 &lt;strong&gt;expand_queue&lt;/strong&gt; 扩容这个数组，容量初始的时候是 64，每次扩容会把当前容量直接翻倍。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　每个服务都有属于自己的一个 struct message_queue 结构的消息队列。消息队列是有锁结构，实现方式是一个动态环形数组，使用 head 表示目前队列中最早的一条消息的索引值，tail 表示目前队列中最晚的一条消息的索引值。在 push 消息进来的时候会检查是否还有剩余位置，如果没有了会调用 expand_queue 扩容这个数组，容量初始的时候是 64，每次扩容会把当前容量直接翻倍。&lt;/p&gt;
 &lt;h2 id=&#34;handle&#34;&gt;handle&lt;/h2&gt;
-&lt;p&gt;　　上文提到了，handle 的作用是用来完成 &lt;strong&gt;名字 → handle&lt;/strong&gt; 和 &lt;strong&gt;handle → 服务&lt;/strong&gt; 的映射。首先，skynet 中同进程不同服务之间发送消息的本质就是&lt;strong&gt;把消息 push 到目标服务的消息队列中&lt;/strong&gt;，这个操作中最重要的一个步骤就是拿到目标服务的消息队列的地址，又因为有了目标服务的地址就能拿到其消息队列的地址，所以这个步骤变为了拿到目标服务的地址。&lt;br&gt;
+&lt;p&gt;　　上文提到了，handle 的作用是用来完成 名字 → handle 和 handle → 服务 的映射。首先，skynet 中同进程不同服务之间发送消息的本质就是把消息 push 到目标服务的消息队列中，这个操作中最重要的一个步骤就是拿到目标服务的消息队列的地址，又因为有了目标服务的地址就能拿到其消息队列的地址，所以这个步骤变为了拿到目标服务的地址。&lt;br&gt;
 　　skynet 中发送消息的时候，指定目标可以通过服务的名字或是 handle，如果目标的参数是名字，需要两步转换，首先要根据服务的名字拿到服务的 handle，然后再根据 handle 拿到服务的地址。如果参数是 handle 则直接根据 handle 拿到服务的地址即可。&lt;br&gt;
 　　这个过程能不能简化呢？在 C 语言中很难实现，如果是 C++ 的话，可以考虑强制要求服务一定要有名字，然后使用一个 unordered_map 把服务的名字和地址对应起来，发送消息的时候也只能通过名字来指定目标服务，这样可以简化掉 handle 这个转化过程，但是也加了不小的限制。&lt;/p&gt;</description>
         </item>
@@ -1853,8 +1853,8 @@ Q query info&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;module-的加载&#34;&gt;module 的加载&lt;/h2&gt;
-&lt;p&gt;　　在创建一个新服务的时候，创建函数会调用 &lt;strong&gt;skynet_module_query&lt;/strong&gt; 来查找指定名字的 module 地址, 这一步会遍历所有已经加载的 module 来查询，因为总数很少，所以遍历并没有什么问题。如果查到了，则直接返回 module 的地址给查询方。&lt;br&gt;
-　　如果没查到，则需要走 module 的加载流程。因为 &lt;strong&gt;path&lt;/strong&gt; 是支持多地址的，多地址用 &lt;strong&gt;&amp;quot;;&amp;quot;&lt;/strong&gt; 分隔，所以加载的过程其实就是依次在每个地址下找对应名字的动态库，如果找到了，就使用系统调用 &lt;strong&gt;dlopen&lt;/strong&gt; 加载动态库拿到加载后的地址，然后用系统调用 &lt;strong&gt;dlsym&lt;/strong&gt; 来分别拿到 &lt;strong&gt;xxx_create/xxx_init/xxx_release/xxx_signal&lt;/strong&gt; 的地址，最后将 api 函数的地址，module 的地址，module 的名字保存到管理器的 module 数组的最新一个数据，并且把 &lt;strong&gt;count&lt;/strong&gt; 累加。到这里 module 的加载就完成了。返回 module 的地址给查询方即可。&lt;/p&gt;
+&lt;p&gt;　　在创建一个新服务的时候，创建函数会调用 skynet_module_query 来查找指定名字的 module 地址, 这一步会遍历所有已经加载的 module 来查询，因为总数很少，所以遍历并没有什么问题。如果查到了，则直接返回 module 的地址给查询方。&lt;br&gt;
+　　如果没查到，则需要走 module 的加载流程。因为 path 是支持多地址的，多地址用 &amp;ldquo;;&amp;rdquo; 分隔，所以加载的过程其实就是依次在每个地址下找对应名字的动态库，如果找到了，就使用系统调用 dlopen 加载动态库拿到加载后的地址，然后用系统调用 dlsym 来分别拿到 xxx_create/xxx_init/xxx_release/xxx_signal 的地址，最后将 api 函数的地址，module 的地址，module 的名字保存到管理器的 module 数组的最新一个数据，并且把 count 累加。到这里 module 的加载就完成了。返回 module 的地址给查询方即可。&lt;/p&gt;
 &lt;h2 id=&#34;module-实例的创建&#34;&gt;module 实例的创建&lt;/h2&gt;
 &lt;p&gt;　　创建一个 module 的实例，本质上就是创建一个 module 的私有数据结构体，这份数据在不同的 module 中结构不一样，比如在 snlua 中，结构体就是 struct snlua, 其中包含了 lua 虚拟机等数据。同一个 module 创建出的不同实例之间共享 module 提供的接口，但是数据是互相独立的。&lt;br&gt;
 　　创建过程中，会首先调用 module 的 create 接口创建出一份私有数据，然后再调用 init 接口初始化这份数据。在释放的时候会调用 release 接口释放这份数据。&lt;/p&gt;</description>
