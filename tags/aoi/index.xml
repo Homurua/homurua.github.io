@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>aoi on 放学后茶会</title>
+        <link>https://wmf.im/tags/aoi/</link>
+        <description>Recent content in aoi on 放学后茶会</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Sun, 27 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/tags/aoi/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>游戏开发笔记（一）AOI分析</title>
+        <link>https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/</link>
+        <pubDate>Sun, 27 Mar 2022 02:18:47 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/</guid>
+        <description>&lt;p&gt;　　AOI 全称 Area Of Interest, 在游戏开发中用来做角色视野内对象显示同步和状态同步，基本上只要有公共地图的游戏都会涉及到。本篇介绍一些常用的 AOI 实现方法。&lt;/p&gt;
+&lt;h2 id=&#34;全局可见&#34;&gt;全局可见&lt;/h2&gt;
+&lt;p&gt;　　一个最简单的实现方法是，场景中的所有对象在后端全都互相可见，任何对象的状态修改都会同步给全部的其它对象，在某个客户端上是否要显示某个对象完全依靠客户端来进行选择。&lt;br&gt;
+　　这种最大的问题有两个，第一个是性能问题，毕竟每次更新都要广播给全部的对象，如果只有几十个对象还能用，多了就不太行了。第二个就是外挂问题，全部可以见意味着全部发送，这样客户端就有全部的对象数据，外挂可以直接拿到。&lt;br&gt;
+　　存储数据也很简单，只保存一个全局的对象表就可以了，对象发生了任何要广播的事件就给剩下全部对象广播。&lt;/p&gt;
+&lt;h2 id=&#34;非全局可见&#34;&gt;非全局可见&lt;/h2&gt;
+&lt;p&gt;　　在非全局可见的实现中，每个对象要维护一个被关注列表，它是指包含了所有能看到自己的对象的集合，自己的状态改变需要同步给集合中的所有对象。&lt;br&gt;
+　　在对象有状态需要更新的情况下，直接广播消息给被关注列表的所有对象即可。比较麻烦的是加入场景和在场景中移动，因为这两种情况下对象需要维护自己的被关注列表，同时也需要更新自己可见的对象的被关注列表。&lt;br&gt;
+　　自己可见的对象比较容易查询，因为有自己的视距和坐标，遍历范围内所有位置可以拿到所有自己可见的对象，把自己加入到它们的被关注列表即可。在维护自己的被关注列表时会碰到问题，因为自己并不知道其它对象的视距，所以不能直接遍历周围范围拿到。&lt;br&gt;
+　　处理这个问题最简单的方法就是遍历场景上全部的对象，依次计算距离并且与它的视距比较，判断是否可以看见新加入的对象。这种方法只能用在地图比较小的情况下，如果地图很大，那么全局遍历一次是很难接受的。&lt;br&gt;
+　　另一种方法就是限制最大视距，因为一般来说不会存在无限视距的对象，所以可以对场景设置一个硬性的视距上限值，任何类型的对象视距都不能超过它。这样在遍历的时候只需要检查最大视距以内的所有对象即可。并且此时可以发现，因为触发修改的对象的视距也不会超过最大视距，所以可以合并两次遍历，即可以通过对最大视距范围内对象的一次遍历完成自己的被关注列表和自己可以看到的对象的被关注列表的更新。&lt;br&gt;
+　　根据业务需要也可以考虑增加一个关注列表，即自己可以看到的所有对象的集合。因为在业务中可能需要获取某个对象能看见的全部对象，如果只维护了被关注列表的话，这个获取就会非常麻烦。维护关注列表并不需要额外的计算，只需要在更新自己可以看到的对象的被关注列表时把它加入到自己的关注列表里即可。&lt;/p&gt;
+&lt;h2 id=&#34;优化思路&#34;&gt;优化思路&lt;/h2&gt;
+&lt;h3 id=&#34;划分格子&#34;&gt;划分格子&lt;/h3&gt;
+&lt;p&gt;　　如果以像素为单位遍历地图的话有点太耗费性能了，而且绝大多数业务也不需要这么高的精度，所以一般都会把地图划分成更大的格子来处理。&lt;br&gt;
+　　比如坐标格子精度为 64 个像素，那么从 (0, 0) 到 (63, 63) 内的所有对象的相对坐标都是 (0, 0)。每个格子会保存一个当前格子内全部对象以 id 为 key 的哈希结构，查询到格子以后可以方便遍历，离开格子时也可以快速移除。&lt;/p&gt;
+&lt;h3 id=&#34;相等视距&#34;&gt;相等视距&lt;/h3&gt;
+&lt;p&gt;　　如果游戏中的所有对象的视距都相等的话，那么 AOI 的问题可以被简化很多。&lt;br&gt;
+　　当视距全都相等时，可以考虑省略掉为每个对象维护的集合，只对每个坐标维护一个对象列表。因为不管怎么改变，都可以根据对象的位置快速确定有关的坐标点，从而拿到全部的需要处理的对象。&lt;br&gt;
+　　如果视距相等并且不需要高精度的情况下，可以结合划分格子的思路，这就是一个常见的实现，“九宫格法” AOI 的思路，它将每个对象的视野限制为以自己为中心格子的九宫格中。&lt;/p&gt;
+&lt;h2 id=&#34;十字链表&#34;&gt;十字链表&lt;/h2&gt;
+&lt;p&gt;　　AOI 算法中还有一个广泛使用的十字链表法，它本身很有特点，跟上面的思路大相径庭。&lt;br&gt;
+　　十字链表法可以用来处理多维的坐标系，在二维坐标系中，会使用两条有序双向链表，一条表示 X 轴，另一条表示 Y 轴。因为链表代表的坐标轴互相垂直像十字架一样，因此得名。&lt;br&gt;
+　　它的原理是，如果在 (m, n) 点有一个视距为 20 的对象 O，那么有 x
+轴的范围在 (m - 20, m + 20) 的所有点集合 A，y 轴的范围在 (n - 20, n + 20) 的所有点集合 B，A ∩ B 的结果即为 O 的可视范围中所有的点。&lt;br&gt;
+　　当对象进入场景时，需要在 x 轴和 y 轴上分别准备三个点，假设对象的视距为 n，则这在 x 轴上的三个点是 x - n，x，x + n，在 y 轴上的三个点为 y - n，y，y + n。两边的两个点是边界点，它们用来判断某个点是否在本点的视距内，中间的点就是坐标点，它用来让别的点的判断它是否在其视距内。同时还需要为对象创建两个临时列表分别用来记录待确认的关注列表和待确认的被关注列表。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_link.jpg&#34;
+	width=&#34;1356&#34;
+	height=&#34;572&#34;
+	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;corss_link&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;237&#34;
+		data-flex-basis=&#34;568px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　假设如图中的 a 和 b 两点，a 的 x 轴坐标为 12，视距是 8，b 的 x 轴坐标为 18，视距为 5。首先 a 先加入到 x 轴中，此时链表为空，直接将 a 加入链表中，然后向前向后分别加入 a+ 和 a- 即可。当 b 加入时，依次会发生以下几个步骤。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;b 跨越 a-，代表了 b 已经进入了 a 的视距中，但是因为还未移动结束，所以会暂时把 a 加入 b 的待确认被关注列表中。&lt;/li&gt;
+&lt;li&gt;b 跨越 a，因为都是坐标点，所以不做操作。&lt;/li&gt;
+&lt;li&gt;b 到达目标位置停止移动，此时 a 还在 b 的待确认被关注列表中，因为移动已经停止，所以把 a 加入到 b 的被关注列表中即可。&lt;/li&gt;
+&lt;li&gt;以 b 的位置为基准点向前查找 b+ 的位置。&lt;/li&gt;
+&lt;li&gt;b+ 跨越 a+，因为都是边界点，所以不做操作。&lt;/li&gt;
+&lt;li&gt;找到 b+ 的位置，停止查找，创建节点。&lt;/li&gt;
+&lt;li&gt;以 b 的位置为基准点向后查找 b- 的位置。&lt;/li&gt;
+&lt;li&gt;找到 b- 的位置，停止查找，创建节点。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;　　可以看到十字链表法在遍历的时候不是遍历坐标点或者格子的，而是直接遍历对象的，这意味着不需要通过划分格子来优化速度，也就是说可以在相同消耗下保持坐标点级别的精度。同时十字链表法对于视距没有什么要求，不同类型的对象使用不同的视距不会有任何问题。&lt;br&gt;
+　　但是它也有一个自己的问题，就是在对象加入的时候，最坏情况下需要遍历每个维度坐标轴上所有的点，如果是二维坐标系则最坏结果为 2 * 3 * N 个节点。&lt;/p&gt;
+&lt;h3 id=&#34;快慢指针&#34;&gt;快慢指针&lt;/h3&gt;
+&lt;p&gt;　　有一种优化链表查询速度的方法是使用快慢指针。它需要创建两个步长不一样的指针，步长比较长的是快指针，步长比较短的是慢指针。&lt;br&gt;
+　　一开始快慢指针都指向表头，遍历的时候会先让快指针走一次，走过之后比较快指针的位置和目标位置，如果还没有到目标位置，则把慢指针的位置指向快指针的位置，并且让快指针继续走。直到快指针的位置超过了目标位置，此时可以确认目标位置就在慢指针和快指针之间，然后移动慢指针查找目标位置即可。&lt;br&gt;
+　　快慢指针的优点是实现很简单，而且不需要修改原始的数据结构，缺点是它对查询速度的优化有限，时间复杂度还是 O(n)，且不同的快指针步长也会有不同的优化效果，效率不太稳定。&lt;/p&gt;
+&lt;h3 id=&#34;提取索引点&#34;&gt;提取索引点&lt;/h3&gt;
+&lt;p&gt;　　优化有序链表的查询还有一个成熟且高效的实现，就是&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Skip_list&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;跳表&lt;/a&gt;。&lt;br&gt;
+　　跳表会将链表中的某些点作为索引点提取到上一层组成一个新的有序链表，可以根据需要一共提取出几层快速链表。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_1st.jpg&#34;
+	width=&#34;1356&#34;
+	height=&#34;572&#34;
+	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;cross_skiplist_axis_1st&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;237&#34;
+		data-flex-basis=&#34;568px&#34;
+	
+&gt;
+&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_1st.jpg&#34;
+	width=&#34;1764&#34;
+	height=&#34;564&#34;
+	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;cross_skiplist_1st&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;312&#34;
+		data-flex-basis=&#34;750px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　如图是将坐标轴转化为跳表的一个简单例子，在实现的时候可以只选择一些对象坐标点提取为索引点，不提取边界点，因为边界点上没有保存被关注列表。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd.jpg&#34;
+	width=&#34;1356&#34;
+	height=&#34;656&#34;
+	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;cross_skiplist_axis_2nd&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;206&#34;
+		data-flex-basis=&#34;496px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　如图尝试为坐标轴增加一个对象 c，它的步骤如下。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;首先从最高层级的表头开始查找，找到下一个项为 a 对象。&lt;/li&gt;
+&lt;li&gt;比如 c 和 a 坐标，c 大于 a，但是 a 后续已经没有其它项，所以从 a 向下查找，来到下一层。&lt;/li&gt;
+&lt;li&gt;在本层中 a 的后续是 b，比较 b 和 c，发现 b 的坐标更大，此时要从 a 继续向下一层找。&lt;/li&gt;
+&lt;li&gt;到最下面这一层，首先新增对象要继承当前对象的被关注列表，也包括当前对象本身。也就是 a 要加入到 c 的待确认被关注列表中。&lt;/li&gt;
+&lt;li&gt;继续向后，首先 c 会经过 b-，将 b 加入 c 的待确认被关注列表。&lt;/li&gt;
+&lt;li&gt;然后跟 b 比较，发现 b 大于 c，所以已经找到了 c 的位置。&lt;/li&gt;
+&lt;li&gt;此时 a 和 b 在 c 的待确认被关注列表中，直接将 a 和 b 加入到 c 的被关注列表中即可。&lt;/li&gt;
+&lt;li&gt;从 c 的位置开始，向前寻找 c+ 的位置，向后寻找 c- 的位置。&lt;/li&gt;
+&lt;li&gt;c- 向后越过了 a，将 c 加入到 a 的被关注列表中。&lt;/li&gt;
+&lt;li&gt;c+ 向前越过了 b，将 c 加入到 b 的被关注列表中。&lt;/li&gt;
+&lt;li&gt;掷色子将 c 提高层次。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_2nd.jpg&#34;
+	width=&#34;2484&#34;
+	height=&#34;724&#34;
+	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;cross_skiplist_2nd&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;343&#34;
+		data-flex-basis=&#34;823px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　最终跳表的结构可能如图所示。&lt;br&gt;
+　　使用跳表的优点是，速度提升明显，时间复杂度趋近于 O(logn)，远比快慢指针要快很多。缺点也比较明显，首先因为需要额外多层的链表，所以内存占用就更多一些，其次在实现上也会比快慢指针复杂很多，要多写很多代码。&lt;/p&gt;</description>
+        </item>
+        
+    </channel>
+</rss>
