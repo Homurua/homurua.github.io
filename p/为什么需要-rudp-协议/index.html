@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。
+'><title>为什么需要 RUDP 协议</title>
+
+<link rel='canonical' href='https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='为什么需要 RUDP 协议'>
+<meta property='og:description' content='　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。
+'>
+<meta property='og:url' content='https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='network' /><meta property='article:published_time' content='2022-03-28T02:18:47&#43;08:00'/><meta property='article:modified_time' content='2022-03-28T02:18:47&#43;08:00'/>
+<meta name="twitter:title" content="为什么需要 RUDP 协议">
+<meta name="twitter:description" content="　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/" style="background-color: #2a9d8f; color: #fff;">
+                网络编程笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/">为什么需要 RUDP 协议</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 28, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。</p>
+<h2 id="引子">引子</h2>
+<p>　　UDP 和 TCP 是传输层最常用的两个协议。UDP 是个不可靠的协议，它不保证数据交付，而 TCP 是可靠的，它可以保证接收方接收的字节流与发送方发送的字节流完全相同。<br>
+　　那么就有了一个问题，既然已经有 TCP 提供可靠服务了，直接用不可以吗？为什么还要魔改 UDP 让它来提供可靠服务呢？<br>
+　　要回答这个问题，首先要了解一下 TCP 的弱点是什么。</p>
+<h2 id="tcp-的弱点">TCP 的弱点</h2>
+<p>　　TCP 之所以可以保证可靠，是因为它使用了包括数据校验和，为报文段增加序号，增加接收方反馈，超时重传，快速重传，在双端增加缓冲区等机制。<br>
+　　当网络畅通无阻时，这些机制都可以非常有效的运行，也就是说如果网络环境良好时，没必要使用 RUDP 了，直接使用 TCP 就是最好的选择。<br>
+　　但是实际中的网络环境千差万别，尤其是现在移动互联网盛行，用户可能是在地铁，电梯等信号不太强的地方使用 4G 等方式上网的。这时候如果继续使用 TCP 的话，在一些对网络延迟要求比较高的场景中体验可能就会很差。<br>
+　　来看一些 TCP 的机制在弱网下可能存在的问题。</p>
+<h3 id="rto-倍率">RTO 倍率</h3>
+<p>　　TCP 会为拥有最小还未被确认序号（SendBase）的报文段设置一个重传定时器，如果超时了，会将它重传，并且会再次为它设置定时器。如果收到了确认报文，则会取消当前的定时器，为下一个待确认报文创建新的定时器。<br>
+　　重传超时的时间被称为 RTO（Retransmission Timeout），它在根据 RTT（Round Trip Time）通过一定的算法计算得来的。在 TCP 的实现中，第一次设置的定时器超时时间为 RTO，如果触发超时以后，下一次为本报文段设置的定时器超时时间会变为 2RTO，如果再次触发，则下一次会是 4RTO，每次会比上一次翻倍。<br>
+　　之所以这样实现，是因为 TCP 考虑到丢包很可能是因为发送方和接收方之间的一台或多台路由器上有太多数据包来不及处理，如果在短时间内继续重传，不仅依然收不到，而且可能会导致拥堵问题更加严重。<br>
+　　在弱网情况下，这个每次翻倍的机制可能就会拖累用户的使用体验。并且弱网下的丢包大部分情况下都是因为硬件的信号问题，而不是线路上路由器拥堵。所以一般 RUDP 的实现会把这个倍率调低，通过更加频繁的重发，尝试将报文成功发送出去。<br>
+　　但是需要注意的是，如果确实是因为线路拥堵的原因导致的丢包，那么调低倍率 RTO 倍率并不会带来任何好处，不仅多浪费了流量，而且还让线路更加拥堵了。</p>
+<h3 id="差错恢复">差错恢复</h3>
+<p>　　网络数据流中处理差错恢复的方法主要有：回退 N 步（Go Back N，GBK）和选择重传（Selective Repeat，SR）这两种。TCP 的实现是把这两种混合在一起的。<br>
+　　这里先不展开讨论这几种差错恢复的全部区别，只把重点放在数据重传上。<br>
+　　GBN 的接收端不设置缓存，失序报文全部丢掉，返回最后确认的 ACK。如果某个序号为 n 的报文段在发送过程中丢失了，它会把包括 n 在内的所有 n 以后的已发送的报文全部重发一次。<br>
+　　SR 中每个报文段相对独立，如果一个报文段在发送中丢失了，那么它自己的定时器超时以后只会重传它自己即可。<br>
+　　TCP 一般的实现中会在接收端缓存失序到达的报文段，并且在收到失序报文时会给发送端回复一个冗余 ACK，三次冗余 ACK 以后会触发 TCP 的快速重传机制，让发送端立即重发缺失的报文段。接收端在收到缺失的报文段以后，会在缓存中查找后续的报文段，根据缓存中的情况，直接返回给发送端最新的 ACK 即可。<br>
+　　RUDP 的实现一般不太一样，以 KCP 为例，它采用了 SR 的策略，并且接收端不会传冗余 ACK，而是由发送端根据接收到的后续的 ACK 来判断某个报文是否丢失了，从而发起快速重传。</p>
+<h3 id="拥塞控制">拥塞控制</h3>
+<p>　　如果说前面的都是小问题的话，那么 TCP 的拥塞控制可能就是 RUDP 大行其道的最大原因了。<br>
+　　拥塞控制是 TCP 的一套试探线路负载上限的策略，包括了慢启动，拥塞避免和快速恢复三种可以互相转化了状态。<br>
+　　慢启动，是指 TCP 会以 1 个 MSS 为拥塞窗口，逐步向上增加，每次收到一个新的 ACK 时就增加一个 MSS，看起来是好像时线性增加其实是指数增长的，因为如果网络没问题的话，下一次在一个 RTT 后会收到 2 个新的 ACK，会直接增加 2 个 MSS，同理下一次会增加 4 个 MSS。虽然增加的速度已经挺快了，但是一开始的速度会比较慢。<br>
+　　如果在 TCP 中发生了超时丢包，都会将拥塞窗口重置为 1 个 MSS，并且 ssthresh（Slow Start Threshold，慢启动阈值）会被设为当前拥塞窗口的二分之一。在拥塞窗口超过了 ssthresh 以后，会进入到拥塞避免状态，每个 RTT 只能增加一个 MSS。同时如果发生的是由三个冗余 ACK 触发的丢包，那么 TCP 会将拥塞窗口变为原来的二分之一。<br>
+　　可以看到在 TCP 中只要发生了丢包，都会倒是速率大幅下降，然后再慢慢升上来。<br>
+　　同时 TCP 的拥塞控制秉承了公平性的原则，两条链接如果都要大量使用带宽的话，那么最终它们分到的带宽都接近带宽总量的二分之一。<br>
+　　TCP 的拥塞策略是 RUDP 大量修改的地方，一般会改的激进很多，也不会完全遵循公平原则。不单是 RUDP，谷歌搞得 bbr 已经被合并到了 Linux 新版内核里，也是为了修改拥塞控制。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/network/">network</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#引子">引子</a></li>
+    <li><a href="#tcp-的弱点">TCP 的弱点</a>
+      <ol>
+        <li><a href="#rto-倍率">RTO 倍率</a></li>
+        <li><a href="#差错恢复">差错恢复</a></li>
+        <li><a href="#拥塞控制">拥塞控制</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

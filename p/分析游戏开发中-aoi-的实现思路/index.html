@@ -2,17 +2,17 @@
 <html lang="zh-cn" dir="ltr">
     <head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　AOI 全称 Area Of Interest, 在游戏开发中用来做角色视野内对象显示同步和状态同步，基本上只要有公共地图的游戏都会涉及到。本篇介绍一些常用的 AOI 实现方法。
-'><title>游戏开发笔记（一）AOI 分析</title>
+'><title>分析游戏开发中 AOI 的实现思路</title>
 
-<link rel='canonical' href='https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/'>
+<link rel='canonical' href='https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/'>
 
-<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='游戏开发笔记（一）AOI 分析'>
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='分析游戏开发中 AOI 的实现思路'>
 <meta property='og:description' content='　AOI 全称 Area Of Interest, 在游戏开发中用来做角色视野内对象显示同步和状态同步，基本上只要有公共地图的游戏都会涉及到。本篇介绍一些常用的 AOI 实现方法。
 '>
-<meta property='og:url' content='https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/'>
+<meta property='og:url' content='https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/'>
 <meta property='og:site_name' content='放学后茶会'>
 <meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='aoi' /><meta property='article:published_time' content='2022-03-27T02:18:47&#43;08:00'/><meta property='article:modified_time' content='2022-03-27T02:18:47&#43;08:00'/>
-<meta name="twitter:title" content="游戏开发笔记（一）AOI 分析">
+<meta name="twitter:title" content="分析游戏开发中 AOI 的实现思路">
 <meta name="twitter:description" content="　AOI 全称 Area Of Interest, 在游戏开发中用来做角色视野内对象显示同步和状态同步，基本上只要有公共地图的游戏都会涉及到。本篇介绍一些常用的 AOI 实现方法。
 ">
     <link rel="shortcut icon" href="/img/dango.svg" />
@@ -206,7 +206,7 @@
 
     <div class="article-title-wrapper">
         <h2 class="article-title">
-            <a href="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/">游戏开发笔记（一）AOI 分析</a>
+            <a href="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/">分析游戏开发中 AOI 的实现思路</a>
         </h2>
     
         
@@ -280,10 +280,10 @@
 　　它的原理是，如果在 (m, n) 点有一个视距为 20 的对象 O，那么有 x
 轴的范围在 (m - 20, m + 20) 的所有点集合 A，y 轴的范围在 (n - 20, n + 20) 的所有点集合 B，A ∩ B 的结果即为 O 的可视范围中所有的点。<br>
 　　当对象进入场景时，需要在 x 轴和 y 轴上分别准备三个点，假设对象的视距为 n，则这在 x 轴上的三个点是 x - n，x，x + n，在 y 轴上的三个点为 y - n，y，y + n。两边的两个点是边界点，它们用来判断某个点是否在本点的视距内，中间的点就是坐标点，它用来让别的点的判断它是否在其视距内。同时还需要为对象创建两个临时列表分别用来记录待确认的关注列表和待确认的被关注列表。</p>
-<p><img src="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link.jpg"
+<p><img src="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link.jpg"
 	width="1356"
 	height="572"
-	srcset="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_480x0_resize_q75_box.jpg 480w, /p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_1024x0_resize_q75_box.jpg 1024w"
+	srcset="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_480x0_resize_q75_box.jpg 480w, /p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
 		alt="corss_link"
@@ -315,10 +315,10 @@
 <p>　　优化有序链表的查询还有一个成熟且高效的实现，就是<a class="link" href="https://en.wikipedia.org/wiki/Skip_list"  target="_blank" rel="noopener"
     >跳表</a>。<br>
 　　跳表会将链表中的某些点作为索引点提取到上一层组成一个新的有序链表，可以根据需要一共提取出几层快速链表。</p>
-<p><img src="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st.jpg"
+<p><img src="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st.jpg"
 	width="1356"
 	height="572"
-	srcset="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_480x0_resize_q75_box.jpg 480w, /p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_1024x0_resize_q75_box.jpg 1024w"
+	srcset="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_480x0_resize_q75_box.jpg 480w, /p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
 		alt="cross_skiplist_axis_1st"
@@ -329,10 +329,10 @@
 		data-flex-basis="568px"
 	
 >
-<img src="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st.jpg"
+<img src="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st.jpg"
 	width="1764"
 	height="564"
-	srcset="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_480x0_resize_q75_box.jpg 480w, /p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_1024x0_resize_q75_box.jpg 1024w"
+	srcset="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_480x0_resize_q75_box.jpg 480w, /p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
 		alt="cross_skiplist_1st"
@@ -344,10 +344,10 @@
 	
 ></p>
 <p>　　如图是将坐标轴转化为跳表的一个简单例子，在实现的时候可以只选择一些对象坐标点提取为索引点，不提取边界点，因为边界点上没有保存被关注列表。</p>
-<p><img src="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd.jpg"
+<p><img src="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd.jpg"
 	width="1356"
 	height="656"
-	srcset="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_480x0_resize_q75_box.jpg 480w, /p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_1024x0_resize_q75_box.jpg 1024w"
+	srcset="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_480x0_resize_q75_box.jpg 480w, /p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
 		alt="cross_skiplist_axis_2nd"
@@ -372,10 +372,10 @@
 <li>c+ 向前越过了 b，将 c 加入到 b 的被关注列表中。</li>
 <li>掷色子将 c 提高层次。</li>
 </ol>
-<p><img src="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd.jpg"
+<p><img src="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd.jpg"
 	width="2484"
 	height="724"
-	srcset="/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_480x0_resize_q75_box.jpg 480w, /p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_1024x0_resize_q75_box.jpg 1024w"
+	srcset="/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_480x0_resize_q75_box.jpg 480w, /p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_1024x0_resize_q75_box.jpg 1024w"
 	loading="lazy"
 	
 		alt="cross_skiplist_2nd"

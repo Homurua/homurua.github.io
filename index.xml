@@ -6,12 +6,50 @@
         <description>Recent content on 放学后茶会</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
-        <lastBuildDate>Sun, 27 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>游戏开发笔记（一）AOI 分析</title>
-        <link>https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/</link>
+        <lastBuildDate>Mon, 28 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>为什么需要 RUDP 协议</title>
+        <link>https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/</link>
+        <pubDate>Mon, 28 Mar 2022 02:18:47 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/</guid>
+        <description>&lt;p&gt;　　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。&lt;/p&gt;
+&lt;h2 id=&#34;引子&#34;&gt;引子&lt;/h2&gt;
+&lt;p&gt;　　UDP 和 TCP 是传输层最常用的两个协议。UDP 是个不可靠的协议，它不保证数据交付，而 TCP 是可靠的，它可以保证接收方接收的字节流与发送方发送的字节流完全相同。&lt;br&gt;
+　　那么就有了一个问题，既然已经有 TCP 提供可靠服务了，直接用不可以吗？为什么还要魔改 UDP 让它来提供可靠服务呢？&lt;br&gt;
+　　要回答这个问题，首先要了解一下 TCP 的弱点是什么。&lt;/p&gt;
+&lt;h2 id=&#34;tcp-的弱点&#34;&gt;TCP 的弱点&lt;/h2&gt;
+&lt;p&gt;　　TCP 之所以可以保证可靠，是因为它使用了包括数据校验和，为报文段增加序号，增加接收方反馈，超时重传，快速重传，在双端增加缓冲区等机制。&lt;br&gt;
+　　当网络畅通无阻时，这些机制都可以非常有效的运行，也就是说如果网络环境良好时，没必要使用 RUDP 了，直接使用 TCP 就是最好的选择。&lt;br&gt;
+　　但是实际中的网络环境千差万别，尤其是现在移动互联网盛行，用户可能是在地铁，电梯等信号不太强的地方使用 4G 等方式上网的。这时候如果继续使用 TCP 的话，在一些对网络延迟要求比较高的场景中体验可能就会很差。&lt;br&gt;
+　　来看一些 TCP 的机制在弱网下可能存在的问题。&lt;/p&gt;
+&lt;h3 id=&#34;rto-倍率&#34;&gt;RTO 倍率&lt;/h3&gt;
+&lt;p&gt;　　TCP 会为拥有最小还未被确认序号（SendBase）的报文段设置一个重传定时器，如果超时了，会将它重传，并且会再次为它设置定时器。如果收到了确认报文，则会取消当前的定时器，为下一个待确认报文创建新的定时器。&lt;br&gt;
+　　重传超时的时间被称为 RTO（Retransmission Timeout），它在根据 RTT（Round Trip Time）通过一定的算法计算得来的。在 TCP 的实现中，第一次设置的定时器超时时间为 RTO，如果触发超时以后，下一次为本报文段设置的定时器超时时间会变为 2RTO，如果再次触发，则下一次会是 4RTO，每次会比上一次翻倍。&lt;br&gt;
+　　之所以这样实现，是因为 TCP 考虑到丢包很可能是因为发送方和接收方之间的一台或多台路由器上有太多数据包来不及处理，如果在短时间内继续重传，不仅依然收不到，而且可能会导致拥堵问题更加严重。&lt;br&gt;
+　　在弱网情况下，这个每次翻倍的机制可能就会拖累用户的使用体验。并且弱网下的丢包大部分情况下都是因为硬件的信号问题，而不是线路上路由器拥堵。所以一般 RUDP 的实现会把这个倍率调低，通过更加频繁的重发，尝试将报文成功发送出去。&lt;br&gt;
+　　但是需要注意的是，如果确实是因为线路拥堵的原因导致的丢包，那么调低倍率 RTO 倍率并不会带来任何好处，不仅多浪费了流量，而且还让线路更加拥堵了。&lt;/p&gt;
+&lt;h3 id=&#34;差错恢复&#34;&gt;差错恢复&lt;/h3&gt;
+&lt;p&gt;　　网络数据流中处理差错恢复的方法主要有：回退 N 步（Go Back N，GBK）和选择重传（Selective Repeat，SR）这两种。TCP 的实现是把这两种混合在一起的。&lt;br&gt;
+　　这里先不展开讨论这几种差错恢复的全部区别，只把重点放在数据重传上。&lt;br&gt;
+　　GBN 的接收端不设置缓存，失序报文全部丢掉，返回最后确认的 ACK。如果某个序号为 n 的报文段在发送过程中丢失了，它会把包括 n 在内的所有 n 以后的已发送的报文全部重发一次。&lt;br&gt;
+　　SR 中每个报文段相对独立，如果一个报文段在发送中丢失了，那么它自己的定时器超时以后只会重传它自己即可。&lt;br&gt;
+　　TCP 一般的实现中会在接收端缓存失序到达的报文段，并且在收到失序报文时会给发送端回复一个冗余 ACK，三次冗余 ACK 以后会触发 TCP 的快速重传机制，让发送端立即重发缺失的报文段。接收端在收到缺失的报文段以后，会在缓存中查找后续的报文段，根据缓存中的情况，直接返回给发送端最新的 ACK 即可。&lt;br&gt;
+　　RUDP 的实现一般不太一样，以 KCP 为例，它采用了 SR 的策略，并且接收端不会传冗余 ACK，而是由发送端根据接收到的后续的 ACK 来判断某个报文是否丢失了，从而发起快速重传。&lt;/p&gt;
+&lt;h3 id=&#34;拥塞控制&#34;&gt;拥塞控制&lt;/h3&gt;
+&lt;p&gt;　　如果说前面的都是小问题的话，那么 TCP 的拥塞控制可能就是 RUDP 大行其道的最大原因了。&lt;br&gt;
+　　拥塞控制是 TCP 的一套试探线路负载上限的策略，包括了慢启动，拥塞避免和快速恢复三种可以互相转化了状态。&lt;br&gt;
+　　慢启动，是指 TCP 会以 1 个 MSS 为拥塞窗口，逐步向上增加，每次收到一个新的 ACK 时就增加一个 MSS，看起来是好像时线性增加其实是指数增长的，因为如果网络没问题的话，下一次在一个 RTT 后会收到 2 个新的 ACK，会直接增加 2 个 MSS，同理下一次会增加 4 个 MSS。虽然增加的速度已经挺快了，但是一开始的速度会比较慢。&lt;br&gt;
+　　如果在 TCP 中发生了超时丢包，都会将拥塞窗口重置为 1 个 MSS，并且 ssthresh（Slow Start Threshold，慢启动阈值）会被设为当前拥塞窗口的二分之一。在拥塞窗口超过了 ssthresh 以后，会进入到拥塞避免状态，每个 RTT 只能增加一个 MSS。同时如果发生的是由三个冗余 ACK 触发的丢包，那么 TCP 会将拥塞窗口变为原来的二分之一。&lt;br&gt;
+　　可以看到在 TCP 中只要发生了丢包，都会倒是速率大幅下降，然后再慢慢升上来。&lt;br&gt;
+　　同时 TCP 的拥塞控制秉承了公平性的原则，两条链接如果都要大量使用带宽的话，那么最终它们分到的带宽都接近带宽总量的二分之一。&lt;br&gt;
+　　TCP 的拥塞策略是 RUDP 大量修改的地方，一般会改的激进很多，也不会完全遵循公平原则。不单是 RUDP，谷歌搞得 bbr 已经被合并到了 Linux 新版内核里，也是为了修改拥塞控制。&lt;/p&gt;</description>
+        </item>
+        <item>
+        <title>分析游戏开发中 AOI 的实现思路</title>
+        <link>https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/</link>
         <pubDate>Sun, 27 Mar 2022 02:18:47 +0800</pubDate>
         
-        <guid>https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/</guid>
+        <guid>https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/</guid>
         <description>&lt;p&gt;　　AOI 全称 Area Of Interest, 在游戏开发中用来做角色视野内对象显示同步和状态同步，基本上只要有公共地图的游戏都会涉及到。本篇介绍一些常用的 AOI 实现方法。&lt;/p&gt;
 &lt;h2 id=&#34;全局可见&#34;&gt;全局可见&lt;/h2&gt;
 &lt;p&gt;　　一个最简单的实现方法是，场景中的所有对象在后端全都互相可见，任何对象的状态修改都会同步给全部的其它对象，在某个客户端上是否要显示某个对象完全依靠客户端来进行选择。&lt;br&gt;
@@ -38,10 +76,10 @@
 　　它的原理是，如果在 (m, n) 点有一个视距为 20 的对象 O，那么有 x
 轴的范围在 (m - 20, m + 20) 的所有点集合 A，y 轴的范围在 (n - 20, n + 20) 的所有点集合 B，A ∩ B 的结果即为 O 的可视范围中所有的点。&lt;br&gt;
 　　当对象进入场景时，需要在 x 轴和 y 轴上分别准备三个点，假设对象的视距为 n，则这在 x 轴上的三个点是 x - n，x，x + n，在 y 轴上的三个点为 y - n，y，y + n。两边的两个点是边界点，它们用来判断某个点是否在本点的视距内，中间的点就是坐标点，它用来让别的点的判断它是否在其视距内。同时还需要为对象创建两个临时列表分别用来记录待确认的关注列表和待确认的被关注列表。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link.jpg&#34;
 	width=&#34;1356&#34;
 	height=&#34;572&#34;
-	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_link_hua721b15b866c36e018a1fd13120ec881_32327_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;corss_link&#34;
@@ -73,10 +111,10 @@
 &lt;p&gt;　　优化有序链表的查询还有一个成熟且高效的实现，就是&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Skip_list&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;跳表&lt;/a&gt;。&lt;br&gt;
 　　跳表会将链表中的某些点作为索引点提取到上一层组成一个新的有序链表，可以根据需要一共提取出几层快速链表。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st.jpg&#34;
 	width=&#34;1356&#34;
 	height=&#34;572&#34;
-	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_1st_hub9c04d3ec79d8140e52d2c140872b916_32179_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cross_skiplist_axis_1st&#34;
@@ -87,10 +125,10 @@
 		data-flex-basis=&#34;568px&#34;
 	
 &gt;
-&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st.jpg&#34;
+&lt;img src=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st.jpg&#34;
 	width=&#34;1764&#34;
 	height=&#34;564&#34;
-	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_1st_huee09333fc191cb01cd1d9a6e973b0367_40115_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cross_skiplist_1st&#34;
@@ -102,10 +140,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;　　如图是将坐标轴转化为跳表的一个简单例子，在实现的时候可以只选择一些对象坐标点提取为索引点，不提取边界点，因为边界点上没有保存被关注列表。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd.jpg&#34;
 	width=&#34;1356&#34;
 	height=&#34;656&#34;
-	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_axis_2nd_huc676e06f1afdab8a9f2eac048bb73117_43911_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cross_skiplist_axis_2nd&#34;
@@ -130,10 +168,10 @@
 &lt;li&gt;c+ 向前越过了 b，将 c 加入到 b 的被关注列表中。&lt;/li&gt;
 &lt;li&gt;掷色子将 c 提高层次。&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd.jpg&#34;
 	width=&#34;2484&#34;
 	height=&#34;724&#34;
-	srcset=&#34;https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0%E4%B8%80aoi-%E5%88%86%E6%9E%90/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%88%86%E6%9E%90%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD-aoi-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF/cross_skiplist_2nd_hu29db3ae375bc7823a90d3a693418ca35_65178_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cross_skiplist_2nd&#34;
