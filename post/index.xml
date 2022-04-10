@@ -1095,15 +1095,15 @@ sudo systemctl status clash
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;github&#34;&gt;Github&lt;/h2&gt;
 &lt;h3 id=&#34;配置密钥&#34;&gt;配置密钥&lt;/h3&gt;
-&lt;p&gt;　　通过在 setting-&amp;gt;SSH and GPG keys 中增加一个 ssh 的公钥即可实现密钥的配置。如果 ssh 本身的密钥配置没有问题的话，在设置过 Git 的用户以后，即可顺利实现对 Github 仓库的无密码访问。&lt;/p&gt;
+&lt;p&gt;　　通过在 setting → SSH and GPG keys 中增加一个 ssh 的公钥即可实现密钥的配置。如果 ssh 本身的密钥配置没有问题的话，在设置过 Git 的用户以后，即可顺利实现对 Github 仓库的无密码访问。&lt;/p&gt;
 &lt;h3 id=&#34;默认分支&#34;&gt;默认分支&lt;/h3&gt;
 &lt;p&gt;　　由于国外轰轰烈烈的 Black Lives Matter 运动，导致了 Github 将自己默认仓库的分支从 master 改为了 main，但是 Git 本身继续使用 master 作为默认分支。&lt;br&gt;
 　　这就导致了一个问题，如果是在本地通过 git init 创建的分支，又关联了 Github 上创建好的一个远程仓库，就会发现这两个仓库的默认分支不一样，需要把本地的仓库默认分支从 master 改为 main 来适应 Github 的修改。&lt;br&gt;
-　　也可以在 Github 的 setting -&amp;gt; repositories 中设置默认分支的名字。&lt;/p&gt;
+　　也可以在 Github 的 setting → repositories 中设置默认分支的名字。&lt;/p&gt;
 &lt;h2 id=&#34;tortoisegit&#34;&gt;TortoiseGit&lt;/h2&gt;
 &lt;h3 id=&#34;配置-ssh-工具&#34;&gt;配置 ssh 工具&lt;/h3&gt;
 &lt;p&gt;　　Git 的 GUI 工具里，Win 平台下最好用的就是小乌龟了。不过小乌龟有个问题，它是用的自带的 ssh 工具，这样没办法使用配置好的 ssh 密钥，必须再使用它自带的工具生成一个 ppk 格式的密钥来专门给它自己用，比较麻烦。&lt;br&gt;
-　　可以通过修改小乌龟的设置，让它使用自带的 ssh 软件，这样可以直接用上命令行配置好的密钥。通过修改 setting-&amp;gt;network-&amp;gt;ssh client 的软件指向已经安装的 git-&amp;gt;usr-&amp;gt;bin-&amp;gt;ssh.exe 即可完成设置。&lt;/p&gt;</description>
+　　可以通过修改小乌龟的设置，让它使用自带的 ssh 软件，这样可以直接用上命令行配置好的密钥。通过修改 setting → network → ssh client 的软件指向已经安装的 git → usr → bin → ssh.exe 即可完成设置。&lt;/p&gt;</description>
         </item>
         <item>
         <title>Skynet笔记（十八）热更新操作</title>
