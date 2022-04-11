@@ -6,7 +6,38 @@
         <description>Recent content on 放学后茶会</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
-        <lastBuildDate>Mon, 28 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Thu, 31 Mar 2022 02:18:47 +0800</lastBuildDate><atom:link href="https://wmf.im/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>如何将一个 Lua Table 序列化</title>
+        <link>https://wmf.im/p/%E5%A6%82%E4%BD%95%E5%B0%86%E4%B8%80%E4%B8%AA-lua-table-%E5%BA%8F%E5%88%97%E5%8C%96/</link>
+        <pubDate>Thu, 31 Mar 2022 02:18:47 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/%E5%A6%82%E4%BD%95%E5%B0%86%E4%B8%80%E4%B8%AA-lua-table-%E5%BA%8F%E5%88%97%E5%8C%96/</guid>
+        <description>&lt;p&gt;　　有时因为业务需要，要将一个 Lua Table 序列化，如果不在乎序列化结果的可读性，可以直接将 Table 序列化成二进制数据块，如果需要结果的可读性，可以将 Table 序列化成字符串。&lt;/p&gt;
+&lt;h2 id=&#34;要序列化的内容&#34;&gt;要序列化的内容&lt;/h2&gt;
+&lt;p&gt;　　因为 Lua 的 Table 中可以保存各种各样的内容，不可能都序列化，而且基本也不会有这种需求，比如像是 Function 这种变量，序列化出来并无意义，因为在另一个环境下反序列化以后就不能用了。&lt;br&gt;
+　　出于这个原因， Function 和 Thread 变量不管是 key 还是 value 都不会处理。如果 key 是 Table 变量，则也不处理，同时 Table 中不能有对其它 Table 的循环引用。&lt;br&gt;
+　　虽然看起来有一些限制，但是因为序列化 Table 一般都是用在保存或者发送上，所以其实本身就基本上不会有这种受限制的需求。&lt;/p&gt;
+&lt;h2 id=&#34;二进制&#34;&gt;二进制&lt;/h2&gt;
+&lt;p&gt;　　将 Table 序列化为二进制数据块的速度是最快的，体积也是最小的，如果没有可读性要求，且序列化远比反序列化的次数多，那就果断选择序列化成二进制。&lt;br&gt;
+　　云风大佬有一个现成的实现可以直接拿来用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/cloudwu/lua-serialize&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;lua-serialize&lt;/a&gt;，自己实现一个也不难，就是使用 Lua 提供的 C Api 遍历 Table，然后根据 key 和 value 的类型，不断写入到一个可以动态扩容的内存块链表中，全部写入完成以后再将链表中的所有块拷贝进一个连续内存中。&lt;br&gt;
+　　除了没有结果没有可读性以外，序列化成二进制还有一个缺点就是结果要反序列化成 Table 的时候依然需要逆向解析一遍。&lt;/p&gt;
+&lt;h2 id=&#34;字符串&#34;&gt;字符串&lt;/h2&gt;
+&lt;p&gt;　　序列化成字符串的优点是，结果可读性好，不需要反序列化，直接用 load 加载即可。缺点是比序列化成二进制要慢一些。&lt;/p&gt;
+&lt;h3 id=&#34;lua-实现&#34;&gt;Lua 实现&lt;/h3&gt;
+&lt;p&gt;　　用 Lua 来实现是最顺畅最简单的，不用写 C 代码，也不需要编译。如果没有高频使用的话，用 Lua 序列化就足够用了。&lt;br&gt;
+　　有一个非常好的第三方实现可以用来解决这个问题，&lt;a class=&#34;link&#34; href=&#34;https://github.com/pkulchenko/serpent&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;serpent&lt;/a&gt;，功能强大，不仅可以序列化，还可以将 Table 以友好方式打印出来。&lt;/p&gt;
+&lt;h3 id=&#34;cc-实现&#34;&gt;C/C++ 实现&lt;/h3&gt;
+&lt;p&gt;　　由于工作需要高频将 Table 序列化成字符串，且单个 Table 数据量也不少。所以一直想找一个 C/C++ 语言的实现版本，但是 github 上找了半天也没找到。后来周末抽了个时间自己实现了一个 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Homurua/luaseri-cpp&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;luaseri-cpp&lt;/a&gt;。&lt;br&gt;
+　　实现并不复杂，但是碰到了一个问题，就是 sprintf 在处理 double 的时候非常慢。搜索以后发现了一个非常切合我需求的项目，&lt;a class=&#34;link&#34; href=&#34;https://github.com/miloyip/dtoa-benchmark&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;dtoa-benchmark&lt;/a&gt;，是腾讯的大佬叶劲峰实现的，学 C++ 的应该都听说过他，《C++ Primer 5th》中文版的审校之一。该项目给出了他对 Grisu2 算法的实现，效率是挺好的，就直接拿来用了。&lt;br&gt;
+　　测试以后发现，序列化的速度比使用 lua-serialize 序列化成二进制慢了大概四倍到五倍，但是比用 serpent 序列化成字符串快了接近十倍，性能已经满足需要了。如果还要继续提速的话，可以考虑不使用 STL 实现，模仿 lua-serialize 的内存分配方法来做。&lt;br&gt;
+　　后面又实现了一个纯 C 的版本 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Homurua/luaseri-str&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;luaseri-str&lt;/a&gt;，比 C++ with STL 的实现大概可以快一倍以上，不过不使用 STL 代码写起来长了很多，逻辑也麻烦了很多。&lt;/p&gt;</description>
+        </item>
+        <item>
         <title>为什么需要 RUDP 协议</title>
         <link>https://wmf.im/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/</link>
         <pubDate>Mon, 28 Mar 2022 02:18:47 +0800</pubDate>
