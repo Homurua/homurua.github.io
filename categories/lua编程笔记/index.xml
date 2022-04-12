@@ -27,15 +27,13 @@
 &lt;h3 id=&#34;lua-实现&#34;&gt;Lua 实现&lt;/h3&gt;
 &lt;p&gt;　　用 Lua 来实现是最顺畅最简单的，不用写 C 代码，也不需要编译。如果没有高频使用的话，用 Lua 序列化就足够用了。&lt;br&gt;
 　　有一个非常好的第三方实现可以用来解决这个问题，&lt;a class=&#34;link&#34; href=&#34;https://github.com/pkulchenko/serpent&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;serpent&lt;/a&gt;，功能强大，不仅可以序列化，还可以将 Table 以友好方式打印出来。&lt;/p&gt;
+    &gt;serpent&lt;/a&gt;，功能强大，不仅可以序列化，还可以将 Table 以可读方式打印出来。&lt;/p&gt;
 &lt;h3 id=&#34;cc-实现&#34;&gt;C/C++ 实现&lt;/h3&gt;
 &lt;p&gt;　　由于工作需要高频将 Table 序列化成字符串，且单个 Table 数据量也不少。所以一直想找一个 C/C++ 语言的实现版本，但是 github 上找了半天也没找到。后来周末抽了个时间自己实现了一个 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Homurua/luaseri-cpp&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;luaseri-cpp&lt;/a&gt;。&lt;br&gt;
-　　实现并不复杂，但是碰到了一个问题，就是 sprintf 在处理 double 的时候非常慢。搜索以后发现了一个非常切合我需求的项目，&lt;a class=&#34;link&#34; href=&#34;https://github.com/miloyip/dtoa-benchmark&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+　　实现并不复杂，但是碰到了一个问题，就是 snprintf 在处理 double 的时候非常慢。搜索以后发现了一个非常切合我需求的项目，&lt;a class=&#34;link&#34; href=&#34;https://github.com/miloyip/dtoa-benchmark&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;dtoa-benchmark&lt;/a&gt;，是腾讯的大佬叶劲峰实现的，学 C++ 的应该都听说过他，《C++ Primer 5th》中文版的审校之一。该项目给出了他对 Grisu2 算法的实现，效率是挺好的，就直接拿来用了。&lt;br&gt;
-　　测试以后发现，序列化的速度比使用 lua-serialize 序列化成二进制慢了大概四倍到五倍，但是比用 serpent 序列化成字符串快了接近十倍，性能已经满足需要了。如果还要继续提速的话，可以考虑不使用 STL 实现，模仿 lua-serialize 的内存分配方法来做。&lt;br&gt;
-　　后面又实现了一个纯 C 的版本 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Homurua/luaseri-str&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;luaseri-str&lt;/a&gt;，比 C++ with STL 的实现大概可以快一倍以上，不过不使用 STL 代码写起来长了很多，逻辑也麻烦了很多。&lt;/p&gt;</description>
+　　测试以后发现，序列化的速度比使用 lua-serialize 序列化成二进制慢了大概 80% 左右，但是比用 serpent 序列化成字符串快了二十倍以上，性能已经满足需要了。&lt;/p&gt;</description>
         </item>
         <item>
         <title>Lua源码笔记（二）数据类型</title>
