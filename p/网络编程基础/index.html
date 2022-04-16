@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　网络编程是后端永远绕不开的话题，毕竟后端的存在就是为了给前端提供服务，而提供服务的方式就是网络。本篇会记录一些学习网络编程中碰到的基础知识。
+'><title>网络编程基础</title>
+
+<link rel='canonical' href='https://wmf.im/p/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='网络编程基础'>
+<meta property='og:description' content='　网络编程是后端永远绕不开的话题，毕竟后端的存在就是为了给前端提供服务，而提供服务的方式就是网络。本篇会记录一些学习网络编程中碰到的基础知识。
+'>
+<meta property='og:url' content='https://wmf.im/p/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='network' /><meta property='article:published_time' content='2022-03-27T20:18:47&#43;08:00'/><meta property='article:modified_time' content='2022-03-27T20:18:47&#43;08:00'/>
+<meta name="twitter:title" content="网络编程基础">
+<meta name="twitter:description" content="　网络编程是后端永远绕不开的话题，毕竟后端的存在就是为了给前端提供服务，而提供服务的方式就是网络。本篇会记录一些学习网络编程中碰到的基础知识。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/" style="background-color: #EA9551; color: #fff;">
+                网络编程笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/">网络编程基础</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 27, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 14 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　网络编程是后端永远绕不开的话题，毕竟后端的存在就是为了给前端提供服务，而提供服务的方式就是网络。本篇会记录一些学习网络编程中碰到的基础知识。</p>
+<h2 id="网络结构分层">网络结构分层</h2>
+<p>　　对网络进行分层可以更加清楚的认识当前网络环境的运行状态。分层的方式有很多种，例如 OSI 的 7 层模型和 TCP/IP 的 4 层模型，本文会遵照 4 层模型的设计。</p>
+<ul>
+<li>应用层（Application）：HTTP，SSH</li>
+<li>传输层（Transport）：TCP，UDP</li>
+<li>网络层（Internet）：IP</li>
+<li>链路层（Link）：网络硬件及其驱动程序</li>
+</ul>
+<p>　　从上向下越来越接近底层。可以看到网络开发中经常打交道的 HTTP，TCP，UDP 这些协议都在比较靠上的层中。</p>
+<h3 id="链路层">链路层</h3>
+<p>　　链路层包括了网卡、网口这类硬件设备，同时也包括了硬件的驱动和硬件在操作系统的抽象。链路层为网络上的主机提供了硬件连接。<br>
+　　链路层中传输的数据被称为帧（frame），不同链路层协议每帧可以传输的最大数据长度不同，这个长度被称为最大传送单元（Maximum Transmission Unit，MTU），帧在传输中可能经过不同协议的链路，其中最小的 MTU 被称为路径 MTU，超过路径 MTU 的数据链路层会直接丢弃，所以需要在上层做好分片。<br>
+　　操作系统会为每个网卡提供缓冲区，在网卡启动的时候，会为它分配多个 RingBuffer 来作为接收队列和发送队列。<br>
+　　当收到网络数据帧的时候，网卡会先把数据通过 <a class="link" href="https://zh.wikipedia.org/wiki/%e7%9b%b4%e6%8e%a5%e5%86%85%e5%ad%98%e8%ae%bf%e9%97%ae"  target="_blank" rel="noopener"
+    >DMA</a> 直接把数据写入到自己的接收队列中，超出队列长度的部分会被直接丢弃。<br>
+　　当需要发送数据时，操作系统内核会将数据写入到网卡的发送队列中，网卡将发送队列中的数据发送出去，然后触发硬件中断清理掉发送队列的内容。</p>
+<h3 id="网络层">网络层</h3>
+<p>　　网络层运行在路由器和主机上，它为网络上的主机提供了逻辑连接。它主要提供的功能是转发和路由选择，前者由硬件实现，负责将数据从输入的链路层接口转发到合适的输出链路层接口，后者由软件实现，负责确定从源地址到目的地址的端到端路径的网络地址范围。<br>
+　　网络层中我们主要看一下 IP 协议，它是本层中使用最广泛的协议。IP 协议是一个尽力交付协议，不保证交付，它分为 IPv4 和 IPv6 两种，目前都在使用中，并且会逐步实现从 IPv4 向 IPv6 的过渡。<br>
+　　IPv4 的地址长度是 32 bit，一般采用点分十进制表示，每 8 个 bit 被分在了一段中，例如会使用 233.233.233.233 来表示 1110 1001 1110 1001 1110 1001 1110 1001。首部长度不固定，在 20 - 60 字节，不带有选项的典型首部长度是 20 字节。提供对数据分片和组装的功能。会使用首部校验和对首部的数据进行检查。<br>
+　　IPv6 的地址长度是 128 bit，通常的表示格式会被分为 8 组，每组的 16 bit 使用 4 个十六进制数来表示，例如 2001:0db8:85a3:08d3:1319:8a2e:0370:7344 就是一个合法的 IPv6 地址。首部长度固定为 40 字节。它不提供分片功能，如果从链路层收到的数据在转发的时候超过了下一个链路层的 MTU，则 IPv6 会直接丢弃该数据报。同时它也不再提供首部的数据校验。</p>
+<h3 id="传输层">传输层</h3>
+<p>　　传输层为网络上的主机中的进程提供了逻辑连接，传输层的协议只在主机中实现，不会在路由器上实现，不管用什么协议，对路由器都是透明的。<br>
+　　最常见的传输层协议是 TCP 和 UDP，TCP 为进程间提供了可靠，有连接的服务，UDP 提供的则是不可靠，无连接的服务。<br>
+　　传输层通过多路复用和多路分解来把主机接收到的数据交付给指定的进程。</p>
+<h3 id="应用层">应用层</h3>
+<p>　　应用层的协议是基于传输层的协议实现的，一般都是把一些常见的开发需求实现成一个规范的协议，避免重复开发。<br>
+　　比如 SSH 协议，如果完全按照它的规范实现一个服务端程序，那么市面上所有的 SSH 客户端就都可以直接拿来跟这个程序通讯，同理按照它的规范实现一个客户端程序，也可以跟市面上所有 SSH 服务端程序通讯。<br>
+　　如果不使用通用协议，自己实现双端的协议也是可以的，这种非公开的协议一般被成为私有协议，使用私有协议通讯的软件也比比皆是，尤其是一些大公司的软件，比如微信这种。</p>
+<h2 id="网络编程接口">网络编程接口</h2>
+<p>　　《Unix 网络编程》里有一个我印象很深刻的例子，是说网络编程就像是打电话的步骤一样。服务端首先要买一台电话机（socket），然后要去运营商注册一个电话号码（bind），接着在电话旁边等待（listen），最后当电话响起的时候接听（accept）。客户端同样需要先买一台电话机（socket），然后注册号码（bind），最后打目标的电话（connect）。</p>
+<h3 id="socket">socket</h3>
+<p>　　socket 用来创建网络套接口的系统调用。调用的时候可以指定各种协议组合，返回的就是当前未使用的最小网络套接口的句柄。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">socket</span><span class="p">(</span><span class="kt">int</span> <span class="n">domain</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">protocol</span><span class="p">);</span>
+
+<span class="c1">// domain
+</span><span class="c1">// AF_INET    IPv4
+</span><span class="c1">// AF_INET6   IPv6
+</span><span class="c1">// AF_LOCAL   Unix socket
+</span><span class="c1"></span>
+<span class="c1">// type
+</span><span class="c1">// SOCK_STREAM    字节流套接口
+</span><span class="c1">// SOCK_DGRAM     数据包套接口
+</span><span class="c1">// SOCK_NONBLOCK  非阻塞套接口
+</span><span class="c1"></span>
+<span class="c1">// protocol
+</span><span class="c1">// IPPROTO_TCP   TCP 传输协议
+</span><span class="c1">// IPPROTO_UDP   UDP 传输协议
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　domain 表示套接口使用的协议域，type 是套接口的类型，protocol 是协议类型。其中前两个参数是一定需要的，第三个参数可以填 0 让内核使用前两个参数匹配的默认协议类型。比如 domain 填 AF_INET，type 填 SOCK_STREAM，protocol 填 0 或者 IPPROTO_TCP，这样创建的套接口就是最常用的 IPv4 TCP 类型。<br>
+　　socket 函数默认情况下创建的套接口都是阻塞的，可以先创建好以后再修改，如果想要直接创建出一个非阻塞的套接口，那么可以使用 SOCK_NONBLOCK 参数，比如当我们把参数 type 设为 SOCK_STREAM | SOCK_NONBLOCK 就会创建出非阻塞的套接口。<br>
+　　需要注意的是，内核可能会复用套接口描述字, 如果程序将套接口描述字保存下来的话，可能会碰到问题。比如一条连接早就关闭了，但是描述字一直保存在某个位置，当下次取出它想要发送数据的时候，它可能已经被内核复用，表示另一条连接了。<br>
+　　内核在创建套接口的时候会为它创建缓冲区，有发送缓冲区和接收缓冲区，或者叫发送队列和接收队列。当执行 send 的时候，其实 send 只是把数据拷贝到了套接口的发送缓冲区中函数就返回了，具体的发送步骤依靠操作系统来安排。<br>
+　　套接口在创建的时候可以设置是否阻塞，如果是阻塞的话，当发送缓冲区满了的时候，send 调用会被阻塞住，如果是非阻塞的，则当发送缓冲区满了的时候直接返回一个错误信息。同理 recv 调用在碰到接收队列是空的时候，也会进行类似的操作。<br>
+　　如果接收缓冲区还有数据的时候，进程通过执行 close 关闭套接口，则会清空接收缓冲区并且发一个 RST 给对方，然后再开始四次挥手。如果发送缓冲区还有数据的时候，进程通过执行 close 关闭套接口，则会把四次挥手的 FIN 放在发送缓冲区的最后，也就是说内核会等发送缓冲区的内容发送完毕以后才开始四次挥手。</p>
+<h3 id="套接口选项">套接口选项</h3>
+<p>　　每个套接口可以有诸多选项，它们标识了套接口的功能和特性。一般使用 setsockopt 设置套接口的选项，使用 getsockopt 获取套接口的选项。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span>
+<span class="kt">int</span> <span class="nf">getsockopt</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span>
+                <span class="kt">void</span> <span class="o">*</span><span class="n">optval</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="o">*</span><span class="n">optlen</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">setsockopt</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span>
+                <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">optval</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="n">optlen</span><span class="p">);</span>
+<span class="c1">// 返回值 0-成功 -1-失败
+</span><span class="c1"></span>
+<span class="c1">// sockfd 打开的套接口描述字
+</span><span class="c1">// level 指定协议
+</span><span class="c1">// optname 选项的名字
+</span><span class="c1">// optval get 的时候存结果，set 的时候放要设置的值。
+</span><span class="c1">// optlen 表示 optval 的长度。
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　套接口选项的值为 0 则表示该选项没有开启，非 0 则表示选项已经开启。下面列出几个常用的套接口选项名。</p>
+<ul>
+<li>IPPROTO_TCP - TCP_NODELAY，用来关闭 TCP 的 Nagle 算法，小包发送不做等待。</li>
+<li>SOL_SOCKET - SO_KEEPLIVE，保持连接存活。</li>
+<li>SOL_SOCKET - SO_REUSEADDR，套接口绑定的地址可以重复使用。</li>
+</ul>
+<p>　　使用 getsockopt 除了可以获取指定的选项的值以外，还可以获取套接口的错误信息。如果套接口发生了错误，内核会将 SO_ERROR 选项的值设为一个标准的错误代码，可以通过 strerror 来获取错误信息。</p>
+<h3 id="io-阻塞类型">I/O 阻塞类型</h3>
+<p>　　除了上文提到的可以在创建的时候直接通过 type 的参数设置套接口的阻塞类型外，还可以使用 fcntl 函数来修改一个套接口的阻塞类型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...</span> <span class="cm">/* arg */</span> <span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　参数 cmd 有两个最常用的值，F_SETFL 用来设置文件标志，F_GETFL 用来获取文件标志。但是需要注意的是，设置的时候会覆盖掉之前已经设置过的标志，所以一般的常规用法是先获取，然后修改当前值，然后再设置回去。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="kt">void</span> <span class="nf">sp_nonblocking</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">flag</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">flag</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flag</span> <span class="o">|</span> <span class="n">O_NONBLOCK</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　这是 skynet 中设置套接口非阻塞的函数，就是 fcntl 的典型用法。</p>
+<h3 id="bind">bind</h3>
+<p>　　bind 可以将一个套接口描述字绑定到指定的 IP 和端口上。因为主机一般都有不止一个 IP，所以要指定一个具体的 IP 出来。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">bind</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">myaddr</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+<span class="c1">// 返回值 0 成功，-1 失败。
+</span><span class="c1">// 参数可以直接用 getaddrinfo 的结果。
+</span><span class="c1">// ip 和 端口都在 myaddr 结构中指定。
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　如果传入的端口号为 0 的话，则内核会自动分配一个可用的端口号来进行绑定。如果传入的地址是 0.0.0.0 或者是 INADDR_ANY 的话，则内核可以自动绑定主机所有可用的地址。<br>
+　　需要注意的是，bind 并不是一定需要的，不管是在服务端还是客户端，内核在处理没有 bind 的套接口时，会有一些辅助性操作。如果不调用 bind，直接对套接口描述字调用 listen 或者 connect 的话，效果和使用 INADDR_ANY 作为 IP，0 作为端口执行过 bind 是一样的，这一部分的内容可以参考 <a class="link" href="https://man7.org/linux/man-pages/man7/ip.7.html"  target="_blank" rel="noopener"
+    >man 7 ip</a>。<br>
+　　有时候一些分布式进程并不需要指定端口，在 listen 获得端口以后，再上报自己的 IP 和端口给中心节点。</p>
+<h3 id="listen">listen</h3>
+<p>　　套接口分为主动套接口和被动套接口，主动套接口负责向外发送数据，被动套接口负责接收数据。使用 socket 创建好的套接口在默认情况下都是主动套接口。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">listen</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">backlog</span><span class="p">);</span>
+<span class="c1">// 返回值 0 成功，-1 失败
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　通过对一个未连接的套接口描述字调用 listen 可以将其改变为被动套接口，内核可以接受一个指向被动套接口的连接请求，同时内核为每个被动套接口维护了两个队列：未完成连接队列和已完成连接队列。<br>
+　　backlog 参数在 linux 中的意思是在等待 accept 的已完成连接的最大队列数量。不要设成 0，意义不明。如果超过了上限，会直接回一个 ECONNREFUSED 给客户端。内核对该参数的最大上限是在
+<code>/proc/sys/net/core/somaxconn</code> 中，新版内核的实现里该值为 4096。<br>
+　　当客户端调用了 connect 以后，服务端收到了第一个 SYN 分节时，就会在未完成连接队列里创建一个新的项，一直到收到自己的 SYN 的 ACK 以后，也就是三次握手完毕以后，把该项从未完成连接队列移动到已完成连接队列的最后。<br>
+　　半连接队列一般使用哈希表来实现，它的最大长度的计算方法是 min(backlog, somaxconn, tcp_max_syn_backlog) + 1 的结果再上取整到 2 的幂，但最小不能小于 16。<br>
+　　半连接队列的价值是，如果每个 SYN 包内核都创建一个 sock 结构体的话，消耗太大了，所以在三次握手完成之前，内核只为每个 SYN 包创建一个很小的结构体 request_sock 来缓解这种情况，同时可以配合 <a class="link" href="https://zh.wikipedia.org/wiki/SYN_cookie"  target="_blank" rel="noopener"
+    >syn_cookie</a> 机制抵抗 <a class="link" href="https://zh.wikipedia.org/wiki/SYN_flood"  target="_blank" rel="noopener"
+    >SYN flood</a> 攻击。<br>
+　　已完成连接队列一般使用双向链表实现，长度是调用 listen 时传入的 backlog 和 <code>/proc/sys/net/core/somaxconn</code> 之间较小的那个值。所有三次握手完毕但是还没有被 accept 调用的连接都在这个队列里。</p>
+<h3 id="accept">accept</h3>
+<p>　　accept 用来接受连接，它的实际操作就是从指定的被动套接口的已完成连接队列的最前面取得一个连接，并且返回它的描述字，后续可以通过这个描述字跟发起 connect 的客户端进行通信。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="c1">// 成功，返回代表新连接的描述符，错误返回-1,同时错误码设置在errno
+</span><span class="c1"></span><span class="kt">int</span> <span class="nf">accept</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="o">*</span><span class="n">addrlen</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　如果参数中传入的被动套接口描述字的已完成连接队列中并无连接，那么情况视套接口的阻塞模式而定。如果套接口是非阻塞的，那么直接返回错误，如果套接口是阻塞的，那么会一直等待已完成连接队列非空，拿到连接后才会返回。<br>
+　　使用 accept 得到的套接口都是阻塞的，可以在拿到套接口描述字以后再将其设为非阻塞的，如果觉得麻烦，想要直接拿到非阻塞的套接字的话，可以使用 accept4 来操作。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">accept4</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="o">*</span><span class="n">addrlen</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　使用 accept4 时，当 flags 传入 0 的时候，函数操作与 accept 完全一样。可以为 flags 传入 SOCK_NONBLOCK，这样得到返回的套接口就是非阻塞的。</p>
+<h3 id="connect">connect</h3>
+<p>　　connect 是客户端向服务端发起连接的接口，当它被调用时，会触发 TCP 的三次握手过程。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"> <span class="cp">#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">connect</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">sockaddr</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="n">socklen_t</span> <span class="n">addrlen</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　需要注意的是，如果 connect 失败了，那么一定要关闭使用的套接口，再重新创建一个来进行下一次连接。</p>
+<h3 id="close">close</h3>
+<p>　　可以使用 close 来关闭一个套接口。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">close</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　套接口描述字本身有一套引用计数机制，调用 close 只会将当前的引用计数 -1，并不一定会真的触发关闭操作。如果引用计数等于 0 的话，内核会尝试发送当前套接字的发送缓冲区中所有剩余的数据，并且在发送完成后，向对端发送 FIN 分节，开始四次挥手。</p>
+<h3 id="套接口-io">套接口 I/O</h3>
+<p>　　因为套接口描述字可以当作一个普通的文件描述字使用，所有有很多可以用来读写套接口的 I/O 函数，根据读写配对，有 read/write，readv/writev，recv/send，recvfrom/sendto，recvmsg/sendmsg 等，它们虽然参数不同，使用场景不太一样，但是功能是基本一致的，这里只写一下最常用的 read/write 好了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="n">ssize_t</span> <span class="nf">read</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">count</span><span class="p">);</span>
+<span class="n">ssize_t</span> <span class="nf">write</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">count</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　read 会尝试从套接口的接收缓冲区中读取长度为 count 字节的数据，保存在 buf 指向的内存中。如果读取错误，会返回 -1 并且设置 errno。如果读取成功，则返回读取到的字节数，这个数字可能比 count 小，也有可能等于 count，比 count 小的原因可能是，接收缓冲区中并没有那么多数据，也可能是 read 在执行时被系统信号打断了。<br>
+　　write 会尝试把 buf 指向的内存中的 count 字节写入到套接口的发送缓冲区中。如果写入失败，则会返回 -1 并且设置 errno。如果写入成功，则会返回写入的字节数，这个数量同样可能会小于等于 count，因为可能套接口的发送缓冲区没有了足够的剩余空间。</p>
+<h2 id="epoll">EPOLL</h2>
+<p>　　epoll 是 Linux 实现的一套高性能的 I/O 复用机制，因为它拥有远超 poll 和 select 的性能，所以它也是目前 Linux 平台上进行 I/O 复用开发最常用的机制。</p>
+<h3 id="使用场景">使用场景</h3>
+<p>　　首先要了解 I/O 复用的使用场景。假设在服务器上有一个服务端程序，监听了一个端口，然后有很多客户端对这个进程发起了连接，这时候通过 accept 可以拿到大量的套接口。<br>
+　　这些大量的已经连接的套接口，如何可以知道那个可读哪个可写呢？最笨的方法就是每隔一段时间遍历检查一遍所有的已连接套接口，检查它们的可读可写状态，进行操作。当套接口少的时候还可以这样，但是如果有很多很多套接口，这个方法的效率就很低。I/O 复用就是用来解决这个问题的。<br>
+　　epoll 可以非常高效的管理很多套接口，用户可以对每个套接口设置关注的状态，然后每过一段时间检查 epoll 中就绪的套接口即可。</p>
+<h3 id="创建-epoll-实例">创建 epoll 实例</h3>
+<p>　　使用 epoll 的第一步是创建一个 epoll 实例出来，用于管理其它套接口。可以通过 epoll_create 和 epoll_create1 来创建 epoll 实例。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/epoll.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">epoll_create</span><span class="p">(</span><span class="kt">int</span> <span class="n">size</span><span class="p">);</span>
+<span class="kt">int</span> <span class="nf">epoll_create1</span><span class="p">(</span><span class="kt">int</span> <span class="n">flags</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　epoll_create 的参数 size 在旧版本内核中是用来告诉内核为实例的数据结构划分的初始大小，不过在新版的内核中 size 已经没有实际意义了，随意填写一个不小于 0 的数字即可。<br>
+　　epoll_create1 是内核提供的一个新的创建 epoll 实例的接口。它去掉了已经无用的 size，增加了一个 flags，这个 flags 可以设为 EPOLL_CLOEXEC，表示启动执行即关闭 (close-on-exec)。<br>
+　　这两个函数返回的都是 int 类型，是代表了创建出的 epoll 实例的文件描述字。</p>
+<h3 id="修改-epoll-的关注列表">修改 epoll 的关注列表</h3>
+<p>　　有了 epoll 实例，下一步要修改它的关注列表了。可以使用 epoll_ctl 来为一个需要关注的套接口增加关注事件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/epoll.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">epoll_ctl</span><span class="p">(</span><span class="kt">int</span> <span class="n">epfd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">op</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="k">struct</span> <span class="n">epoll_event</span> <span class="o">*</span><span class="n">event</span><span class="p">);</span>
+
+<span class="c1">// op
+</span><span class="c1">// EPOLL_CTL_ADD 增加关注事件
+</span><span class="c1">// EPOLL_CTL_MOD 修改关注事件
+</span><span class="c1">// EPOLL_CTL_DEL 删除关注事件
+</span><span class="c1"></span>
+<span class="k">typedef</span> <span class="k">union</span> <span class="n">epoll_data</span> <span class="p">{</span>
+    <span class="kt">void</span>        <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+    <span class="kt">int</span>          <span class="n">fd</span><span class="p">;</span>
+    <span class="kt">uint32_t</span>     <span class="n">u32</span><span class="p">;</span>
+    <span class="kt">uint64_t</span>     <span class="n">u64</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">epoll_data_t</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="n">epoll_event</span> <span class="p">{</span>
+    <span class="kt">uint32_t</span>     <span class="n">events</span><span class="p">;</span>      <span class="cm">/* Epoll events */</span>
+    <span class="n">epoll_data_t</span> <span class="n">data</span><span class="p">;</span>        <span class="cm">/* User data variable */</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　参数 epfd 就是上一步中创建出来的 epoll 实例的描述字，op 代表操作，fd 代表关注的套接口描述字，event 代表关注的事件。<br>
+　　data 的内容会在事件触发以后传给 epoll_wait 的返回值，可以用它保存一些在事件触发以后处理事件需要使用的数据。一般是需要记录下本描述字的，不然事件触发的时候会拿不到描述字。<br>
+　　需要注意的是，当对一个描述字增加过关注事件以后，第二次想要增加需要使用修改才行。同时修改只能修改已经在关注列表中的描述字，也就是要先增加过关注事件才能修改。删除也是一定要当前存在关注列表中的，否则会报错。<br>
+　　events 是一个掩码位，列举几个常用的选项。</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align:center">位掩码</th>
+<th style="text-align:center">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">EPOLLIN</td>
+<td style="text-align:center">普通数据可读</td>
+</tr>
+<tr>
+<td style="text-align:center">EPOLLOUT</td>
+<td style="text-align:center">普通数据可写</td>
+</tr>
+<tr>
+<td style="text-align:center">EPOLLRDHUP</td>
+<td style="text-align:center">套接口对端关闭</td>
+</tr>
+<tr>
+<td style="text-align:center">EPOLLET</td>
+<td style="text-align:center">采用边缘触发事件通知</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="等待-epoll-事件">等待 epoll 事件</h3>
+<p>　　设置好 epoll 的事件关注列表以后，就可以等待事件发生了。使用 epoll_wait 来等待一个 epoll 实例上的事件发生。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#include</span> <span class="cpf">&lt;sys/epoll.h&gt;</span><span class="cp">
+</span><span class="cp"></span><span class="kt">int</span> <span class="nf">epoll_wait</span><span class="p">(</span><span class="kt">int</span> <span class="n">epfd</span><span class="p">,</span> <span class="k">struct</span> <span class="n">epoll_event</span> <span class="o">*</span><span class="n">events</span><span class="p">,</span> <span class="kt">int</span> <span class="n">maxevents</span><span class="p">,</span> <span class="kt">int</span> <span class="n">timeout</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　参数 epfd 就是 epoll 实例的描述字，events 用来接收触发事件的结果，maxevents 是 events 数组的长度，timeout 是等待的超时时间。<br>
+　　如果调用成功，则返回值是就绪的描述字个数，同时 events 中包含了这些就绪描述字在使用 epoll_ctl 增加事件的时候传入的 event。<br>
+　　timeout 如果设为 -1，则会一直阻塞，直到有一个描述字就绪。如果设为 0，则不阻塞，执行一次检测，不管有没有就绪的描述字都直接返回。如果大于 0，则在有任何描述字就绪的时候返回，如果一直没有，那么会最多阻塞在这里 timeout 毫秒的时间。</p>
+<h3 id="触发模式">触发模式</h3>
+<p>　　I/O 复用的事件触发模式可以分为两种，水平触发和边缘触发。<br>
+　　水平触发指的是，只要当前事件仍然成立，就会返回就绪，比如套接口的接收缓冲区中有数据，那么每一次检查都会返回当前套接口可读。<br>
+　　边缘触发是指，事件之前不成立，现在成立了，就会返回，一直到下一次再触发。即使缓冲区中的数据没有被读完，在下一次有新的数据进来之前检查也不会返回可读。
+　　select，poll 只支持水平触发，epoll 两种都支持，默认情况下使用的是水平触发，可以在增加事件关注列表时对某个套接口的事件使用边缘触发。<br>
+　　可以看到如果使用边缘触发，那么就需要在收到一个事件以后，不断处理完它，因为再也不会有第二次检测到这个事件的机会了。同时使用边缘触发的话，最好搭配非阻塞套接口使用，因为需要不断读取直到没有数据，如果使用阻塞套接口会很麻烦。<br>
+　　使用边缘触发的时候需要注意套接口饥饿的问题，因为如果一个套接口上有大量的数据，然后读取的时候使用无限循环的方式调用 read 去读的话，可能会在这一个套接口上花费大量时间，从而导致其它套接口上的数据一直得不到处理。有一种规避的方法是，记录下来所有触发过的套接口描述字，不立即读完其中的数据，而是每次对每个套接口读取一定长度的数据，不断遍历全部的可读套接口，如果某一个套接口上的数据已经读完了，就将它从数组中移除，一直这样直到所有就绪套接口都处理完毕。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/network/">network</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-rudp-%E5%8D%8F%E8%AE%AE/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">为什么需要 RUDP 协议</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#网络结构分层">网络结构分层</a>
+      <ol>
+        <li><a href="#链路层">链路层</a></li>
+        <li><a href="#网络层">网络层</a></li>
+        <li><a href="#传输层">传输层</a></li>
+        <li><a href="#应用层">应用层</a></li>
+      </ol>
+    </li>
+    <li><a href="#网络编程接口">网络编程接口</a>
+      <ol>
+        <li><a href="#socket">socket</a></li>
+        <li><a href="#套接口选项">套接口选项</a></li>
+        <li><a href="#io-阻塞类型">I/O 阻塞类型</a></li>
+        <li><a href="#bind">bind</a></li>
+        <li><a href="#listen">listen</a></li>
+        <li><a href="#accept">accept</a></li>
+        <li><a href="#connect">connect</a></li>
+        <li><a href="#close">close</a></li>
+        <li><a href="#套接口-io">套接口 I/O</a></li>
+      </ol>
+    </li>
+    <li><a href="#epoll">EPOLL</a>
+      <ol>
+        <li><a href="#使用场景">使用场景</a></li>
+        <li><a href="#创建-epoll-实例">创建 epoll 实例</a></li>
+        <li><a href="#修改-epoll-的关注列表">修改 epoll 的关注列表</a></li>
+        <li><a href="#等待-epoll-事件">等待 epoll 事件</a></li>
+        <li><a href="#触发模式">触发模式</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

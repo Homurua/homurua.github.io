@@ -1173,10 +1173,10 @@ Q query info&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;　　module 的创建主要就是对其私有数据的创建，snlua 中也不例外，过程就是创建一个 snlua 的结构体变量，然后初始化它其中的变量。&lt;br&gt;
-　　可以看到单个 snlua 服务的内存警告的初始阈值是 32M 大小。这个并不是硬上限，只是一个警告阈值，超过了会触发一次警告，然后这个值会被修改为原来的两倍，直到下一次触发警告。内存分配使用了自定义的 &lt;strong&gt;lalloc&lt;/strong&gt; 来做，还有一点需要注意，在创建状态机的时候，把 snlua 的指针也传进去了，这个在协程部分会用到。&lt;/p&gt;
+　　可以看到单个 snlua 服务的内存警告的初始阈值是 32M 大小。这个并不是硬上限，只是一个警告阈值，超过了会触发一次警告，然后这个值会被修改为原来的两倍，直到下一次触发警告。内存分配使用了自定义的 lalloc 来做，还有一点需要注意，在创建状态机的时候，把 snlua 的指针也传进去了，这个在协程部分会用到。&lt;/p&gt;
 &lt;h2 id=&#34;初始化&#34;&gt;初始化&lt;/h2&gt;
-&lt;p&gt;　　初始化的时候用了一个有趣的操作，并没有直接在 &lt;strong&gt;snlua_init&lt;/strong&gt; 里面做初始化，而是给自己发了一条消息，然后在消息的回调函数 &lt;strong&gt;launch_cb&lt;/strong&gt; 里面再通过调用了 &lt;strong&gt;init_cb&lt;/strong&gt; 做了初始化。&lt;em&gt;&lt;strong&gt;这里暂时不太懂为什么要这样设计，理论上来说这一步直接完成 Lua 状态机的初始化也不是不行啊。&lt;/strong&gt;&lt;/em&gt;&lt;br&gt;
-　　Lua 状态机的环境都是在 &lt;strong&gt;init_cb&lt;/strong&gt; 中进行初始化的。大概进行了以下几点操作&lt;/p&gt;
+&lt;p&gt;　　初始化的时候用了一个有趣的操作，并没有直接在 snlua_init 里面做初始化，而是给自己发了一条消息，然后在消息的回调函数 launch_cb 里面再通过调用了 init_cb 做了初始化。&lt;br&gt;
+　　Lua 状态机的环境都是在 init_cb 中进行初始化的。大概进行了以下几点操作&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;加载标准库&lt;/li&gt;
 &lt;li&gt;加载 skynet.profile 库&lt;/li&gt;
@@ -1188,20 +1188,20 @@ Q query info&lt;/p&gt;
 &lt;li&gt;检查是否设置了 lua 服务的内存上限，如果有则要设置&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;内存分配&#34;&gt;内存分配&lt;/h2&gt;
-&lt;p&gt;　　自定了 Lua 的内存分配函数为 &lt;strong&gt;lalloc&lt;/strong&gt;，主要的操作就是处理 snlua 中跟内存有关的三个变量 &lt;strong&gt;mem / mem_limit / mem_report&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;　　自定了 Lua 的内存分配函数为 lalloc，主要的操作就是处理 snlua 中跟内存有关的三个变量 mem / mem_limit / mem_report&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;修改当前占用的内存 &lt;strong&gt;mem&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;检查内存分配上限 &lt;strong&gt;mem_limit&lt;/strong&gt;，如果超了上限不能分配&lt;/li&gt;
+&lt;li&gt;修改当前占用的内存 mem&lt;/li&gt;
+&lt;li&gt;检查内存分配上限 mem_limit，如果超了上限不能分配&lt;/li&gt;
 &lt;li&gt;检查内存使用的警告阈值，如果超过了阈值，要给出警告，并且把警告阈值翻倍&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;　　因为自定义了内存分配函数，所以同时也支持了输出当前使用的内存，可以通过 debug 后台发信号查询指定服务的内存占用。&lt;/p&gt;
 &lt;h2 id=&#34;信号打断&#34;&gt;信号打断&lt;/h2&gt;
 &lt;p&gt;　　snlua 在自己的 signal 接口中，支持了打断正在运行的脚本的功能。这个功能主要是用来打断可能陷入死循环的服务的。&lt;br&gt;
-　　打断的实现需要用到 snlua 中的 &lt;strong&gt;activeL&lt;/strong&gt; 和 &lt;strong&gt;trap&lt;/strong&gt; 这两个变量。&lt;strong&gt;trap&lt;/strong&gt; 是个原子变量，用来标识当前是否正在打断过程中，之所以需要是原子变量是因为 signal 可能并行触发。&lt;strong&gt;activeL&lt;/strong&gt; 变量用来标识当前正在执行的 Lua 状态机。&lt;br&gt;
-　　要理解 &lt;strong&gt;activeL&lt;/strong&gt; 变量的作用需要了解一些 Lua 的协程实现才可以。Lua 的每个协程对应的结构也是 &lt;strong&gt;lua_State&lt;/strong&gt;，和 Lua 的主虚拟机是相同的，在协程内部的调用中会使用协程自己的 &lt;strong&gt;lua_State&lt;/strong&gt; 执行各种操作。这就有了一个问题，要打断当前运行的脚本，需要给 &lt;strong&gt;lua_State&lt;/strong&gt; 设置钩子函数，所以需要一个变量来记录当前是哪个 &lt;strong&gt;lua_State&lt;/strong&gt; 正在执行，又因为切换 &lt;strong&gt;lua_State&lt;/strong&gt; 的过程是发生在对协程的 &lt;strong&gt;resume&lt;/strong&gt; 调用中的，所以需要自己实现一个 &lt;strong&gt;resume&lt;/strong&gt; 来替换掉标准库中的 &lt;strong&gt;coroutine.resume&lt;/strong&gt;，也就是 &lt;strong&gt;luaB_coresume&lt;/strong&gt; 了。在发生 &lt;strong&gt;lua_State&lt;/strong&gt; 切换的时候，snlua 都会修改 &lt;strong&gt;activeL&lt;/strong&gt; 变量指向新的活动状态机。&lt;br&gt;
-　　打断脚本的操作本身很简单，通过 Lua 的钩子函数机制调用 &lt;strong&gt;signal_hook&lt;/strong&gt;，&lt;strong&gt;signal_hook&lt;/strong&gt; 中使用 &lt;strong&gt;lua_getallocf&lt;/strong&gt; 拿到创建 &lt;strong&gt;lua_State&lt;/strong&gt; 的时候存进去的 snlua 结构体的指针，将其 &lt;strong&gt;trap&lt;/strong&gt; 变量修改为可打断状态，然后调用 &lt;strong&gt;luaL_error&lt;/strong&gt; 报错来打断当前的执行逻辑。&lt;/p&gt;
+　　打断的实现需要用到 snlua 中的 activeL 和 trap 这两个变量。trap 是个原子变量，用来标识当前是否正在打断过程中，之所以需要是原子变量是因为 signal 可能并行触发。activeL 变量用来标识当前正在执行的 Lua 状态机。&lt;br&gt;
+　　要理解 activeL 变量的作用需要了解一些 Lua 的协程实现才可以。Lua 的每个协程对应的结构也是 lua_State，和 Lua 的主虚拟机是相同的，在协程内部的调用中会使用协程自己的 lua_State 执行各种操作。这就有了一个问题，要打断当前运行的脚本，需要给 lua_State 设置钩子函数，所以需要一个变量来记录当前是哪个 lua_State 正在执行，又因为切换 lua_State 的过程是发生在对协程的 resume 调用中的，所以需要自己实现一个 resume 来替换掉标准库中的 coroutine.resume，也就是 luaB_coresume 了。在发生 lua_State 切换的时候，snlua 都会修改 activeL 变量指向新的活动状态机。&lt;br&gt;
+　　打断脚本的操作本身很简单，通过 Lua 的钩子函数机制调用 signal_hook，signal_hook 中使用 lua_getallocf 拿到创建 lua_State 的时候存进去的 snlua 结构体的指针，将其 trap 变量修改为可打断状态，然后调用 luaL_error 报错来打断当前的执行逻辑。&lt;/p&gt;
 &lt;h2 id=&#34;profile&#34;&gt;profile&lt;/h2&gt;
-&lt;p&gt;　　snlua 中还实现了 profile 的功能，通过在脚本中调用 &lt;strong&gt;profile.start&lt;/strong&gt; 和 &lt;strong&gt;profile.stop&lt;/strong&gt; 来拿到中间的时间间隔。实现是通过在 start 的时候创建一个 &lt;strong&gt;start_time&lt;/strong&gt; 变量，在 stop 的时候计算时间间隔。中间涉及协程的调用时，也是通过自定义的 &lt;strong&gt;resume&lt;/strong&gt; 函数来实现的，在 &lt;strong&gt;resume&lt;/strong&gt; 协程之前和之后，分别记录时间，将其汇总到总时间中去。&lt;/p&gt;</description>
+&lt;p&gt;　　snlua 中还实现了 profile 的功能，通过在脚本中调用 profile.start 和 profile.stop 来拿到中间的时间间隔。实现是通过在 start 的时候创建一个 start_time 变量，在 stop 的时候计算时间间隔。中间涉及协程的调用时，也是通过自定义的 resume 函数来实现的，在 resume 协程之前和之后，分别记录时间，将其汇总到总时间中去。&lt;/p&gt;</description>
         </item>
         <item>
         <title>Skynet笔记（八）一切都是消息</title>
