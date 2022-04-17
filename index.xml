@@ -23,7 +23,7 @@
     &gt;lua-serialize&lt;/a&gt;，自己实现一个也不难，就是使用 Lua 提供的 C Api 遍历 Table，然后根据 key 和 value 的类型，不断写入到一个可以动态扩容的内存块链表中，全部写入完成以后再将链表中的所有块拷贝进一个连续内存中。&lt;br&gt;
 　　除了结果没有可读性以外，序列化成二进制还有一个缺点就是结果要反序列化成 Table 的时候依然需要逆向解析一遍。&lt;/p&gt;
 &lt;h2 id=&#34;字符串&#34;&gt;字符串&lt;/h2&gt;
-&lt;p&gt;　　序列化成字符串的优点是，结果可读性好，不需要反序列化，直接用 load 加载即可。缺点是比序列化成二进制要慢一些。&lt;/p&gt;
+&lt;p&gt;　　序列化成字符串的优点是，结果可读性好，而且不需要额外实现反序列化，可以直接使用 load 来加载字符串实现反序列化。&lt;/p&gt;
 &lt;h3 id=&#34;lua-实现&#34;&gt;Lua 实现&lt;/h3&gt;
 &lt;p&gt;　　用 Lua 来实现是最顺畅最简单的，不用写 C 代码，也不需要编译。如果没有高频使用的话，用 Lua 序列化就足够用了。&lt;br&gt;
 　　有一个非常好的第三方实现可以用来解决这个问题，&lt;a class=&#34;link&#34; href=&#34;https://github.com/pkulchenko/serpent&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -32,8 +32,13 @@
 &lt;p&gt;　　由于工作需要高频将 Table 序列化成字符串，且单个 Table 数据量也不少。所以一直想找一个 C/C++ 语言的实现版本，但是 github 上找了半天也没找到。后来周末抽了个时间自己实现了一个 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Homurua/luaseri-cpp&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;luaseri-cpp&lt;/a&gt;。&lt;br&gt;
 　　实现并不复杂，但是碰到了一个问题，就是 snprintf 在处理 double 的时候非常慢。搜索以后发现了一个非常切合我需求的项目，&lt;a class=&#34;link&#34; href=&#34;https://github.com/miloyip/dtoa-benchmark&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;dtoa-benchmark&lt;/a&gt;，是腾讯的大佬叶劲峰实现的，学 C++ 的应该都听说过他，《C++ Primer 5th》中文版的审校之一。该项目给出了他对 Grisu2 算法的实现，效率是挺好的，就直接拿来用了。&lt;br&gt;
-　　测试以后发现，序列化的速度比使用 lua-serialize 序列化成二进制慢了大概 80% 左右，但是比用 serpent 序列化成字符串快了二十倍以上，性能已经满足需要了。&lt;/p&gt;</description>
+    &gt;dtoa-benchmark&lt;/a&gt;，是腾讯的大佬叶劲峰实现的，学 C++ 的应该都听说过他，《C++ Primer 5th》中文版的审校之一。该项目给出了他对 Grisu2 算法的实现，效率是挺好的，就直接拿来用了。&lt;/p&gt;
+&lt;h2 id=&#34;性能对比&#34;&gt;性能对比&lt;/h2&gt;
+&lt;p&gt;　　对比以上的三种实现，经过测试，可以得出性能的大致对比结果。&lt;br&gt;
+　　在序列化一个大型 Table 的时候，以 lua-serialize 的用时为基准 n，luaseri-cpp 的用时为 1.8n - 2n，serpent 的用时大概为 40n 左右。lua-serialize 序列化出来的结果也比其余两种结果的长度小很多，具体比例与 Table 中的数据有关系，当 Table 中的数字越多时，长度差距越大。&lt;br&gt;
+　　反序列化的时候，lua-serialize 需要使用它自带的反序列化函数，同样以它的反序列化事件为基准 m，序列化为字符串的实现使用 Lua 自带的 load 函数加载字符串得到 Table，使用的时间大概在 2m 左右。&lt;br&gt;
+　　可以看到 lua-serialize 无论在序列化和反序列化上时间都占优不少，在空间使用上优势更大。所以如果不需要结果的可读性的话，直接使用它即可。如果需要可读性，那么使用 luaseri-cpp 的效率也是比较快的。如果不喜欢用 C 库，或者对性能没要求的情况下可以使用 serpent 来实现。&lt;br&gt;
+　　感觉可以在开发版本序列化成字符串，方便调试，在线上版本使用 lua-serialize，效率和空间都能占优不少。&lt;/p&gt;</description>
         </item>
         <item>
         <title>为什么需要 RUDP 协议</title>
