@@ -60,7 +60,7 @@
 &lt;p&gt;　　国内的一些地方的一些运营商，包括御三家，经常会对 UDP 数据进行限制，尤其是出国流量，轻则丢包，重则断连，可能完全无法使用。&lt;br&gt;
 　　这样的情况导致 RUDP 很难作为单一协议使用，基本上还需要一份 TCP 的实现进行保底。&lt;br&gt;
 　　为了解决这种情况，有一些特殊的办法。比如可以通过一些手段将 UDP 数据伪装成 TCP 数据。有一个开源项目 &lt;a class=&#34;link&#34; href=&#34;https://github.com/wangyu-/udp2raw&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;udp2raw&lt;/a&gt; 就是针对功能这个实现的。或者通过发送冗余数据这种简单粗暴的方法，通过耗费更多流量来对抗丢包，可以尝试使用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/wangyu-/UDPspeeder&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;udp2raw&lt;/a&gt; 就是针对功能这个实现的。或者通过发送冗余数据这种简单粗暴的方法，使用更多流量来对抗丢包，可以尝试使用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/wangyu-/UDPspeeder&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;UDPspeeder&lt;/a&gt;。&lt;/p&gt;
 &lt;h3 id=&#34;能耗&#34;&gt;能耗&lt;/h3&gt;
 &lt;p&gt;　　由于 RUDP 都是运行在用户空间的，每一次的数据收发都需要进行上下文切换，而运行在内核空间的 TCP 的上下文切换会少很多。&lt;br&gt;
