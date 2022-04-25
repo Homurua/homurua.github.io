@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　网络相关的部分是我感觉 skynet 中最复杂的部分了，本篇中会尝试尽量完整的分析到网络相关的大部分功能的实现原理。
+'><title>skynet源码分析（十）网络分析</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='skynet源码分析（十）网络分析'>
+<meta property='og:description' content='　网络相关的部分是我感觉 skynet 中最复杂的部分了，本篇中会尝试尽量完整的分析到网络相关的大部分功能的实现原理。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-18T14:53:02&#43;08:00'/><meta property='article:modified_time' content='2022-02-18T14:53:02&#43;08:00'/>
+<meta name="twitter:title" content="skynet源码分析（十）网络分析">
+<meta name="twitter:description" content="　网络相关的部分是我感觉 skynet 中最复杂的部分了，本篇中会尝试尽量完整的分析到网络相关的大部分功能的实现原理。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" style="background-color: #46BDBA; color: #fff;">
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/">skynet源码分析（十）网络分析</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 18, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 15 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　网络相关的部分是我感觉 skynet 中最复杂的部分了，本篇中会尝试尽量完整的分析到网络相关的大部分功能的实现原理。</p>
+<h2 id="线程模型">线程模型</h2>
+<p>　　skynet 使用的是多线程 reactor 模型，有一条 socket 线程用来处理 epoll 事件分发，多条 worker 线程来执行事件。<br>
+　　与其它使用类似模型的框架相比，skynet 最大的区别应该就是还使用了 Actor 的并发模型。所以在 socket 线程处理 epoll 事件的时候，并不是直接把事件交给了 worker 线程来执行，而是把事件和相关的数据一起转化为一条 Actor 之间通用的消息，放到了 Actor 的消息队列中，等待 worker 线程处理 Actor 的消息队列时来处理这个网络事件。</p>
+<h2 id="socket-管理器">socket 管理器</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define MAX_INFO 128
+</span><span class="cp"></span><span class="c1">// MAX_SOCKET will be 2^MAX_SOCKET_P
+</span><span class="c1"></span><span class="cp">#define MAX_SOCKET_P 16
+</span><span class="cp">#define MAX_SOCKET (1&lt;&lt;MAX_SOCKET_P)
+</span><span class="cp">#define MAX_EVENT 64
+</span><span class="cp">#define MAX_UDP_PACKAGE 65535
+</span><span class="cp"></span>
+<span class="k">struct</span> <span class="n">socket_server</span> <span class="p">{</span>
+    <span class="k">volatile</span> <span class="kt">uint64_t</span> <span class="n">time</span><span class="p">;</span> <span class="c1">// 当前时间，由 timer 线程更新，socket 线程直接读这个值
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">recvctrl_fd</span><span class="p">;</span> <span class="c1">// 接收命令的管道套接字
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sendctrl_fd</span><span class="p">;</span> <span class="c1">// 发送命令的管道套接字
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">checkctrl</span><span class="p">;</span> <span class="c1">// 用来标记是否要检查控制台命令的标志
+</span><span class="c1"></span>    <span class="n">poll_fd</span> <span class="n">event_fd</span><span class="p">;</span> <span class="c1">// 全局的 epoll 套接字
+</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">alloc_id</span><span class="p">;</span> <span class="c1">// 已分配的id，不断累加
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_n</span><span class="p">;</span> <span class="c1">// 本次调用 epoll 得到的就绪的 fd 个数
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_index</span><span class="p">;</span> <span class="c1">// 目前处理到的 fd 序号
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_object_interface</span> <span class="n">soi</span><span class="p">;</span> <span class="c1">// userobject 接口
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">event</span> <span class="n">ev</span><span class="p">[</span><span class="n">MAX_EVENT</span><span class="p">];</span> <span class="c1">// 捕获的事件数组
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket</span> <span class="n">slot</span><span class="p">[</span><span class="n">MAX_SOCKET</span><span class="p">];</span> <span class="c1">// 全部的 socket 哈希，key 为经过哈希算法计算以后的 id
+</span><span class="c1"></span>    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="n">MAX_INFO</span><span class="p">];</span> <span class="c1">// 临时缓冲区
+</span><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">udpbuffer</span><span class="p">[</span><span class="n">MAX_UDP_PACKAGE</span><span class="p">];</span> <span class="c1">// udp 数据缓冲区
+</span><span class="c1"></span>    <span class="n">fd_set</span> <span class="n">rfds</span><span class="p">;</span> <span class="c1">// 要监听的读描述符集合，用于命令的 select
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　每个 skynet 进程都有一个全局的 socket 管理器，它会在 skynet 进程启动的时候被初始化。从其中的变量大概可以看出一些实现的端倪。比较重要的部分是 epoll 相关的部分和命令相关的部分。<br>
+　　在其初始化函数 <strong>socket_server_create</strong> 中，主要的操作是</p>
+<ul>
+<li>创建了用于 ctrl 命令的管道套接字</li>
+<li>创建了 epoll 套接字</li>
+<li>调用 pipe 创建管道并且把其中一端加入 epoll 套接字的管理中</li>
+<li>初始化 <strong>slot</strong> 数组中的全部数据，运行中不会扩容，新的 socket 会被复制到指定的位置上</li>
+</ul>
+<h2 id="socket-结构分析">socket 结构分析</h2>
+<h3 id="结构概览">结构概览</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket</span> <span class="p">{</span>
+    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 本结构关联的服务 handle
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">high</span><span class="p">;</span> <span class="c1">// 高优先级队列
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">low</span><span class="p">;</span> <span class="c1">// 低优先级队列
+</span><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">wb_size</span><span class="p">;</span> <span class="c1">// 等待写入的字节长度
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_stat</span> <span class="n">stat</span><span class="p">;</span> <span class="c1">// 统计数据
+</span><span class="c1"></span>    <span class="n">ATOM_ULONG</span> <span class="n">sending</span><span class="p">;</span> <span class="c1">// 是否正在发送数据，是一个引用计数，会累加
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span> <span class="c1">// 套接字
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 分配的 id
+</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">type</span><span class="p">;</span> <span class="c1">// 当前连接状态
+</span><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">protocol</span><span class="p">;</span> <span class="c1">// 连接协议
+</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">reading</span><span class="p">;</span> <span class="c1">// fd 的 read 监听标记
+</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">writing</span><span class="p">;</span> <span class="c1">// fd 的 write 监听标记
+</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">closing</span><span class="p">;</span> <span class="c1">// fd 的 close 标记
+</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">udpconnecting</span><span class="p">;</span> <span class="c1">// udp 正在连接
+</span><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">warn_size</span><span class="p">;</span> <span class="c1">// 报警阈值
+</span><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+        <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
+    <span class="p">}</span> <span class="n">p</span><span class="p">;</span> <span class="c1">// 如果是 tcp 连接则用 size 表示每次读取的字节数，如果是 udp 则用 udp_address 表示地址
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">dw_lock</span><span class="p">;</span> <span class="c1">// 自旋锁
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">dw_offset</span><span class="p">;</span> <span class="c1">// 已经写入的大小
+</span><span class="c1"></span>    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">dw_buffer</span><span class="p">;</span> <span class="c1">// 数据指针
+</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">dw_size</span><span class="p">;</span> <span class="c1">// 总大小
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　socket 连接是个很复杂的结构，因为内存对齐的缘故，变量的先后顺序排列并不是按照关联性分布的，后面会按照功能相关性分开讨论其中的变量。</p>
+<h3 id="socket-的基础数据">socket 的基础数据</h3>
+<ul>
+<li><strong>int fd</strong><br>
+fd 是系统分配的 socket 套接字，是网络连接的基础。不同的网络操作会使用不同的参数来使用系统调用 <strong>socket</strong> 创建自己的网络套接字。</li>
+<li><strong>int id</strong><br>
+id 是由 skynet 分配的用来标识 socket 结构体变量的唯一标识符。之所以在有了 <strong>fd</strong> 以后还需要 <strong>id</strong> 是因为内核可能会重用 <strong>fd</strong>，并不能用 <strong>fd</strong> 来做唯一标识。</li>
+<li><strong>ATOM_INT type</strong><br>
+虽然名字叫类型，但是其实是 socket 当前的状态，这个变量会随着 socket 的状态改变而被修改，目前一共有十种状态。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define SOCKET_TYPE_INVALID 0 </span><span class="c1">// 初始状态，表示未使用
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_RESERVE 1 </span><span class="c1">// 保留状态
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PLISTEN 2 </span><span class="c1">// 监听前状态
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_LISTEN 3 </span><span class="c1">// 监听中状态
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTING 4 </span><span class="c1">// 连接中状态
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTED 5 </span><span class="c1">// 已连接状态
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_READ 6 </span><span class="c1">// 半关闭剩下读
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_WRITE 7 </span><span class="c1">// 半关闭剩下写
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PACCEPT 8 </span><span class="c1">// 已 accept 但是还未加入 epoll
+</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_BIND 9 </span><span class="c1">// 绑定状态
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li><strong>uint8_t protocol</strong><br>
+protocol 表示的是 socket 关联的协议类型，在处理网络事件时，需要知道它的协议类型来执行不同的消息分发函数。目前一共有 4 中类型，其中 PROTOCOL_UNKNOWN 是一开始的默认类型。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define PROTOCOL_TCP 0
+</span><span class="cp">#define PROTOCOL_UDP 1
+</span><span class="cp">#define PROTOCOL_UDPv6 2
+</span><span class="cp">#define PROTOCOL_UNKNOWN 255
+</span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li><strong>uintptr_t opaque</strong><br>
+opaque 是创建本 socket 的源服务的 handle，因为前文中提到的 skynet 并不会直接处理网络事件，而是会把每个网络事件都转换为消息发送给源服务，所以 socket 要记录下来源服务的 handle 来接受网络事件消息。</li>
+<li><strong>union {int size; uint8_t udp_address[UDP_ADDRESS_SIZE];} p</strong><br>
+这里为了省内存使用了一个 union 做了两个作用，当 socket 是 tcp 协议的时候，使用 size 表示本连接每次从 fd 中读取的字节数，这个 size 会被初始化 64，并且会根据每次从 fd 中读取数据的情况增加或者减少，这个参数的存在是为了优化读取的效率。如果是 udp 协议的话，使用 udp_address 用来保存对端的地址。</li>
+<li><strong>bool reading, writing</strong><br>
+用来表示套接字当前在 epoll 中的状态，主要被用在修改 epoll 的监听事件时，比如当之前已经设置过 EPOLLIN，又要加上 EPOLLOUT 的时候，如果没有 reading 记录的话，就比较麻烦。</li>
+<li><strong>bool closing</strong><br>
+标记 socket 的已关闭状态。</li>
+<li><strong>struct socket_stat stat</strong><br>
+stat 用来记录当前 socket 的读写数据状态。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket_stat</span> <span class="p">{</span>
+  <span class="kt">uint64_t</span> <span class="n">rtime</span><span class="p">;</span> <span class="c1">// 最近一次读取时间
+</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">wtime</span><span class="p">;</span> <span class="c1">// 最近一次写入时间
+</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的总数据长度
+</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">write</span><span class="p">;</span> <span class="c1">// 已写入的总数据长度
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li><strong>ATOM_INT udpconnecting</strong><br>
+正在连接中的 udp 数量，发起连接时累加，连接成功后递减。</li>
+</ul>
+<h3 id="写入队列相关">写入队列相关</h3>
+<ul>
+<li><strong>struct wb_list high, low</strong><br>
+wb_list 即 write buffer list，发送队列是一个单向链表。每个 socket 连接有两个发送队列，一个高优先级队列和一个低优先级队列，高优先级队列中的数据会优先发送出去。发送数据时，需要指定数据的优先级。
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">write_buffer</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+    <span class="n">size_t</span> <span class="n">sz</span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="n">userobject</span><span class="p">;</span>
+    <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
+<span class="p">};</span>
+<span class="k">struct</span> <span class="n">wb_list</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">head</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">tail</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div></li>
+<li><strong>int64_t wb_size</strong><br>
+wb_size 即 write buffer size，是 socket 连接中全部等待写入的数据长度，包含两个写入队列的待写入长度总和。</li>
+<li><strong>int64_t warn_size</strong><br>
+socket 等待发送数据的警告阈值，如果超过了这个值，会输出一条警告信息。阈值每次触发以后会变为原来的两倍。</li>
+</ul>
+<h3 id="direct-write-相关">direct write 相关</h3>
+<ul>
+<li><strong>struct spinlock dw_lock</strong><br>
+直接写入部分的锁，需要修改 dw 相关的数据时要先加锁。</li>
+<li><strong>int dw_offset</strong><br>
+通过 dw 已经发出去数据偏移量，在 socket 线程处理发送的时候需要根据这个值计算出还未发送出去的数据。</li>
+<li><strong>const void *dw_buffer</strong><br>
+如果 dw 阶段发送出去的数据不完整的话，调用 clone_buffer 使 dw_buffer 指向待发送数据，等待 socket 线程后续再次发送这个数据。</li>
+<li><strong>size_t dw_size</strong><br>
+本次 dw 数据的总大小，也就是 dw_buffer 指向数据的大小。</li>
+</ul>
+<h3 id="分配-id">分配 ID</h3>
+<p>　　skynet 在分配 socket 的 ID 时，也会碰到空洞位置的问题，因为关闭的 socket 连接会被再次设为可用状态，这就导致了分配 ID 不能简单累加，而是从 alloc_id 开始，遍历完整个 slot 数组，计算哈希的时候直接针对 MAX_SOCKET 取模即可。这里有个小问题，alloc_id 是个原子变量，可能会让这个分配 ID 的函数的效率雪上加霜，最坏情况下在分配一次 ID 的过程中，alloc_id 要被 atomic_fetch_add 累加几万次。</p>
+<h2 id="epoll-相关">epoll 相关</h2>
+<p>　　skynet 在创建 epoll 套接字的时候，为 <strong>epoll_create</strong> 传入了参数 1024，这里仅为兼容旧版本的内核，新版内核已经不再需要这个用来提示的参数。<br>
+　　关于 epoll 的触发模式，skynet 使用的是 epoll 默认的水平触发模式。</p>
+<h2 id="self-pipe">self-pipe</h2>
+<p>　　从 socket_server 的初始化函数中可以看到，recvctrl_fd 和 sendctrl_fd 分别是管道 pipe 套接字的两端，并且 recvctrl_fd 被加入到了 epoll 监听中。<br>
+　　这用到了一个叫做 self-pipe 的技术，《Linux 系统编程手册》65.5.2 有介绍这个技术。它在 skynet 中的应用主要是为了解决单网络线程阻塞在 epoll 的 wait 上这种情况。如果不使用这个技术，则当需要做一些修改，比如修改 epoll 的监听套接字的时候，这时候线程阻塞在了 wait 上，要处理修改只能让 wait 等待一个指定时间以后返回，处理修改，然后再次进入 wait 中。这带来一个问题就是等待时间的选取是比较麻烦的，太久了则修改要等待很久才能生效，太短了则会让 wait 不断返回进入，比较浪费 CPU 资源。<br>
+　　通过 self-pipe 技术就可以解决这个问题，创建一对管道套接字用于网络命令处理，然后把接收端加入 epoll 管理中，所有对网络操作的修改都发送给管道的发送端。这样就能达到一旦有命令过来，epoll 的 wait 立刻会被唤醒，不需要指定返回时间了。</p>
+<h2 id="socket-线程的主循环">socket 线程的主循环</h2>
+<h3 id="skynet_socket_poll">skynet_socket_poll</h3>
+<p>　　socket 线程会无限循环调用函数 skynet_socket_poll，在这个函数中，通过调用 socket_server_poll 来获取网络事件和处理的数据 result，针对不同的网络事件，通过调用 forward_message 发送不同格式的消息给与触发事件的套接字绑定的服务。<br>
+　　函数会创建一个 socket_message 的结构体变量 result，把 result 传给了 socket_server_poll，其处理完网络事件以后，会把结果写入到 result 中，然后 result 会再次给到 forward_message，它会将 result 根据需要处理成一条 skynet 消息，然后 push 到源服务的消息队列中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket_message</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// socket id
+</span><span class="c1"></span>    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 目标服务的 handle 句柄
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">ud</span><span class="p">;</span>	<span class="c1">// accept 事件中 ud 是新连接的 id，别的时候是 data 的长度
+</span><span class="c1"></span>    <span class="kt">char</span> <span class="o">*</span> <span class="n">data</span><span class="p">;</span> <span class="c1">//数据指针
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="socket_server_poll">socket_server_poll</h3>
+<p>　　本函数是 skynet 网络部分处理网络事件的最终循环。该函数大部分情况下都阻塞在 sp_wait 上，等待 socket 事件触发或者是网络命令过来。<br>
+　　从 epoll_wait 中唤醒以后，开始了一轮处理。在每轮的处理中，首先会把检查控制命令的变量 checkctrl 置为 1，然后开始依次处理本次触发的网络事件。<br>
+　　在网络事件的处理中，如果碰到的是命令事件，则直接 continue 回到循环的最上面去处理网络命令。否则则会去读取 socket 的状态 type，根据不同的 type 执行不同的操作，向 result 中填充相关的数据。<br>
+　　每次从 epoll 中取到的就绪套接字个数放在 event_n 中，用一个变量 event_index 保存当前处理到了第几个套接字。当 event_index == event_n 的时候，则说明本轮的处理已经结束了，线程会再次调用 epoll_wait 获取下一轮要处理的就绪套接字。<br>
+　　本函数会填充 result 参数，并且返回一个处理结果类型给 skynet_socket_poll，返回的结果一共包含了八种类型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define SOCKET_DATA 0       </span><span class="c1">// 读取数据
+</span><span class="c1"></span><span class="cp">#define SOCKET_CLOSE 1      </span><span class="c1">// socket 关闭
+</span><span class="c1"></span><span class="cp">#define SOCKET_OPEN 2       </span><span class="c1">// socket 连接成功
+</span><span class="c1"></span><span class="cp">#define SOCKET_ACCEPT 3     </span><span class="c1">// accept 成功
+</span><span class="c1"></span><span class="cp">#define SOCKET_ERR 4        </span><span class="c1">// socket 错误
+</span><span class="c1"></span><span class="cp">#define SOCKET_EXIT 5       </span><span class="c1">// 退出 socket 线程
+</span><span class="c1"></span><span class="cp">#define SOCKET_UDP 6        </span><span class="c1">// 接收 udp 数据
+</span><span class="c1"></span><span class="cp">#define SOCKET_WARNING 7    </span><span class="c1">// socket 警告
+</span></code></pre></td></tr></table>
+</div>
+</div><h3 id="网络指令处理">网络指令处理</h3>
+<p>　　每当 epoll_wait 返回时，新的一轮网络事件的处理就会开始，指令的检查标记 checkctrl 也会被设为 1，来开启指令检查。每轮只会处理一次指令，会一直连续处理指令直到全部处理完。<br>
+　　通过 has_cmd 来检查管道中有没有还没处理的命令数据。这一步是使用系统调用 select 来实现的，使用 select 来检查 recvctrl_fd 是否可读。虽说 recvctrl_fd 被加到了 epoll 中，但是 epoll_wait 唤醒以后，如果是指令数据唤醒的，不会原地处理，而是等下一个循环处理，所以这里还要再检查一次是否可读，并没有以来 epoll 做标记之类的，可能是为了处理简单一些。<br>
+　　如果 recvctrl_fd 中有指令等待读取，则调用 ctrl_cmd 读取并执行指令。其中用了两次 block_readpipe 来读取管道中的数据，第一次读取了数据头，包括了命令类型和数据长度，第二次用第一次读取到的数据长度读取了数据。<br>
+　　block_readpipe 是用来从管道中读取数据的函数，可以看到一个有意思的地方，read 的返回值只处理了小于 0 的情况，并没有处理 n &gt; 0 &amp;&amp; n &lt; size 的情况。这是因为对管道套接字执行 read 操作是一个原子操作，不会被别的情况比如信号之类的打断，所以只有两种可能，错误和全部读取完成。关于 pipe 套接字的读写后面可以考虑开一篇文章写一下。<br>
+　　读取到了命令以后，根据命令类型，把数据交给不同的处理函数来处理即可。</p>
+<h2 id="网络请求">网络请求</h2>
+<h3 id="概述">概述</h3>
+<p>　　skynet 中涉及网络的操作，除了 direct write 以外，都是通过网络请求来实现的。worker 线程根据自己想要做的操作的类型，创建不同结构的请求数据，通过 send_request 发送到命令管道的发送端 sendctrl_fd 中去，等待主循环中接受处理请求。</p>
+<h3 id="请求包的结构">请求包的结构</h3>
+<p>　　因为 C 中没有面向对象的功能，所以通过 union 来实现了请求包的结构，每一种类型的请求对应了一类的请求结构体，所有的请求都会转化成一个 request_package 结构体，发送到管道中来。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">request_package</span> <span class="p">{</span>
+    <span class="kt">uint8_t</span> <span class="n">header</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span> <span class="c1">// 6 bytes dummy, 第 7 个字节表示类型，第 8 个字节表示长度
+</span><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
+        <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+        <span class="k">struct</span> <span class="n">request_open</span> <span class="n">open</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_send</span> <span class="n">send</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_send_udp</span> <span class="n">send_udp</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_close</span> <span class="n">close</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_listen</span> <span class="n">listen</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_bind</span> <span class="n">bind</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_resumepause</span> <span class="n">resumepause</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_setopt</span> <span class="n">setopt</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_udp</span> <span class="n">udp</span><span class="p">;</span>
+        <span class="k">struct</span> <span class="n">request_setudp</span> <span class="n">set_udp</span><span class="p">;</span>
+    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
+    <span class="kt">uint8_t</span> <span class="n">dummy</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span> <span class="c1">// 预留了 256 个字节
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="处理请求包">处理请求包</h3>
+<p>　　socket 线程的主循环中，会不断读取管道中的数据，每条命令要执行两次 read 读取，第一次要读到 header 中的内容，然后根据 header[1] 的长度数据，读取剩余的数据。然后根据 hander[0] 中的类型数据，进行不同的处理。目前一共有 13 种网络操作类型。</p>
+<blockquote>
+<p>S Start socket<br>
+B Bind socket<br>
+L Listen socket<br>
+K Close socket<br>
+O Connect to (Open)<br>
+X Exit<br>
+D Send package (high)<br>
+P Send package (low)<br>
+A Send UDP package<br>
+T Set opt<br>
+U Create UDP socket<br>
+C set udp address<br>
+Q query info</p>
+</blockquote>
+<h2 id="网络接口分析">网络接口分析</h2>
+<h3 id="概述-1">概述</h3>
+<p>　　因为所有的网络操作都是通过发送命令来进行的，所以 skynet 的网络接口都是非阻塞的，不同的接口会完成基本的操作，然后把需要的参数打包成一条上面提到过的 request_package 结构数据发送给命令的接收端。</p>
+<h3 id="connect">connect</h3>
+<p>　　通过调用 socketdriver.connect 可以发起一个对外连接。lconnect 中会从目标地址的字符串中分离出 host 和 port 这两个参数，再获取一个 socket id，然后打包成一个网络请求，给命令接收套接字发送了一个 &lsquo;O&rsquo; 类型的命令。<br>
+　　在 socekt 线程中的部分里，对应命令的处理方法是 open_socket，首先它会通过系统调用 getaddrinfo 拿到目标主机的全部地址，然后依此对每个地址尝试去执行系统调用 socket 创建一个套接字并且把它设为 keep_alive 和 non_blocking 的，然后执行 connect 系统调用。<br>
+　　如果套接字创建成功了，则创建 socket 结构体。检查 connect 的调用返回，如果成功了，则直接把 socket 的状态设为 SOCKET_TYPE_CONNECTED，返回 SOCKET_OPEN，连接成功。<br>
+　　如果连接失败了，且 errno 是 EINPROGRESS，也就是说无法马上连接的状态，则把 socket 的状态设为 SOCKET_TYPE_CONNECTING，并且将套接字加入到 epoll 中，打开写入事件。当 epoll 触发了套接字的 write 事件时，则说明之前的连接已经建立成功了。将 socket 的状态设为 SOCKET_TYPE_CONNECTED，返回 SOCKET_OPEN 表示连接成功。<br>
+　　SOCKET_OPEN 返回以后，会创建一个 SKYNET_SOCKET_TYPE_CONNECT 类型的消息给发起连接的源服务，但是源服务并不需要处理连接成功的消息，所以 netpack 在进行解包的时候，直接忽略了 SKYNET_SOCKET_TYPE_CONNECT 类型的消息。</p>
+<h3 id="listen">listen</h3>
+<p>　　从 gateserver 的 open 命令来分析一下 skynet 套接字的监听步骤。socketdriver.listen 是 skynet 的监听接口，可以开启一个监听套接字，函数返回值是监听套接字的唯一标识符，也就是上面提到的 id 这个变量。监听的接口执行可以分为两个阶段，第一个是在 worker 线程中执行的部分，第二个是在 socket 线程中执行的部分。<br>
+　　监听操作在第一阶段的执行中，主要逻辑在 socket_server_listen 函数中，其中依次调用了 socket/bind/listen 等系统调用，完成了网络套接字的创建，绑定和监听，但是并未将套接字加入到 epoll 的管理中去。然后通过 reserve_id 分配了一个 socket 结构的唯一 id，但是这里也不会创建 socket 结构体。创建一个 request_package 的结构体，将上面拿到的参数填入其 request_listen 结构体中，然后将其发送给命令的接收套接字 sendctrl_fd 即可。<br>
+　　监听操作在第二阶段的执行中，主要逻辑在 listen_socket 函数中。这里逻辑就比较简单了，做的事情就是上段中点明了剩下的两个部分，把监听套接字加入到 epoll 管理中，并且创建了 socket 结构变量。socket 中的 type 会被修改为 SOCKET_TYPE_PLISTEN，只是 pre listen 还没有完全完成监听。还有一点需要注意的是，因为上一阶段已经拿到了 socket 的唯一 id，所以这里是直接修改了之前那个 id 在数组 socket_server.slot 中对应的 socket 结构体。<br>
+　　到这里 socketdriver.listen 的工作就全部结束了，但是明显可以发现这个时候的 listen 还未完全完成。因为此时还未设置 accept 以后的回调，而且 socket 中的状态也还是未完成的监听状态。我们现在有一个 socket id 是监听套接字的句柄，需要做的是使用这个 id 调用 socketdriver.start 来执行后续的步骤。<br>
+　　socketdriver.start 中主要做的事情是给网络命令接收套接字发送了一个 &lsquo;R&rsquo; 请求，这个请求会把 id 对应的套接字加入到 epoll 管理中并且打开读取监听。不过由于 listen 的前期创建 socket 的时候已经把套接字加入到了 epoll 并且默认是打开读取的，所以这里并不会做什么操作。这里最主要修改的是上面提到的 socket 的状态，会把状态改为 SOCKET_TYPE_LISTEN，以让循环中可以正确处理监听，然后还把监听 socket 的源服务改为了调用 start 的服务，也就是说可以实现在某个服务中 listen 创建一个 socket id，然后把它传给另一个服务，由另一个服务调用 start 来接收后续的消息。</p>
+<h3 id="accept">accept</h3>
+<p>　　accept 由 socket 线程的 epoll 循环触发，如果触发网络事件的套接字是 SOCKET_TYPE_LISTEN 状态的话，则说明触发了 accept 事件。<br>
+　　report_accept 是处理 accept 事件的函数，首先通过系统调用 accept 拿到网络套接字，然后拿到 socket 结构要用的唯一 id，client 的 fd 会被设置 keep_live 和 no_blocking，创建 socket
+结构，把 socket 的状态设为 SOCKET_TYPE_PACCEPT 类型。<br>
+　　上述处理结束以后，返回到 skynet_socket_poll 的类型为 SOCKET_ACCEPT，skynet_socket_poll 会调用 forward_message 给 socket 的源服务发消息，socket 的源服务现在是上一步中执行 socketdriver.start 的服务。发送的消息中把消息结构体中的 type 设为了 SKYNET_SOCKET_TYPE_ACCEPT 来标识消息的类型。<br>
+　　消息会交给 gate 服务处理，它注册了 &ldquo;socket&rdquo; 类型的协议，负责解包的是 netpack.filter 函数。lfilter 在处理 SKYNET_SOCKET_TYPE_ACCEPT 时很简单，只是整理了一下参数而已，压入了操作类型对应的字符串 &ldquo;open&rdquo; 供 dispatch 方法调用。<br>
+　　在 dispatch 中，&ldquo;open&rdquo; 操作对应了 MSG.open 方法，其中跟网络层有关的就是调用了 handle.connect，在 handle.connect 中，历经千难万苦，如果是用 examples 中提供的示例的话，就是经过了 watchdog 和 agent 的操作，最终调用了 socketdriver.start 来激活客户端的 socket 结构。与 listen 的步骤类似，在 start 中会把 client 的 socket 类型从 SOCKET_TYPE_PACCEPT 改为 SOCKET_TYPE_CONNECTED，socket 关联的服务 handle 会改为调用 socketdriver.start 的服务。</p>
+<h3 id="write">write</h3>
+<p>　　发送数据有两种方法，常规的是通过 epoll 的写事件触发。为了减少一些开销，skynet 还做了一个叫做 direct write 的操作，也就是直接写入，不通过 socket 线程，而是在 worker 线程直接尝试把数据发出去。<br>
+　　首先来看 direct write 的部分，发送数据的接口为 socket_server_send，这个函数首先会检查当前 socket 能不能直接发送，如果在当前 socket 的高或低优先级队列中有数据等待发送的，则不能直接发送。如果可以直接发送的话，则会直接在 worker 线程调用 write 往套接字中写入数据。<br>
+　　直接发送会有三种结果。如果发送失败了，则忽略这个错误，当作写入了 0 长度的数据。如果完整发送了全部的数据，则可以直接返回，不需要再走后面的步骤了，本次发送已经完成了。如果只发送了部分数据，包括前面发送错误产生的结果，都会设置 dw_buffer/dw_size/dw_offset 这三个变量，等待后续 socket 线程再次进行数据发送，并且发送了一条网络消息 &lsquo;W&rsquo; 来打开本套接字的写事件监听。<br>
+　　触发 epoll 的写事件以后，如果有之前 direct write 阶段没发完的数据，会首先把剩余的数据加入到高优先级队列的首部。发送阶段，会优先先发高优先级队列的数据，然后再发低优先级队列中的数据，如果低优先级队列中的数据没有全部发完，则会借助一个叫做 raise_uncomplete 的操作，把剩余的数据提到高优先级队列中。<br>
+　　在两种情况下会触发关闭套接字写事件的监听，首先是如果 write 如果返回了一个错误，且不是 EINTR（信号打断） 或者 EAGAIN（非阻塞套接字缓冲区写满） 错误的情况下会关闭写事件。还有就是当套接字的高优先级队列和低优先级队列都发送完毕的时候也会关闭写事件。</p>
+<h3 id="read">read</h3>
+<p>　　当 epoll 中的套接字变为可读以后，如果是 TCP 连接，则使用 forward_message_tcp 读取套接字中的数据。<br>
+　　每次读取的长度是 socket.p.size，初始为 64 字节，如果在本次读取的时候发现套接字中可读长度大于 size 的话，则将 size 扩大为之前的 2 倍，如果发现套接字中的数据比 size 的 1/2 还少的时候，则把 size 变为原来的 1/2 长度。另外，如果本次没有读取完套接字中的数据，则会减少 event_index，使下一次循环依然处理本事件。<br>
+　　读取到数据以后，转化成消息，给 socket 的源服务发送一条 SKYNET_SOCKET_TYPE_DATA 类型的消息。这个消息会触发网络分包，通过 netpack.filter 进行分包，分包值得单开一篇文章细说一下，此处先一笔带过。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十八）热更新操作</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#线程模型">线程模型</a></li>
+    <li><a href="#socket-管理器">socket 管理器</a></li>
+    <li><a href="#socket-结构分析">socket 结构分析</a>
+      <ol>
+        <li><a href="#结构概览">结构概览</a></li>
+        <li><a href="#socket-的基础数据">socket 的基础数据</a></li>
+        <li><a href="#写入队列相关">写入队列相关</a></li>
+        <li><a href="#direct-write-相关">direct write 相关</a></li>
+        <li><a href="#分配-id">分配 ID</a></li>
+      </ol>
+    </li>
+    <li><a href="#epoll-相关">epoll 相关</a></li>
+    <li><a href="#self-pipe">self-pipe</a></li>
+    <li><a href="#socket-线程的主循环">socket 线程的主循环</a>
+      <ol>
+        <li><a href="#skynet_socket_poll">skynet_socket_poll</a></li>
+        <li><a href="#socket_server_poll">socket_server_poll</a></li>
+        <li><a href="#网络指令处理">网络指令处理</a></li>
+      </ol>
+    </li>
+    <li><a href="#网络请求">网络请求</a>
+      <ol>
+        <li><a href="#概述">概述</a></li>
+        <li><a href="#请求包的结构">请求包的结构</a></li>
+        <li><a href="#处理请求包">处理请求包</a></li>
+      </ol>
+    </li>
+    <li><a href="#网络接口分析">网络接口分析</a>
+      <ol>
+        <li><a href="#概述-1">概述</a></li>
+        <li><a href="#connect">connect</a></li>
+        <li><a href="#listen">listen</a></li>
+        <li><a href="#accept">accept</a></li>
+        <li><a href="#write">write</a></li>
+        <li><a href="#read">read</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

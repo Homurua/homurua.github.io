@@ -14,8 +14,9 @@
         <guid>https://wmf.im/p/git%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</guid>
         <description>&lt;p&gt;　　Git 是当之无愧的最流行版本控制软件，虽然相比 SVN 有一些复杂，但是也有很多优点。本篇用于记录在使用 Git 中的心得。&lt;/p&gt;
 &lt;h2 id=&#34;设置代理&#34;&gt;设置代理&lt;/h2&gt;
-&lt;p&gt;　　在 github 设置部署代码的时候，会非常非常慢，成功率完全随缘。Git 支持针对指定网站的代理设置，非常方便。&lt;br&gt;
-　　不管在 Windows 还是 Linux 下，都可以通过在用户目录的根目录下，创建一个 .gitconfig 的文件来配置 Git 的代理。&lt;/p&gt;
+&lt;p&gt;　　在 github 设置部署代码的时候，会非常非常慢，成功率完全随缘。Git 支持针对指定网站的代理设置，非常方便。&lt;/p&gt;
+&lt;h3 id=&#34;https-协议&#34;&gt;HTTPS 协议&lt;/h3&gt;
+&lt;p&gt;　　不管在 Windows 还是 Linux 下，都可以通过在用户目录的根目录下，创建一个 .gitconfig 的文件来配置 Git 的代理。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -26,6 +27,20 @@
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;[http]
 [http &amp;#34;https://github.com&amp;#34;]
     proxy = http://x.x.x.x:xxx
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;ssh-协议&#34;&gt;SSH 协议&lt;/h3&gt;
+&lt;p&gt;　　如果使用 SSH 协议进行 git 操作的话，则需要设置 ssh 程序的代理。在用户的根目录下，ssh 程序会创建一个 .ssh 目录，在 Linux 下是隐藏的。其中的 config 是 ssh 客户端的配置文件，可以增加配置对指定主机设置是否使用代理，设置如下。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;Host github.com
+    User git
+    ProxyCommand connect -H xxx.xxx.xxx.xxx:1234 %h %p
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;h2 id=&#34;设置用户&#34;&gt;设置用户&lt;/h2&gt;

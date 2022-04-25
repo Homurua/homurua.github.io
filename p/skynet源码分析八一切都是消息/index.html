@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　skynet 使用的并发模型是 actor 模型，这就使得两个 actor 之间进行交互的时候全都是通过消息来实现的，而且不单单是 actor 之间交互使用了消息，前文提到的定时调用和网络事件也都是通过消息来通知目标服务的。可以说 skynet 中消息是一切交互的依托形式，本篇会尝试理清楚消息相关的实现。
+'><title>skynet源码分析（八）一切都是消息</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='skynet源码分析（八）一切都是消息'>
+<meta property='og:description' content='　skynet 使用的并发模型是 actor 模型，这就使得两个 actor 之间进行交互的时候全都是通过消息来实现的，而且不单单是 actor 之间交互使用了消息，前文提到的定时调用和网络事件也都是通过消息来通知目标服务的。可以说 skynet 中消息是一切交互的依托形式，本篇会尝试理清楚消息相关的实现。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-14T16:10:16&#43;08:00'/><meta property='article:modified_time' content='2022-02-14T16:10:16&#43;08:00'/>
+<meta name="twitter:title" content="skynet源码分析（八）一切都是消息">
+<meta name="twitter:description" content="　skynet 使用的并发模型是 actor 模型，这就使得两个 actor 之间进行交互的时候全都是通过消息来实现的，而且不单单是 actor 之间交互使用了消息，前文提到的定时调用和网络事件也都是通过消息来通知目标服务的。可以说 skynet 中消息是一切交互的依托形式，本篇会尝试理清楚消息相关的实现。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" style="background-color: #46BDBA; color: #fff;">
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/">skynet源码分析（八）一切都是消息</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 14, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 5 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　skynet 使用的并发模型是 actor 模型，这就使得两个 actor 之间进行交互的时候全都是通过消息来实现的，而且不单单是 actor 之间交互使用了消息，前文提到的定时调用和网络事件也都是通过消息来通知目标服务的。可以说 skynet 中消息是一切交互的依托形式，本篇会尝试理清楚消息相关的实现。</p>
+<h2 id="消息的结构">消息的结构</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_message</span> <span class="p">{</span>
+    <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">;</span> <span class="c1">// 消息源的地址
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">session</span><span class="p">;</span> <span class="c1">// 消息的 session id
+</span><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span> <span class="c1">// 消息的数据
+</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">sz</span><span class="p">;</span> <span class="c1">// 消息的长度和类型，高 8bit 为类型，其余为长度
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　消息的结构非常简单，其中 session 由源服务生成，是给 call 调用提供支持的，如果是 send 消息的话则 session 会被设为 0。</p>
+<h2 id="发送消息">发送消息</h2>
+<p>　　不管是从 Lua 层还是 C 层发送消息，最终调用的接口都是 skynet_send 函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="kt">int</span> <span class="n">skynet_send</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> 
+                <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">,</span>
+                <span class="kt">uint32_t</span> <span class="n">destination</span><span class="p">,</span>
+                <span class="kt">int</span> <span class="n">type</span><span class="p">,</span>
+                <span class="kt">int</span> <span class="n">session</span><span class="p">,</span>
+                <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">size_t</span> <span class="n">sz</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到这是一个参数非常多的函数，但是仔细一看就会发现参数的内容跟上面消息的结构基本上吻合。事实上这个函数做的事情也简单，用参数生成一个 struct skynet_message 结构的消息，然后 push 到目标服务的消息队列中去即可。</p>
+<h2 id="服务消息队列">服务消息队列</h2>
+<p>　　skynet 中的每个服务都有一个 struct message_queue 结构的消息队列，它对应了 actor 模型中的 mailbox，保存着本服务的全部待处理消息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">message_queue</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">lock</span><span class="p">;</span> <span class="c1">// 自旋锁
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span> <span class="c1">// 消息队列所属服务的 handle
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">cap</span><span class="p">;</span> <span class="c1">// 容量，动态长度，可以扩容
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">head</span><span class="p">;</span> <span class="c1">// 消息的头指针
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">tail</span><span class="p">;</span> <span class="c1">// 消息的尾指针
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">release</span><span class="p">;</span> <span class="c1">// 标记是否已经被释放
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">in_global</span><span class="p">;</span> <span class="c1">// 标记是否在全局队列中
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">overload</span><span class="p">;</span> <span class="c1">// 现在的负载
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">overload_threshold</span><span class="p">;</span> <span class="c1">// 超载警告的阈值
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_message</span> <span class="o">*</span><span class="n">queue</span><span class="p">;</span> <span class="c1">// 消息队列数组
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">message_queue</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">// 下一个消息队列，链表结构
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　从成员变量中可以看到消息队列的实现方式。首先它是自带有一个自旋锁的，因为很多线程都有可能同时修改某个服务的消息队列，所以修改的时候都需要加锁。它通过 head，tail，cap 和 queue 组成了一个环形动态长度的数组，初始的容量为 64，当容量不够用时，每次扩容到以前容量的 2 倍。此外消息队列通过 overload 和 overload_threshold 实现了一个负载警告的功能，当拿取消息的时候，如果当前消息数量超过了当前设置的负载阈值，会输出一条服务负载过重的警告信息。</p>
+<h2 id="全局消息队列">全局消息队列</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">global_queue</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">message_queue</span> <span class="o">*</span><span class="n">head</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">message_queue</span> <span class="o">*</span><span class="n">tail</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">lock</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　skynet 中有一个全局的消息队列，当服务的消息队列中有待处理的消息时，它会被放在全局消息队列中来。worker 线程每次就是先从全局消息队列中拿一个服务队列出去，然后处理这个服务消息队列中的消息。<br>
+　　struct global_queue 的结构比较简单，是一个 message_queue 的单向链表。带有一个自旋锁，修改链表要先加锁。</p>
+<h2 id="消息处理">消息处理</h2>
+<h3 id="注册回调函数">注册回调函数</h3>
+<p>　　每个服务都需要有一个回调函数，回调函数被用来处理消息的数据。通过调用 skynet_callback 来注册回调函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="kt">void</span> <span class="n">skynet_callback</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">context</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">ud</span><span class="p">,</span> <span class="n">skynet_cb</span> <span class="n">cb</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　skynet_cb 是一个如下形式的函数指针。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">skynet_cb</span><span class="p">)(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span> <span class="n">context</span><span class="p">,</span> 
+                        <span class="kt">void</span> <span class="o">*</span><span class="n">ud</span><span class="p">,</span> 
+                        <span class="kt">int</span> <span class="n">type</span><span class="p">,</span>
+                        <span class="kt">int</span> <span class="n">session</span><span class="p">,</span>
+                        <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">,</span>
+                        <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span> <span class="n">msg</span><span class="p">,</span>
+                        <span class="n">size_t</span> <span class="n">sz</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　不同的服务有不同的回调函数设置的位置，例如最常用的 snlua 服务会在 lua 脚本中调用 skynet.start 函数，这个函数里面就会把 lua_skynet.c 中的 _cb 设为回调函数。</p>
+<h3 id="数据打包与解包">数据打包与解包</h3>
+<p>　　消息在发送之前有时需要对数据进行打包，比如说要发送的数据是一个 lua table 这种。如果消息的数据有进行过打包的话，那么目标服务在处理消息的时候就需要进行对应的解包操作。<br>
+　　这就要求在消息的发送方和接收方两边对同一个类型的协议有相同的配置，起码 pack 和 unpack 这两个函数一定要可以实现互相转换。一个最常见的例子，在 snlua 服务中，&ldquo;lua&rdquo; 类型的协议的打包和解包函数分别为 skynet.pack 和 skynet.unpack，前者可以把 lua table 转为二进制数据，后者可以把前者转换的结果再次转为 lua table 格式。</p>
+<h3 id="执行消息回调">执行消息回调</h3>
+<p>　　执行回调本身只负责调用注册的回调函数，需要各个服务在回调函数中正确处理自己的业务。回调可以很简单很直接，也可以很复杂。比如在 snlua 服务的回调函数就比较复杂，当消息的回调被调用时，首先调用的是直接注册的 _cb，它会从索引表中取到注册时存进去的 lua 回调函数也就是 skynet.dispatch_message 并且执行它，执行中会根据协议的类型，在 proto 中找到对应的协议类型的参数，从中拿到之前注册过的消息分发函数 dispatch，用它创建一个协程，然后执行协程。</p>
+<h2 id="lua-层接口">Lua 层接口</h2>
+<h3 id="初始化服务">初始化服务</h3>
+<p>　　skynet.start 是绝大部分 snlua 服务会在服务的入口文件里调用的方法。它通过 C 接口，把消息回调函数设为了 _cb，_cb 相当于是一个 wrapper 函数，它会把通过参数传入的 Lua 函数 skynet.dispatch_message 保存在 LUA_REGISTRYINDEX 中，等到 _cb 被调用的时候，它会取出这个函数，把参数传给它，并且调用它。也就是说基本上所有的 snlua 服务都是用的同一个回调函数 skynet.dispatch_message 来处理消息的。<br>
+　　传给 skynet.start 的函数可以看作是初始化函数，一般会在里面调用 skynet.dispatch 来为关心的消息类型指定处理函数。</p>
+<h3 id="注册消息协议">注册消息协议</h3>
+<p>　　可以通过 skynet.register_protocol 来注册一类消息，其中 lua, response 和 error 是在 require skynet 的时候就已经注册过的了，不再需要重复注册。<br>
+　　可以通过调用 skynet.dispatch 来修改某个消息类型的处理函数。在绝大多数 snlua 服务的初始脚本中，都包含对 skynet.dispatch 的调用，比如下面这个就是在注册 &ldquo;lua&rdquo; 协议的消息的回调函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="n">skynet.dispatch</span><span class="p">(</span><span class="s2">&#34;lua&#34;</span><span class="p">,</span> <span class="kr">function</span><span class="p">(...)</span>
+    <span class="c1">-- ...</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　snlua 服务中会维护一个 proto 的 table 用来保存各类协议的数据，其中的数据正是由上文提到的 skynet.register_protocol 注册进来的。一个典型的协议会包含以下几种数据</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="p">{</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&#34;lua&#34;</span><span class="p">,</span>
+    <span class="n">id</span> <span class="o">=</span> <span class="n">skynet.PTYPE_LUA</span><span class="p">,</span>
+    <span class="n">pack</span> <span class="o">=</span> <span class="n">skynet.pack</span><span class="p">,</span>
+    <span class="n">unpack</span> <span class="o">=</span> <span class="n">skynet.unpack</span><span class="p">,</span>
+    <span class="n">dispatch</span> <span class="o">=</span> <span class="kr">function</span><span class="p">()</span> <span class="kr">end</span><span class="p">,</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="发送消息-1">发送消息</h3>
+<p>　　skynet.send 是最常用的消息发送方法，有目标服务的句柄或是名字都可以发送消息。它会根据消息的类型，找到类型对应的打包函数，将其打包，调用 C 层的接口发送出去。<br>
+　　skynet.call 可以理解为类似远程调用的那种感觉，执行以后会挂起本协程，等待目标服务对本消息进行返回以后，会再次从挂起点开始执行。call 的实现深度依赖了 Lua 的协程，发送消息的部分跟 send 是一样的，只是它会拿到 send 返回的 session，同时将 session 和当前运行的协程绑定，然后调用 yield 阻塞当前协程，等待唤醒。</p>
+<h3 id="处理消息">处理消息</h3>
+<p>　　在 skynet.dispatch_message 中可以看到，处理消息是使用 pcall 调用 raw_dispatch_message 来实现的。除了处理消息外，本函数还处理了 fork 相关的调用。<br>
+　　raw_dispatch_message 中，如果消息的类型为 PTYPE_RESPONSE 也就是对 call 调用的回复，则会通过消息的 session 找到之前调用 call 挂起自己的协程，然后把结果通过 resume 传给协程，使其从挂起点之后继续执行。<br>
+　　如果是其它消息类型，则通过类型拿到对应的处理函数，拿到一个新的协程，通过类型指定的解包方法解包数据，然后用协程执行处理函数和消息数据。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十八）热更新操作</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#消息的结构">消息的结构</a></li>
+    <li><a href="#发送消息">发送消息</a></li>
+    <li><a href="#服务消息队列">服务消息队列</a></li>
+    <li><a href="#全局消息队列">全局消息队列</a></li>
+    <li><a href="#消息处理">消息处理</a>
+      <ol>
+        <li><a href="#注册回调函数">注册回调函数</a></li>
+        <li><a href="#数据打包与解包">数据打包与解包</a></li>
+        <li><a href="#执行消息回调">执行消息回调</a></li>
+      </ol>
+    </li>
+    <li><a href="#lua-层接口">Lua 层接口</a>
+      <ol>
+        <li><a href="#初始化服务">初始化服务</a></li>
+        <li><a href="#注册消息协议">注册消息协议</a></li>
+        <li><a href="#发送消息-1">发送消息</a></li>
+        <li><a href="#处理消息">处理消息</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

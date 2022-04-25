@@ -7,11 +7,11 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <lastBuildDate>Mon, 14 Mar 2022 23:12:36 +0800</lastBuildDate><atom:link href="https://wmf.im/tags/skynet/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Skynet笔记（十八）热更新操作</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/</link>
+        <title>skynet源码分析（十八）热更新操作</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/</link>
         <pubDate>Mon, 14 Mar 2022 23:12:36 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/</guid>
         <description>&lt;p&gt;　　Lua 脚本的热更新是快速开发和不停服修复 bug 的重要功能，基本上每个基于 Lua 的框架都会提供。但是因为 skynet 开启了众多的 LuaState 的特殊性，所以它的脚本热更新会跟别的框架有很大区别。本文会尝试讲解 skynet 中热更新的操作。&lt;/p&gt;
 &lt;h2 id=&#34;clearcache&#34;&gt;clearcache&lt;/h2&gt;
 &lt;p&gt;　　通过 debug 后台的 clearcache 指令可以清空进程的 CodeCache 缓存。更新本地文件，并且清空 CodeCache 的操作有时会被用来作为 skynet 热更新的方法。但是由于 CodeCache 清空时并不会修改旧的引用，所以旧的服务并不能用到更新，只有新启动的服务可以用到新的内容。&lt;br&gt;
@@ -140,11 +140,11 @@
 &lt;/div&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十七）ShareTable的实现</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+        <title>skynet源码分析（十七）ShareTable的实现</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
         <pubDate>Sat, 12 Mar 2022 05:42:49 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
         <description>&lt;p&gt;　　因为 skynet 中的每一个 snlua 服务都运行在一个独立的 LuaState 中，所以就存在了数据共享的问题。因为 Lua 本身是不支持跨 LuaState 分享数据的，所以 skynet 通过修改 Lua 实现了这一功能，不过有一些局限，只能共享只读数据。本篇会尝试分析这一功能的实现。&lt;/p&gt;
 &lt;h2 id=&#34;服务&#34;&gt;服务&lt;/h2&gt;
 &lt;p&gt;　　使用 sharetable 的时候会启动一个进程唯一的服务 sharetable，它的内容在 sharetable_service 这个函数中，提供了对共享数据加载，查询，关闭的功能。&lt;/p&gt;
@@ -179,11 +179,11 @@
 　　加上 id 以后的字符串比较方式变为了，首先比较地址，如果不同的话，比较 id，如果 id 不为 0 且相等，也可以直接判定字符串相等。如果 id 的比较也不相等的话，则需要老老实实调用 memcmp 进行一次完整比较，如果完整比较相等的话，会把较小的 id 改为较大的 id，这样下一次比较的时候就可以通过 id 直接判断出相等了。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十六）内存管理</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</link>
+        <title>skynet源码分析（十六）内存管理</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</link>
         <pubDate>Wed, 02 Mar 2022 19:24:25 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/</guid>
         <description>&lt;p&gt;　　skynet 在默认情况下使用了 jemalloc 进行内存分配，这种情况下 skynet 提供了自定义的内存管理函数，本篇会尝试讲解这部分功能的实现。&lt;/p&gt;
 &lt;h2 id=&#34;接口&#34;&gt;接口&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -285,11 +285,11 @@
 　　在内存释放的时候，如果 dogtag 不是 MEMORY_ALLOCTAG，则说明之前的 dogtag 被覆盖掉了，则可以看作是内存越界写入了。如果是 MEMORY_ALLOCTAG 则将 dogtag 设为 MEMORY_FREETAG 来标记它已经被释放了。同时在一开始也会检查 dogtag 是否是 MEMORY_FREETAG，如果是的话，则可以说明存在二次释放的问题。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十五）CodeCache的实现</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+        <title>skynet源码分析（十五）CodeCache的实现</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
         <pubDate>Wed, 02 Mar 2022 19:22:28 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
         <description>&lt;p&gt;　　CodeCache 应该算是 skynet 的一个特色功能了，是用来优化不同 LuaState 加载同一份代码的速度。因为 skynet 大量启动了 LuaState 来作为 Acotr 使用，所以才在重复加载代码上需要这样的优化。本篇会尝试分析 CodeCache 的实现。&lt;/p&gt;
 &lt;h2 id=&#34;作用&#34;&gt;作用&lt;/h2&gt;
 &lt;p&gt;　　首先要了解 CodeCache 解决的是什么问题。简单来说，是在文件第一次加载的时候，将其从磁盘中读取出来，解析完毕以后，把函数原型缓存在一个独立的 LuaState 中。之后其它 LuaState 有加载需求时首先会尝试从缓存中加载，并且函数原型 Proto 可以直接共享缓存中的数据。&lt;br&gt;
@@ -335,11 +335,11 @@
 　　可以看到清空缓存其实清掉的只是函数原型缓存的指针而已，并没有释放掉原来的缓存，只是当下一次加载一个文件的时候，会重新生成缓存而已，之前的服务还是引用的旧的函数原型，既不会更新也不会失效。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十四）协程的使用</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</link>
+        <title>skynet源码分析（十四）协程的使用</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</link>
         <pubDate>Sat, 26 Feb 2022 18:12:59 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/</guid>
         <description>&lt;p&gt;　　skynet 中有不少关键功能都是依赖 Lua 协程实现的，skynet 本身也对 Lua 协程有一些管理。本篇会尝试分析 skynet 中对 Lua 协程的使用方法。&lt;/p&gt;
 &lt;h2 id=&#34;协程池&#34;&gt;协程池&lt;/h2&gt;
 &lt;p&gt;　　一般基于 Lua 的框架都会提供协程的复用，复用可以减少不断创建和销毁协程的开销。协程池是大部分框架的选择，在 skynet 中也是通过协程池实现的协程复用。&lt;br&gt;
@@ -375,11 +375,11 @@
 　　wakeup_queue 中等待唤醒的协程会在消息的处理协程挂起以后，通过 dispatch_wakeup 根据 wakeup 的调用顺序被依次唤醒。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十三）计时器实现</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</link>
+        <title>skynet源码分析（十三）计时器实现</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</link>
         <pubDate>Sat, 26 Feb 2022 18:11:47 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/</guid>
         <description>&lt;p&gt;　　skynet 的定时器采用了时间轮设计，可以高效的处理定时调用，本篇会尝试理清楚定时器的设计思路和实现方法。&lt;/p&gt;
 &lt;h2 id=&#34;时间轮算法&#34;&gt;时间轮算法&lt;/h2&gt;
 &lt;p&gt;　　时间轮是实现高效率定时器的常见算法。虽然经常被形容的很高大上，但是其实时间轮非常好理解，因为它就是取自生活中的例子。&lt;br&gt;
@@ -493,10 +493,10 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;　　当调用 skynet.timeout 的时候，会向时间轮中加入一个定时节点。处理过程中会首先创建一个 timer_event 结构的变量，然后调用 timer_add 创建一个 timer_node 结构变量，并且把 timer_event 变量的内存直接追加到了 timer_node 变量的内存后面。timer_node 的 expire 会设为 timer.time + 定时的时间。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node.jpg&#34;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node.jpg&#34;
 	width=&#34;643&#34;
 	height=&#34;296&#34;
-	srcset=&#34;https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_1024x0_resize_q75_box.jpg 1024w&#34;
+	srcset=&#34;https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/timer_node_hu920df33549b56e3d4dbc59a68d7fc4f1_60507_1024x0_resize_q75_box.jpg 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;timer_node&#34;
@@ -559,11 +559,11 @@
     &gt;issue&lt;/a&gt; 说了这个原因，timer 不需要关注 skynet 的用法实现。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十二）集群</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/</link>
+        <title>skynet源码分析（十二）集群</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/</link>
         <pubDate>Sat, 26 Feb 2022 18:11:13 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%8C%E9%9B%86%E7%BE%A4/</guid>
         <description>&lt;p&gt;　　skynet 中支持 harbor 和 cluster 两种方式实现集群，本篇主要讨论 cluster，原因是我个人比较喜欢 cluster 这种方式，XD&lt;/p&gt;
 &lt;h2 id=&#34;配置&#34;&gt;配置&lt;/h2&gt;
 &lt;p&gt;　　集群功能需要各个远程主机的配置，这个配置可以通过在 config 文件中指定 cluster 变量为一个配置文件的路径来实现，也可以通过 cluster.reload 来加载。&lt;br&gt;
@@ -604,11 +604,11 @@
 　　在消息分发函数中，第一次向某个服务发消息之前会去 clusterd 中根据名字查询服务地址，查到以后会保存下来，以后不会再次查询。当名字有变更的时候，clusterd 会发送 namechange 消息给 clusteragent 来变更名字。因为数据已经打包过了，所以这一步的发送不再需要打包数据了，发送消息使用的是 rawsend 和 rawcall 即可。使用对应方法直接把消息转给通过服务名字查询到的服务地址。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十一）netpack分析</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/</link>
+        <title>skynet源码分析（十一）netpack分析</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/</link>
         <pubDate>Sat, 26 Feb 2022 18:08:38 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%80netpack%E5%88%86%E6%9E%90/</guid>
         <description>&lt;p&gt;　　netpack 提供的是网络基础数据包的打包和解包功能，是网络输出传输绕不开的一个点。本篇会尝试分析一下 netpack 的实现。&lt;/p&gt;
 &lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
 &lt;p&gt;　　netpack 中一共提供了 5 个 Lua 接口。pack 用来打包数据，tostring 用来将一个二进制数据转化为字符串，filter 用来将数据按照类型整理，clear 用来清空待处理数据的队列，pop 用来从待处理队列中弹出一个网络包。&lt;/p&gt;
@@ -686,11 +686,11 @@
 &lt;p&gt;　　用来清空整个队列的方法，在 gateserver 中被放在了 CMD 的 __gc 元方法中。会遍历清空 queue 中的 hash 和 queue 这两个结构，释放每一个数据的内存。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（十）网络分析</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/</link>
+        <title>skynet源码分析（十）网络分析</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/</link>
         <pubDate>Fri, 18 Feb 2022 14:53:02 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E7%BD%91%E7%BB%9C%E5%88%86%E6%9E%90/</guid>
         <description>&lt;p&gt;　　网络相关的部分是我感觉 skynet 中最复杂的部分了，本篇中会尝试尽量完整的分析到网络相关的大部分功能的实现原理。&lt;/p&gt;
 &lt;h2 id=&#34;线程模型&#34;&gt;线程模型&lt;/h2&gt;
 &lt;p&gt;　　skynet 使用的是多线程 reactor 模型，有一条 socket 线程用来处理 epoll 事件分发，多条 worker 线程来执行事件。&lt;br&gt;
@@ -1111,11 +1111,11 @@ Q query info&lt;/p&gt;
 　　读取到数据以后，转化成消息，给 socket 的源服务发送一条 SKYNET_SOCKET_TYPE_DATA 类型的消息。这个消息会触发网络分包，通过 netpack.filter 进行分包，分包值得单开一篇文章细说一下，此处先一笔带过。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（九）snlua服务详解</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B9%9Dsnlua%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</link>
+        <title>skynet源码分析（九）snlua服务详解</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%9Dsnlua%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</link>
         <pubDate>Tue, 15 Feb 2022 03:10:34 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B9%9Dsnlua%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%9Dsnlua%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</guid>
         <description>&lt;p&gt;　　snlua 服务绝对是 skynet 中最重要的服务了，是一切 lua 服务的原型，也是 99% 情况下业务中使用的服务。本篇会讲解一下 snlua 服务的实现。&lt;/p&gt;
 &lt;h2 id=&#34;结构&#34;&gt;结构&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -1204,11 +1204,11 @@ Q query info&lt;/p&gt;
 &lt;p&gt;　　snlua 中还实现了 profile 的功能，通过在脚本中调用 profile.start 和 profile.stop 来拿到中间的时间间隔。实现是通过在 start 的时候创建一个 start_time 变量，在 stop 的时候计算时间间隔。中间涉及协程的调用时，也是通过自定义的 resume 函数来实现的，在 resume 协程之前和之后，分别记录时间，将其汇总到总时间中去。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（八）一切都是消息</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/</link>
+        <title>skynet源码分析（八）一切都是消息</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/</link>
         <pubDate>Mon, 14 Feb 2022 16:10:16 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%AB%E4%B8%80%E5%88%87%E9%83%BD%E6%98%AF%E6%B6%88%E6%81%AF/</guid>
         <description>&lt;p&gt;　　skynet 使用的并发模型是 actor 模型，这就使得两个 actor 之间进行交互的时候全都是通过消息来实现的，而且不单单是 actor 之间交互使用了消息，前文提到的定时调用和网络事件也都是通过消息来通知目标服务的。可以说 skynet 中消息是一切交互的依托形式，本篇会尝试理清楚消息相关的实现。&lt;/p&gt;
 &lt;h2 id=&#34;消息的结构&#34;&gt;消息的结构&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -1396,11 +1396,11 @@ Q query info&lt;/p&gt;
 　　如果是其它消息类型，则通过类型拿到对应的处理函数，拿到一个新的协程，通过类型指定的解包方法解包数据，然后用协程执行处理函数和消息数据。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（七）各种线程的作用</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/</link>
+        <title>skynet源码分析（七）各种线程的作用</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/</link>
         <pubDate>Sun, 13 Feb 2022 17:36:02 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/</guid>
         <description>&lt;p&gt;　　skynet 进程中一共有五种线程，主线程、monitor 线程、timer 线程、socket 线程和 worker 线程。每种线程各司其职，本篇会讲述一下各种线程的作用。&lt;/p&gt;
 &lt;h2 id=&#34;主线程&#34;&gt;主线程&lt;/h2&gt;
 &lt;p&gt;　　skynet 中的主线程只负责初始化整个进程，在前篇讲启动流程的时候，那些流程都是发生在主线程中的。它不参与业务的处理，在初始化完所有的全局变量以后，它按配置创建出了剩下的四种线程，并且等待全部线程的结束。&lt;/p&gt;
@@ -1536,11 +1536,11 @@ Q query info&lt;/p&gt;
 　　当 worker 线程已经从全局队列中取不到服务队列时，它会锁上 monitor 结构的锁，然后累加休眠的线程数 sleep，并且使用 pthread_cond_wait 将线程阻塞在 monitor.cond 上，等待 socket 线程或是 timer 线程唤醒。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（六）handle的管理</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/</link>
+        <title>skynet源码分析（六）handle的管理</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/</link>
         <pubDate>Sat, 12 Feb 2022 03:10:43 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%85%ADhandle%E7%9A%84%E7%AE%A1%E7%90%86/</guid>
         <description>&lt;p&gt;　　handle 作为服务的句柄，在 skynet 的消息发送和消息处理中都起到了不可或缺的作用。handle 的管理模块主要提供了 “通过 handle 查询服务地址” 和 “通过服务名字查询 handle” 这两个功能。本篇来讨论一下 skynet 是如何对 handle 进行管理的。&lt;/p&gt;
 &lt;h2 id=&#34;管理器结构&#34;&gt;管理器结构&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -1637,11 +1637,11 @@ Q query info&lt;/p&gt;
 &lt;p&gt;　　因为 &lt;strong&gt;name&lt;/strong&gt; 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（五）认识服务</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%BA%94%E8%AE%A4%E8%AF%86%E6%9C%8D%E5%8A%A1/</link>
+        <title>skynet源码分析（五）认识服务</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%BA%94%E8%AE%A4%E8%AF%86%E6%9C%8D%E5%8A%A1/</link>
         <pubDate>Fri, 11 Feb 2022 17:19:18 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%BA%94%E8%AE%A4%E8%AF%86%E6%9C%8D%E5%8A%A1/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%BA%94%E8%AE%A4%E8%AF%86%E6%9C%8D%E5%8A%A1/</guid>
         <description>&lt;p&gt;　　skynet 是一个 actor 模型的消息框架，每个 actor 在 skynet 中就是一个服务。服务可以说是 skynet 中最重要的概念，本篇会介绍 skynet 中的服务。&lt;/p&gt;
 &lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
 &lt;p&gt;　　skynet 中的服务是基于上文中前文中提到的 module 在创建的，module 为服务提供了私有数据的存储位置。服务作为一个 acotr，拥有自己的消息队列，可以向别的服务发送消息，也可以接收别的服务的消息并把消息交给消息回调函数进行处理。&lt;/p&gt;
@@ -1773,11 +1773,11 @@ Q query info&lt;/p&gt;
 　　这个过程能不能简化呢？在 C 语言中很难实现，如果是 C++ 的话，可以考虑强制要求服务一定要有名字，然后使用一个 unordered_map 把服务的名字和地址对应起来，发送消息的时候也只能通过名字来指定目标服务，这样可以简化掉 handle 这个转化过程，但是也加了不小的限制。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（四）认识module</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%9B%9B%E8%AE%A4%E8%AF%86module/</link>
+        <title>skynet源码分析（四）认识module</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%9B%9B%E8%AE%A4%E8%AF%86module/</link>
         <pubDate>Thu, 10 Feb 2022 23:36:55 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E5%9B%9B%E8%AE%A4%E8%AF%86module/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%9B%9B%E8%AE%A4%E8%AF%86module/</guid>
         <description>&lt;p&gt;　　module 是 skynet 中一切 actor 的基石，每个 actor 的本质都是一种 module 的具象化。本篇会讲解跟 module 有关的内容。&lt;/p&gt;
 &lt;h2 id=&#34;概述&#34;&gt;概述&lt;/h2&gt;
 &lt;p&gt;　　skynet 自带了四个 module, 在 service-src 目录下面每个 service_xxx.c 的文件是一个对应的 module. 编译完成之后，module 所在的目录是 cservice, 目录下的 xxx.so 就是对应的 module 动态库。启动一个服务的操作其实就是启动一个 module 实例，比如最常见的 lua 层的服务，就全部都是 service_snlua 的实例。&lt;/p&gt;
@@ -1860,11 +1860,11 @@ Q query info&lt;/p&gt;
 　　创建过程中，会首先调用 module 的 create 接口创建出一份私有数据，然后再调用 init 接口初始化这份数据。在释放的时候会调用 release 接口释放这份数据。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（三）bootstrap服务详解</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%89bootstrap%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</link>
+        <title>skynet源码分析（三）bootstrap服务详解</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%89bootstrap%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</link>
         <pubDate>Thu, 10 Feb 2022 23:02:50 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%89bootstrap%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%89bootstrap%E6%9C%8D%E5%8A%A1%E8%AF%A6%E8%A7%A3/</guid>
         <description>&lt;p&gt;　　上文写到在 skynet 进程启动过程中，bootstrap 函数会读取传入的配置文件中 bootstrap 对应的项加载启动脚本，其中 bootstrap 一般的配置为 &amp;ldquo;snlua bootstrap&amp;rdquo;, 在执行中实际操作就是启动一个 snlua 服务，启动参数为 bootstrap.&lt;/p&gt;
 &lt;h2 id=&#34;执行步骤&#34;&gt;执行步骤&lt;/h2&gt;
 &lt;ol&gt;
@@ -1892,11 +1892,11 @@ Q query info&lt;/p&gt;
 &lt;p&gt;　　主要为两个功能提供服务，第一个是 UniqueService, 第二个是 snax. 它会把自己注册成 &amp;ldquo;.service&amp;rdquo; 的名字，可以提供全局服务的名字查询和全局服务创建的功能&lt;/p&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（二）启动流程</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%BA%8C%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</link>
+        <title>skynet源码分析（二）启动流程</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%BA%8C%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</link>
         <pubDate>Thu, 10 Feb 2022 16:24:34 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%BA%8C%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%BA%8C%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/</guid>
         <description>&lt;p&gt;　　本篇大概讲一下 skynet 进程的启动流程，完全了解启动流程基本上也就明白了 skynet 的原理了，本篇会大概提到全部的启动流程。&lt;/p&gt;
 &lt;h2 id=&#34;main&#34;&gt;main&lt;/h2&gt;
 &lt;ol&gt;
@@ -1941,11 +1941,11 @@ Q query info&lt;/p&gt;
 &lt;/ol&gt;</description>
         </item>
         <item>
-        <title>Skynet笔记（一）目录结构</title>
-        <link>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</link>
+        <title>skynet源码分析（一）目录结构</title>
+        <link>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</link>
         <pubDate>Thu, 10 Feb 2022 15:33:55 +0800</pubDate>
         
-        <guid>https://wmf.im/p/skynet%E7%AC%94%E8%AE%B0%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</guid>
+        <guid>https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%80%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/</guid>
         <description>&lt;p&gt;　　要学习 skynet 源码，首先需要了解源码的文件分布，skynet 的源码排布还是很有规范的，利于了学习。本篇会以 1.4.0 版本的 skynet 源码为准，对各个文件夹其中包含的代码做一个大致的说明。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;3rd&lt;/strong&gt; 使用的第三方库

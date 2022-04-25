@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　Lua 脚本的热更新是快速开发和不停服修复 bug 的重要功能，基本上每个基于 Lua 的框架都会提供。但是因为 skynet 开启了众多的 LuaState 的特殊性，所以它的脚本热更新会跟别的框架有很大区别。本文会尝试讲解 skynet 中热更新的操作。
+'><title>skynet源码分析（十八）热更新操作</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='skynet源码分析（十八）热更新操作'>
+<meta property='og:description' content='　Lua 脚本的热更新是快速开发和不停服修复 bug 的重要功能，基本上每个基于 Lua 的框架都会提供。但是因为 skynet 开启了众多的 LuaState 的特殊性，所以它的脚本热更新会跟别的框架有很大区别。本文会尝试讲解 skynet 中热更新的操作。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-03-14T23:12:36&#43;08:00'/><meta property='article:modified_time' content='2022-03-14T23:12:36&#43;08:00'/>
+<meta name="twitter:title" content="skynet源码分析（十八）热更新操作">
+<meta name="twitter:description" content="　Lua 脚本的热更新是快速开发和不停服修复 bug 的重要功能，基本上每个基于 Lua 的框架都会提供。但是因为 skynet 开启了众多的 LuaState 的特殊性，所以它的脚本热更新会跟别的框架有很大区别。本文会尝试讲解 skynet 中热更新的操作。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" style="background-color: #46BDBA; color: #fff;">
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/">skynet源码分析（十八）热更新操作</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Mar 14, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 3 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　Lua 脚本的热更新是快速开发和不停服修复 bug 的重要功能，基本上每个基于 Lua 的框架都会提供。但是因为 skynet 开启了众多的 LuaState 的特殊性，所以它的脚本热更新会跟别的框架有很大区别。本文会尝试讲解 skynet 中热更新的操作。</p>
+<h2 id="clearcache">clearcache</h2>
+<p>　　通过 debug 后台的 clearcache 指令可以清空进程的 CodeCache 缓存。更新本地文件，并且清空 CodeCache 的操作有时会被用来作为 skynet 热更新的方法。但是由于 CodeCache 清空时并不会修改旧的引用，所以旧的服务并不能用到更新，只有新启动的服务可以用到新的内容。<br>
+　　因为这样的特性，导致了这种方法使用范围比较窄。如果服务本身就是不断创建和销毁的，那就可以直接用，旧的服务会按照以前的逻辑执行完毕，新的服务会直接用新的逻辑。比如像一些副本之类的功能可能就会这样设计，每个副本都对应了一个为它提供支持的服务，副本开始时创建服务，结束时销毁服务。<br>
+　　还有一类服务也可以用这种方法热更新，就是无状态的服务。虽然旧的服务没办法被更新，但是因为是无状态服务，所以可以直接启动等量的新服务，然后让别的服务都把消息发送到新服务，旧的服务销毁即可。但是 skynet 并不提供相关的支持，要自己实现这类功能。</p>
+<h2 id="sharetable">sharetable</h2>
+<p>　　sharetable 是 skynet 提供的一种可以在不同 LuaState 中共享只读数据的操作，一般在项目中用于共享策划配置表数据。<br>
+　　sharetable 中的数据可以进行热更新，针对同一份文件再次执行 loadfile 即可重新加载该文件，然后要在所有需要更新数据的服务里执行 sharetable.update 实现数据更新。</p>
+<h2 id="inject">inject</h2>
+<p>　　inject 是 skynet 提供的可以用于热更新的后台指令，它的特点比较鲜明，用起来比较麻烦，但是理论上可以覆盖所有情况。<br>
+　　inject 会把该服务的 skynet.dispatch_message 和 skynet.register_protocol 这两个函数所有的 upvalue 作为 env 传给通过 load 加载的注入脚本，_U 是这两个函数的 upvalue，_P 是按协议类型分类的分发函数的 upvalue，想要替换任何函数或者是 upvalue 都需要自己在脚本中处理。<br>
+　　这里给出一个尽量简单的例子，用来修改 example 里的 simpledb 服务，将 GET 改为每获取一次为原 value 后面追加一个 &ldquo;A&rdquo; 字母。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="kd">local</span> <span class="kr">function</span> <span class="nf">getupvalues</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+    <span class="kr">if</span> <span class="ow">not</span> <span class="n">func</span> <span class="kr">then</span> <span class="kr">return</span> <span class="kr">end</span>
+    <span class="kd">local</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="kr">while</span> <span class="kc">true</span> <span class="kr">do</span>
+        <span class="kd">local</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">debug.getupvalue</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="kr">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">target</span> <span class="kr">then</span>
+            <span class="kr">return</span> <span class="n">value</span>
+        <span class="kr">end</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="kr">end</span>
+<span class="kr">end</span>
+
+<span class="kd">local</span> <span class="n">command</span> <span class="o">=</span> <span class="n">_P.lua</span><span class="p">.</span><span class="n">command</span>
+<span class="kd">local</span> <span class="n">db</span> <span class="o">=</span> <span class="n">getupvalues</span><span class="p">(</span><span class="n">command.GET</span><span class="p">,</span> <span class="s2">&#34;db&#34;</span><span class="p">)</span>
+
+<span class="n">command.GET</span> <span class="o">=</span> <span class="kr">function</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="n">db</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">..</span> <span class="s2">&#34;A&#34;</span>
+    <span class="kr">return</span> <span class="n">db</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<span class="kr">end</span>
+
+<span class="n">print</span> <span class="s2">&#34;inject success!!&#34;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　首先使用任意 telnet 程序连上 skynet 的 debug 后台，这里要注意一下如果在启动 debug_console 时不指定监听地址的话，debug_console 默认监听的地址是 127.0.0.1，这样的话不能从远端连接该端口。<br>
+　　输入 list，让 skynet 列出当前进程所有服务的地址。然后使用 inject 命令，指定目标服务的地址和要注入的脚本地址即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Console" data-lang="Console"><span class="gp">$ </span>nc 127.0.0.1 <span class="m">8000</span>
+<span class="go">Welcome to skynet console
+</span><span class="go">list
+</span><span class="go">:01000004       snlua cmaster
+</span><span class="go">:01000005       snlua cslave
+</span><span class="go">:01000007       snlua datacenterd
+</span><span class="go">:01000008       snlua service_mgr
+</span><span class="go">:0100000a       snlua protoloader
+</span><span class="go">:0100000b       snlua console
+</span><span class="go">:0100000c       snlua debug_console 8000
+</span><span class="go">:0100000d       snlua simpledb
+</span><span class="go">:0100000e       snlua watchdog
+</span><span class="go">:0100000f       snlua gate
+</span><span class="go">&lt;CMD OK&gt;
+</span><span class="go">inject :0100000d examples/injectsimpledb.lua
+</span><span class="go">inject success!!
+</span><span class="go">&lt;CMD OK&gt;
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　成功注入以后，启动客户端，向 simpledb 发送 GET 命令。可以看到成功返回，并且每次返回的值都在原来的值后面追加了一个 &ldquo;A&rdquo; 字母。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Console" data-lang="Console"><span class="go">hello
+</span><span class="go">result  worldA
+</span><span class="go">hello
+</span><span class="go">result  worldAA
+</span><span class="go">hello
+</span><span class="go">result  worldAAA
+</span><span class="go">hello
+</span><span class="go">result  worldAAAA
+</span></code></pre></td></tr></table>
+</div>
+</div>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%89%E8%AE%A1%E6%97%B6%E5%99%A8%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十三）计时器实现</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#clearcache">clearcache</a></li>
+    <li><a href="#sharetable">sharetable</a></li>
+    <li><a href="#inject">inject</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

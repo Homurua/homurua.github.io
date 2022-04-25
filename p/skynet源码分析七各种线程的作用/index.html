@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　skynet 进程中一共有五种线程，主线程、monitor 线程、timer 线程、socket 线程和 worker 线程。每种线程各司其职，本篇会讲述一下各种线程的作用。
+'><title>skynet源码分析（七）各种线程的作用</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='skynet源码分析（七）各种线程的作用'>
+<meta property='og:description' content='　skynet 进程中一共有五种线程，主线程、monitor 线程、timer 线程、socket 线程和 worker 线程。每种线程各司其职，本篇会讲述一下各种线程的作用。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:published_time' content='2022-02-13T17:36:02&#43;08:00'/><meta property='article:modified_time' content='2022-02-13T17:36:02&#43;08:00'/>
+<meta name="twitter:title" content="skynet源码分析（七）各种线程的作用">
+<meta name="twitter:description" content="　skynet 进程中一共有五种线程，主线程、monitor 线程、timer 线程、socket 线程和 worker 线程。每种线程各司其职，本篇会讲述一下各种线程的作用。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" style="background-color: #46BDBA; color: #fff;">
+                skynet笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B8%83%E5%90%84%E7%A7%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E4%BD%9C%E7%94%A8/">skynet源码分析（七）各种线程的作用</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Feb 13, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　skynet 进程中一共有五种线程，主线程、monitor 线程、timer 线程、socket 线程和 worker 线程。每种线程各司其职，本篇会讲述一下各种线程的作用。</p>
+<h2 id="主线程">主线程</h2>
+<p>　　skynet 中的主线程只负责初始化整个进程，在前篇讲启动流程的时候，那些流程都是发生在主线程中的。它不参与业务的处理，在初始化完所有的全局变量以后，它按配置创建出了剩下的四种线程，并且等待全部线程的结束。</p>
+<h2 id="monitor-结构">monitor 结构</h2>
+<p>　　在介绍其余线程之前，首先要看一个结构体 monitor，它跟后面介绍的 monitor 线程同名，但是并不是其专用的数据，而是穿插在所有的线程中使用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">monitor</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">count</span><span class="p">;</span> <span class="c1">// worker 线程的总数
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="o">**</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全部的线程 monitor 指针
+</span><span class="c1"></span>    <span class="n">pthread_cond_t</span> <span class="n">cond</span><span class="p">;</span> <span class="c1">// 给 worker 线程挂起用的全局条件
+</span><span class="c1"></span>    <span class="n">pthread_mutex_t</span> <span class="n">mutex</span><span class="p">;</span> <span class="c1">// 有锁结构
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sleep</span><span class="p">;</span> <span class="c1">// 睡眠的 worker 线程数量
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">quit</span><span class="p">;</span> <span class="c1">// 退出标记
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　monitor 结构体变量每个进程只有一个，可以看到它是一个有锁的结构，这里可以发现一个与其它地方明显的区别，锁直接使用了 pthread 库的 mutex 来做，而没有用 skynet 中更常用的 spinlock 来实现，主要是因为要配合 cond 来做线程挂起。</p>
+<h2 id="monitor-线程">monitor 线程</h2>
+<h3 id="作用">作用</h3>
+<p>　　monitor 线程的功能比较简单，monitor 顾名思义就是监控，它监控的就是所有 worker 线程的工作状态，如果 worker 线程在处理一条消息的时候用时太久了，monitor 线程会打印出一条错误日志，告诉开发者一条从 A 服务到 B 服务的消息的处理逻辑中可能有死循环存在。</p>
+<h3 id="实现">实现</h3>
+<p>　　每个 worker 线程都有一个与之绑定的 skynet_monitor 的变量，它负责记录的本 worker 线程的检查状态。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="p">{</span>
+    <span class="n">ATOM_INT</span> <span class="n">version</span><span class="p">;</span> <span class="c1">// 原子 version
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">check_version</span><span class="p">;</span> <span class="c1">// 上次检查时的 version
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">;</span> <span class="c1">// 当前处理的消息的源 handle
+</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">destination</span><span class="p">;</span> <span class="c1">// 当前处理的消息的目标 handle
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　每次当 worker 线程开始处理一条消息的时候，它会修改自己对应的 skynet_monitor 中变量的值。其中 version 会被一直累加，source 和 destination 设为当前处理的消息的源地址和目标地址。<br>
+　　线程的主函数会进入到一个无限循环中，在循环中，每 5s 会检查一次每个 worker 线程的 skynet_monitor 中的值。如果 version 和 check_version 不相等，则把 check_version 设为 version，如果相等，则说明从上次检查到这次检查也就是 5s 之内，worker 线程都在处理同一条消息。这时候就认为这个 worker 线程可能已经陷入了死循环中。把目标服务的 endless 属性设为 true，然后输出一条错误日志警告开发者。</p>
+<h2 id="timer-线程">timer 线程</h2>
+<h3 id="作用-1">作用</h3>
+<p>　　timer 线程主要负责了两件事情，更新系统的当前时间和唤醒一个睡眠的 worker 线程。前者是为了给时间的获取接口提供时间返回值，以及执行定时任务，后者是让之前因为没有取到消息处理而睡眠的 worker 线程再次尝试去处理消息。</p>
+<h3 id="自己计时的意义">自己计时的意义</h3>
+<p>　　计时的实现很简单，记录了一个进程的开始时间 starttime 和一个进程从开始到现在经过的时间 current 来完成当前时间的计算，每经过 2.5ms 将 current 的值更新一次。<br>
+　　之所以要框架自己实现计时的原因主要有两个。首先，业务逻辑中取时间是一个经常有的操作，而 lua 标准库中的取时间的接口 os.time 的实现是用的系统调用 time 来做的，这个系统调用会使进程进入内核态，大量使用的话效率堪忧。而 skynet 每个 tick 更新时间是调用的 clock_gettime，这个接口可以说不是系统接口，或者说是因为 linux 的 vdso 机制使这个接口可以很高效的频繁调用。第二个原因是自己实现的计时不会被系统时间影响，在进程执行的过程中如果系统时间被改掉了，自己实现的计时器还是会按以前的步骤执行，这样可以避免一些问题的发生，比如定时器的触发问题。</p>
+<h3 id="定时器的实现">定时器的实现</h3>
+<p>　　skynet 中定时器的计时是使用时间轮算法来实现的，时间轮是一个被广泛用于实现高效率定时器的算法，linux kernel 的定时器也是使用时间轮算法实现的。<br>
+　　skynet.timeout 是 skynet 提供的定时调用接口，它首先拿到一个新的 session 用于接收定时器的唤醒，然后创建一个包裹了等待执行的函数的协程，把协程跟 session 关联起来，然后用 session 和自己的 handle 创建一个 struct timer_event 加入到时间轮中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">timer_event</span> <span class="p">{</span>
+    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">session</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　等待时间轮转动到了指定的时间点以后，从里面取出这个 timer_event 结构体变量，使用其中的 session 来创建一条 PTYPE_RESPONSE 类型的消息，将消息 push 到目标 handle 的消息队列里。等 worker 线程处理这条消息时，根据 session 拿到对应的 co 执行它，一个定时器的调用就完成了。</p>
+<h2 id="socket-线程">socket 线程</h2>
+<h3 id="作用-2">作用</h3>
+<p>　　socket 线程主要做了三件事，接收并且处理 socket 命令，处理 epoll 事件，然后如果当前全部的 worker 线程都在睡眠中，则唤醒其中的一个。<br>
+　　需要注意的是，本线程并不会去执行任何 epoll 事件，所有事件都是转换成一条 PTYPE_SOCKET 类型的消息，发送给与相关 socket 绑定的服务。<br>
+　　socket 线程的具体实现比较复杂，后面会专门开一篇网络专文，此处只大概讲一下作用，具体实现暂时略过。</p>
+<h2 id="worker-线程">worker 线程</h2>
+<h3 id="作用-3">作用</h3>
+<p>　　worker 线程顾名思义，就是处理逻辑的主力线程了。它只做一件事情，处理消息。它会尝试去全局队列中拿到一个服务队列，然后再根据自己的负载参数，处理其中一定比例的消息。如果拿不到消息队列，会把自己投入睡眠中，等待 timer 线程或是 socket 线程唤醒自己。</p>
+<h3 id="数量">数量</h3>
+<p>　　worker 线程是这几类线程中唯一可以通过 config 中的配置参数修改线程数量的。一般把 worker 线程的数量设置为本机的 cpu 核心数即可。</p>
+<h3 id="工作参数">工作参数</h3>
+<p>　　每个 worker 线程有一个属于自己的参数结构体 worker_parm，用来保存一些本线程的参数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">worker_parm</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">monitor</span> <span class="o">*</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全局 monitor 的引用
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 线程ID
+</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">weight</span><span class="p">;</span> <span class="c1">// 工作权重
+</span><span class="c1"></span><span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　其中 weight 表示的是工作权重，目的是为了尽量让不同的 worker 线程的步骤不一样，从而减轻在全局消息队列那里的锁竞争问题。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="kt">int</span> <span class="n">weight</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　worker 线程在拿到服务的消息队列以后，会把队列长度 n &raquo;= weight 来得到本次要处理的消息数量。所以前四个线程每次只处理一条消息，后面的四个每次处理队列中的全部消息，再后面分别是每次处理总长度的 1/2，1/4，1/8 条消息，32 以后的 worker 线程的 weight 一律为 0，也就是每次处理消息队列中的全部消息。</p>
+<h3 id="实现-1">实现</h3>
+<p>　　只要还要服务没有退出，worker 线程会一直尝试去全局队列中取服务队列并且处理其中的消息，在 skynet_context_message_dispatch 中可以看到具体的实现。<br>
+　　通过调用 skynet_globalmq_pop 从全局队列中取出一个服务队列，全局队列是个链表，此处加锁以后，从链表头部取出即可。<br>
+　　拿到服务消息队列以后，需要从里面拿取消息，并且处理。这个过程在一个循环中，循环的次数跟本线程的工作权重 weight 有关，通过计算当前队列中待处理的消息总长度 n &raquo;= weight 得到本次要处理的消息条数。<br>
+　　dispatch_message 用来处理消息，通过移位拿到消息的类型和长度，累加处理消息计数，然后调用 context 的 callback 函数进行处理。<br>
+　　本轮消息处理完毕以后，会尝试获取一个新的服务队列，如果能拿到，不管当前处理的队列中还有没有剩余消息，都会把当前队列 push 回全局队列中，如果拿不到，则继续处理本队列，即使它其中已经没有消息了。<br>
+　　如果一开始拿到的要处理的服务队列中本来就没有消息的话，则会把其 in_global 参数设为 0，且不会将其放回全局队列中，而是会尝试从全局队列中再拿取一个队列返回，来进行下一次的处理。这个没有消息也没有在全局队列中的服务队列会一直保持这个状态，直到下一次有其它服务向其发送消息，这时候会重新把其 in_global 参数设为 MQ_IN_GLOBAL，并把其 push 回全局队列中。<br>
+　　当 worker 线程已经从全局队列中取不到服务队列时，它会锁上 monitor 结构的锁，然后累加休眠的线程数 sleep，并且使用 pthread_cond_wait 将线程阻塞在 monitor.cond 上，等待 socket 线程或是 timer 线程唤醒。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十八）热更新操作</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#主线程">主线程</a></li>
+    <li><a href="#monitor-结构">monitor 结构</a></li>
+    <li><a href="#monitor-线程">monitor 线程</a>
+      <ol>
+        <li><a href="#作用">作用</a></li>
+        <li><a href="#实现">实现</a></li>
+      </ol>
+    </li>
+    <li><a href="#timer-线程">timer 线程</a>
+      <ol>
+        <li><a href="#作用-1">作用</a></li>
+        <li><a href="#自己计时的意义">自己计时的意义</a></li>
+        <li><a href="#定时器的实现">定时器的实现</a></li>
+      </ol>
+    </li>
+    <li><a href="#socket-线程">socket 线程</a>
+      <ol>
+        <li><a href="#作用-2">作用</a></li>
+      </ol>
+    </li>
+    <li><a href="#worker-线程">worker 线程</a>
+      <ol>
+        <li><a href="#作用-3">作用</a></li>
+        <li><a href="#数量">数量</a></li>
+        <li><a href="#工作参数">工作参数</a></li>
+        <li><a href="#实现-1">实现</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>
