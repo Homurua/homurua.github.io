@@ -15,6 +15,14 @@
         <description>&lt;p&gt;　　90后，游戏后端开发&lt;br&gt;
 　　主要技术栈：C、Lua、Linux&lt;br&gt;
 　　邮箱：&lt;a class=&#34;link&#34; href=&#34;mailto:i@wmf.im&#34; &gt;i@wmf.im&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;　　本站页面使用 &lt;a class=&#34;link&#34; href=&#34;https://gohugo.io/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Hugo&lt;/a&gt; 生成，主题采用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/CaiJimmy/hugo-theme-stack&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;hugo-theme-stack&lt;/a&gt;&lt;br&gt;
+　　Markdown 编辑使用 &lt;a class=&#34;link&#34; href=&#34;https://code.visualstudio.com/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Visual Studio Code&lt;/a&gt; with &lt;a class=&#34;link&#34; href=&#34;https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Markdown All in One&lt;/a&gt;&lt;br&gt;
+　　图片绘制使用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/jgraph/drawio&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;draw.io&lt;/a&gt;&lt;/p&gt;
 </description>
         </item>
         <item>

@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　由于在游戏服务器的架构中，大部分的进程都是有状态的，所以就非常依赖热更新。Lua 方便的热更新是其得以在手游后端开发中大量使用的重要原因，本篇来讲一下我了解过的 Lua 的一些代码加载和热更新方式。
+'><title>Lua 的代码加载和热更新方式</title>
+
+<link rel='canonical' href='https://wmf.im/p/lua-%E7%9A%84%E4%BB%A3%E7%A0%81%E5%8A%A0%E8%BD%BD%E5%92%8C%E7%83%AD%E6%9B%B4%E6%96%B0%E6%96%B9%E5%BC%8F/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='Lua 的代码加载和热更新方式'>
+<meta property='og:description' content='　由于在游戏服务器的架构中，大部分的进程都是有状态的，所以就非常依赖热更新。Lua 方便的热更新是其得以在手游后端开发中大量使用的重要原因，本篇来讲一下我了解过的 Lua 的一些代码加载和热更新方式。
+'>
+<meta property='og:url' content='https://wmf.im/p/lua-%E7%9A%84%E4%BB%A3%E7%A0%81%E5%8A%A0%E8%BD%BD%E5%92%8C%E7%83%AD%E6%9B%B4%E6%96%B0%E6%96%B9%E5%BC%8F/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='lua' /><meta property='article:published_time' content='2022-04-10T22:56:27&#43;08:00'/><meta property='article:modified_time' content='2022-04-10T22:56:27&#43;08:00'/>
+<meta name="twitter:title" content="Lua 的代码加载和热更新方式">
+<meta name="twitter:description" content="　由于在游戏服务器的架构中，大部分的进程都是有状态的，所以就非常依赖热更新。Lua 方便的热更新是其得以在手游后端开发中大量使用的重要原因，本篇来讲一下我了解过的 Lua 的一些代码加载和热更新方式。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/lua%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/" style="background-color: #1398C2; color: #fff;">
+                Lua编程笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/lua-%E7%9A%84%E4%BB%A3%E7%A0%81%E5%8A%A0%E8%BD%BD%E5%92%8C%E7%83%AD%E6%9B%B4%E6%96%B0%E6%96%B9%E5%BC%8F/">Lua 的代码加载和热更新方式</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 10, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 6 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　由于在游戏服务器的架构中，大部分的进程都是有状态的，所以就非常依赖热更新。Lua 方便的热更新是其得以在手游后端开发中大量使用的重要原因，本篇来讲一下我了解过的 Lua 的一些代码加载和热更新方式。</p>
+<h2 id="加载模块">加载模块</h2>
+<h3 id="dofile">dofile</h3>
+<p>　　使用 dofile 进行代码加载是最简单粗暴的，在进程启动的时候，直接将本进程所有要用到的脚本文件使用 dofile 加载进来。<br>
+　　如果需要重新加载，那么就对修改过的文件再次执行 dofile 重新加载一次。但是这样加载有一个不好的地方，就是每个文件都要有一个全局变量的 Table，而且如果这个 Table 被别的文件里使用 local 引用了，那么即使重新 dofile 加载一次，原来的引用还是保存了原先那个 Table 的地址。</p>
+<h3 id="loadfile">loadfile</h3>
+<p>　　使用 loadfile 加载文件，会得到一个中间函数，这个中间函数执行完就跟直接调用 dofile 加载效果是一样的了。但是因为有了一个中间函数，就有一些操作的机会。<br>
+　　可以使用 setfenv 将加载结果的函数放在一个新创建的 Table 中执行，这样既解决了需要全局变量的问题，也解决了别的地方引用的问题。给出一个简单的实现方法。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="kd">local</span> <span class="n">modules</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="kr">function</span> <span class="nf">import</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">reload</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">filefunc</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="kr">if</span> <span class="ow">not</span> <span class="n">modules</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span> <span class="kr">then</span>
+        <span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">setmetatable</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">{</span><span class="n">__index</span> <span class="o">=</span> <span class="n">_G</span><span class="p">})</span>
+        <span class="kd">local</span> <span class="n">wrapfunc</span> <span class="o">=</span> <span class="n">setfenv</span><span class="p">(</span><span class="n">filefunc</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="n">wrapfunc</span><span class="p">()</span>
+        <span class="n">modules</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span>
+        <span class="kr">return</span> <span class="n">m</span>
+    <span class="kr">else</span>
+        <span class="kr">if</span> <span class="n">reload</span> <span class="kr">then</span>
+            <span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
+            <span class="kd">local</span> <span class="n">wrapfunc</span> <span class="o">=</span> <span class="n">setfenv</span><span class="p">(</span><span class="n">filefunc</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+            <span class="n">wrapfunc</span><span class="p">()</span>
+            <span class="kr">return</span> <span class="n">m</span>
+        <span class="kr">else</span>
+            <span class="kr">return</span> <span class="n">modules</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
+        <span class="kr">end</span>
+    <span class="kr">end</span>
+<span class="kr">end</span>
+
+<span class="kd">local</span> <span class="n">xxx</span> <span class="o">=</span> <span class="n">import</span><span class="p">(</span><span class="s2">&#34;xxx.lua&#34;</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　需要注意的是，因为 Lua 底层机制的改变，setfenv 在 Lua5.2 及以后就废除了，不过也可以通过 _ENV 模拟出来，<a class="link" href="https://leafo.net/guides/setfenv-in-lua52-and-above.html"  target="_blank" rel="noopener"
+    >Implementing setfenv in Lua 5.2, 5.3, and above</a>。</p>
+<h3 id="require">require</h3>
+<p>　　require 是 Lua 官方提供的加载模块的接口，不仅可以加载 Lua 模块，也可以加载 C 模块。它加载过的模块会被放在 package.loaded 中，对同一个模块第二次加载，不会重复加载，会直接返回旧的模块给调用者。<br>
+　　需要重新加载的时候需要首先将 package.loaded 中对应模块设为 nil，然后再次执行 require。但是这样也有一个问题，那就是如果在某个地方使用 local 变量引用了 require 的结果，那么更新以后它引用的还是旧的模块。</p>
+<h2 id="热更新">热更新</h2>
+<p>　　重新加载模块并不是完整的热更新，热更新需要在重新加载模块的时候做很多处理，对各个类型的变量进行有选择性的保留或是覆盖。下面来说一下各个种类的变量要怎么处理。</p>
+<h3 id="外部变量">外部变量</h3>
+<p>　　外部变量包括了模块中的全局变量和 return 出来的局部变量。它们比较容易处理，因为外部可以直接读取到，区分它们处理方式的是它们有没有被外部引用。<br>
+　　如果不需要处理它们的外部引用，那么一般将整个文件重新加载即可。重新加载以后文件中的变量都会被覆盖掉，如果需要保留部分旧值的话，可以在重新加载之前在外部获取并且保存这些旧值，然后在重新加载之后，再次恢复这些旧值即可。<br>
+　　如果需要处理它们的外部引用，那么就需要使用热更新脚本，在原地址上进行修改。</p>
+<h3 id="局部变量">局部变量</h3>
+<p>　　局部变量如果不需要保留的话，那就不用额外处理了，局部变量在外部都是以函数的 upvalue 形式存在的，重新加载以后函数会使用新的 upvalue，跟以前的值没关系。如果要保留以前值的话，那就要将旧的 upvalue 赋值给新的 upvalue。<br>
+　　upvalue 的处理大概是热更新中最麻烦的部分，这部分因为要处理的问题跟实际情况的关联很强，所以除非在开发过程中就有一些强制规范约束，否则基本上不太可能实现类似一键更新这种操作。对于这种情况一般采用的方法需要每次为热更编写一个脚本，然后将需要修改的内容全部收集起来，使用 load 加载热更脚本，收集的内容作为 loadfile 的 env 参数传入。<br>
+　　处理 upvalue 的时候需要使用到一些 debug 库的方法。</p>
+<ul>
+<li>debug.getinfo 用来获得函数信息，可以通过使用 debug.getinfo(func, &ldquo;u&rdquo;) 获得函数信息中与 upvalue 相关的部分。</li>
+<li>debug.getupvalue 可以获得指定函数指定序号的 upvalue 的 name 和 value。</li>
+<li>debug.setupvalue 可以增加函数的 upvalue。</li>
+<li>debug.upvalueid 可以得到指定函数指定序号的 upvalue 的一个唯一标识符，可以用来判断两个函数引用的 upvalue 是否是同一个值。</li>
+<li>debug.upvaluejoin 让一个闭包中的某个 upvalue 引用另一个闭包的某个 upvalue。</li>
+</ul>
+<p>　　要实现 upvalue 的保留关键就是通过上述的 api 拿到想要保留的旧函数 upvalue 的值，然后再赋值给新函数的 upvalue。<br>
+　　收集 upvalue 的方法可以参考 skynet 中 <a class="link" href="https://github.com/cloudwu/skynet/blob/master/lualib/skynet/inject.lua"  target="_blank" rel="noopener"
+    >inject</a> 的实现稍作修改，将 number 和 string 类型的 upvalue 也加入进来。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="kd">local</span> <span class="kr">function</span> <span class="nf">getupvaluetable</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">unique</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="kr">while</span> <span class="kc">true</span> <span class="kr">do</span>
+        <span class="kd">local</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">debug.getupvalue</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="kr">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">nil</span> <span class="kr">then</span>
+            <span class="kr">return</span>
+        <span class="kr">end</span>
+        <span class="kd">local</span> <span class="n">t</span> <span class="o">=</span> <span class="n">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="kr">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&#34;table&#34;</span> <span class="ow">or</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&#34;number&#34;</span> <span class="ow">or</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&#34;string&#34;</span> <span class="kr">then</span>
+            <span class="n">u</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="kr">elseif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&#34;function&#34;</span> <span class="kr">then</span>
+            <span class="kr">if</span> <span class="ow">not</span> <span class="n">unique</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="kr">then</span>
+                <span class="n">unique</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span>
+                <span class="n">getupvaluetable</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">unique</span><span class="p">)</span>
+            <span class="kr">end</span>
+        <span class="kr">end</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="kr">end</span>
+<span class="kr">end</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　收集到以后的修改就非常自由了，既可以把模块整个重新加载一遍，然后将保存的 upvalue 还原，也可以在原来模块的基础上直接修改函数。一般为了避免其它地方引用的问题，所以还是在原地址上直接修改函数的比较多。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="c1">-- m.lua</span>
+<span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="kd">local</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="kr">function</span> <span class="nc">m</span><span class="p">.</span><span class="nf">add</span><span class="p">()</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">&#34;a&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+<span class="kr">end</span>
+
+<span class="kr">return</span> <span class="n">m</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　来看一个简单的例子，在 m.add 被执行几次以后，需要进行热更修改，将 a 每次增加的值改为 2，并且需要延续之前 a 的值。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="c1">-- hotfix.lua</span>
+<span class="kd">local</span> <span class="n">a</span> <span class="o">=</span> <span class="n">u.a</span>
+<span class="n">m.add</span> <span class="o">=</span> <span class="kr">function</span><span class="p">()</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">2</span>
+    <span class="n">print</span><span class="p">(</span><span class="s2">&#34;a&#34;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+<span class="kr">end</span>
+
+<span class="c1">-- main.lua</span>
+<span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="n">require</span> <span class="s2">&#34;m&#34;</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 2</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 3</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 4</span>
+
+<span class="kd">local</span> <span class="n">u</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="kd">local</span> <span class="n">unique</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">getupvaluetable</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">m.add</span><span class="p">,</span> <span class="n">unique</span><span class="p">)</span>
+<span class="kd">local</span> <span class="n">env</span> <span class="o">=</span> <span class="n">setmetatable</span><span class="p">({</span><span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="p">},</span> <span class="p">{</span><span class="n">__index</span> <span class="o">=</span> <span class="n">_ENV</span><span class="p">})</span>
+<span class="n">loadfile</span><span class="p">(</span><span class="s2">&#34;./hotfix.lua&#34;</span><span class="p">,</span> <span class="s2">&#34;bt&#34;</span><span class="p">,</span> <span class="n">env</span><span class="p">)()</span>
+
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 6</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 8</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到，热更脚本从环境中拿到传进来的 upvalue 直接赋值即可，旧的 m.add 函数和其 upvalue a 都被换成了新的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="kd">local</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="kd">local</span> <span class="n">step</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="kr">function</span> <span class="nc">m</span><span class="p">.</span><span class="nf">add</span><span class="p">()</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="kr">end</span>
+
+<span class="kr">function</span> <span class="nc">m</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="n">s</span>
+<span class="kr">end</span>
+
+<span class="kr">return</span> <span class="n">m</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　再来看一个稍微复杂一点的情况，这次再加一个函数，目标是将 add 改成 a = a + step，并且 step 变成两个函数的公共 upvalue，也就是说再次调用 m.set 修改 step 以后，m.add 可以直接使用新的值，而不需要再次热更。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="c1">-- hotfix.lua</span>
+<span class="kd">local</span> <span class="n">a</span> <span class="o">=</span> <span class="n">u.a</span>
+<span class="kd">local</span> <span class="n">step</span> <span class="o">=</span> <span class="n">u.step</span>
+<span class="n">m.add</span> <span class="o">=</span> <span class="kr">function</span><span class="p">()</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">step</span>
+<span class="kr">end</span>
+
+<span class="n">debug.upvaluejoin</span><span class="p">(</span><span class="n">m.add</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">m.set</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1">-- main.lua</span>
+<span class="kd">local</span> <span class="n">m</span> <span class="o">=</span> <span class="n">require</span> <span class="s2">&#34;m&#34;</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 2</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 3</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 4</span>
+
+<span class="kd">local</span> <span class="n">u</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="kd">local</span> <span class="n">unique</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">getupvaluetable</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">m.add</span><span class="p">,</span> <span class="n">unique</span><span class="p">)</span>
+<span class="n">getupvaluetable</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">m.set</span><span class="p">,</span> <span class="n">unique</span><span class="p">)</span>
+<span class="kd">local</span> <span class="n">env</span> <span class="o">=</span> <span class="n">setmetatable</span><span class="p">({</span><span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="p">},</span> <span class="p">{</span><span class="n">__index</span> <span class="o">=</span> <span class="n">_ENV</span><span class="p">})</span>
+<span class="n">loadfile</span><span class="p">(</span><span class="s2">&#34;./hotfix.lua&#34;</span><span class="p">,</span> <span class="s2">&#34;bt&#34;</span><span class="p">,</span> <span class="n">env</span><span class="p">)()</span>
+
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 14</span>
+<span class="n">m.set</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">m.add</span><span class="p">()</span> <span class="c1">-- a = 114</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　这里最关键的一步是使用了 debug.upvaluejoin，将 m.add 的第二个 upvalue step 与 m.set 的第一个 upvalue step 进行了关联，可以看到热更过以后，再次调用 m.add 此时累加的步长已经变成了 step 的当前值 10，调用 m.set 将 step 设为 100 以后，再次调用 m.add，累加的步长变成了 100。</p>
+<h3 id="旧的对象">旧的对象</h3>
+<p>　　Lua 中的面向对象是使用元表的 __index 方法模拟出来的，创建出来的对象只有修改过的数据和函数是自己的，未修改过的数据和函数都是使用的类定义的提供的。<br>
+　　得益于这种实现方法，Lua 中热更新一个类的成员函数基本上不需要做什么额外处理，直接在原函数的位置上修改即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Lua" data-lang="Lua"><span class="c1">-- c.lua</span>
+<span class="kd">local</span> <span class="n">c</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="p">}</span>
+
+<span class="kr">function</span> <span class="nc">c</span><span class="p">:</span><span class="nf">new</span><span class="p">()</span>
+    <span class="kr">return</span> <span class="n">setmetatable</span><span class="p">({},</span> <span class="p">{</span><span class="n">__index</span> <span class="o">=</span> <span class="n">self</span><span class="p">})</span>
+<span class="kr">end</span>
+
+<span class="kr">function</span> <span class="nc">c</span><span class="p">:</span><span class="nf">add</span><span class="p">()</span>
+    <span class="n">self.count</span> <span class="o">=</span> <span class="n">self.count</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="kr">end</span>
+
+<span class="kr">return</span> <span class="n">c</span>
+
+<span class="c1">-- hotfix.lua</span>
+<span class="n">c.add</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">self</span><span class="p">)</span>
+    <span class="n">self.count</span> <span class="o">=</span> <span class="n">self.count</span> <span class="o">+</span> <span class="mi">10</span>
+<span class="kr">end</span>
+
+<span class="c1">-- main.lua</span>
+<span class="kd">local</span> <span class="n">c</span> <span class="o">=</span> <span class="n">require</span> <span class="s2">&#34;c&#34;</span>
+<span class="kd">local</span> <span class="n">o1</span> <span class="o">=</span> <span class="n">c</span><span class="p">:</span><span class="n">new</span><span class="p">()</span>
+<span class="n">o1</span><span class="p">:</span><span class="n">add</span><span class="p">()</span> <span class="c1">-- o1.count = 2</span>
+
+<span class="n">loadfile</span><span class="p">(</span><span class="s2">&#34;./hotfix.lua&#34;</span><span class="p">,</span> <span class="s2">&#34;bt&#34;</span><span class="p">,</span> <span class="n">setmetatable</span><span class="p">({</span><span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="p">},</span> <span class="p">{</span><span class="n">__index</span> <span class="o">=</span> <span class="n">_ENV</span><span class="p">}))()</span>
+
+<span class="n">o1</span><span class="p">:</span><span class="n">add</span><span class="p">()</span> <span class="c1">-- o1.count = 12</span>
+
+<span class="kd">local</span> <span class="n">o2</span> <span class="o">=</span> <span class="n">c</span><span class="p">:</span><span class="n">new</span><span class="p">()</span>
+<span class="n">o2</span><span class="p">:</span><span class="n">add</span><span class="p">()</span> <span class="c1">-- o1.count == 11</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到在热更过以后，不管是热更之前创建的旧对象还是热更以后创建的新对象，执行的都是更新过的逻辑。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/lua/">lua</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/%E5%A6%82%E4%BD%95%E5%B0%86%E4%B8%80%E4%B8%AA-lua-table-%E5%BA%8F%E5%88%97%E5%8C%96/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">如何将一个 Lua Table 序列化</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%BA%8C%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Lua源码笔记（二）数据类型</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/lua%E6%BA%90%E7%A0%81%E7%AC%94%E8%AE%B0%E4%B8%80%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">Lua源码笔记（一）代码结构</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#加载模块">加载模块</a>
+      <ol>
+        <li><a href="#dofile">dofile</a></li>
+        <li><a href="#loadfile">loadfile</a></li>
+        <li><a href="#require">require</a></li>
+      </ol>
+    </li>
+    <li><a href="#热更新">热更新</a>
+      <ol>
+        <li><a href="#外部变量">外部变量</a></li>
+        <li><a href="#局部变量">局部变量</a></li>
+        <li><a href="#旧的对象">旧的对象</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>
