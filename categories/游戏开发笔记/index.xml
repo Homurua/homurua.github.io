@@ -14,7 +14,6 @@
         <guid>https://wmf.im/p/%E6%B5%85%E8%B0%88%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD%E7%9A%84%E6%B5%AE%E7%82%B9%E6%95%B0%E4%B8%8E%E5%AE%9A%E7%82%B9%E6%95%B0/</guid>
         <description>&lt;p&gt;　　使用浮点数表示小数在各种开发中都非常常用，但是在游戏开发中有一些场合需要使用整数来模拟定点数代替浮点数表示小数，本篇会简单讲解这两种表示小数方法的区别和使用场景。&lt;/p&gt;
 &lt;h2 id=&#34;浮点数&#34;&gt;浮点数&lt;/h2&gt;
-&lt;h3 id=&#34;定义&#34;&gt;定义&lt;/h3&gt;
 &lt;p&gt;　　现行的浮点数通用运算标准是由 IEEE 委员会在上世纪八十年代制定的，被称为 IEEE 754 标准，它规定了浮点数需要使用 $v$ = $(-1)^s$ * $f$ * $2^e$ 的形式来表示一个小数：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;s 代表符号位（sign），当 s 为 1 时 v 是负数，s 为 0 时 v 是正数。&lt;/li&gt;
@@ -36,7 +35,6 @@
 		data-flex-basis=&#34;1805px&#34;
 	
 &gt;&lt;/p&gt;
-&lt;h3 id=&#34;跨平台&#34;&gt;跨平台&lt;/h3&gt;
 &lt;p&gt;　　虽然有了 IEEE 754 标准，但是各家在实现上还是有一些区别，尤其是舍入规则上。这导致了跨平台，尤其是跨 CPU 架构的情况下，执行同一个浮点数计算得到的结果可能不一样。相关内容可以参考这篇回答，&lt;a class=&#34;link&#34; href=&#34;https://stackoverflow.com/questions/20963419/cross-platform-floating-point-consistency&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;Cross Platform Floating Point Consistency&lt;/a&gt;。&lt;br&gt;
 　　由于大部分情况下的开发都不太需要浮点数满足跨平台一致性，所以一般功能的日常开发并无什么影响，但是游戏开发中如果使用了帧同步技术的话，微小的计算差异可能会被慢慢累积，最后变得使得多端的状态不一致。&lt;/p&gt;
