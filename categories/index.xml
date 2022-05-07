@@ -6,21 +6,21 @@
         <description>Recent content in Categories on 放学后茶会</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
-        <lastBuildDate>Sun, 10 Apr 2022 22:56:27 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Fri, 15 Apr 2022 09:21:57 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>游戏开发笔记</title>
+        <link>https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/</link>
+        <pubDate>Fri, 15 Apr 2022 09:21:57 +0800</pubDate>
+        
+        <guid>https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/</guid>
+        <description>&lt;img src="https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/game_dev.jpg" alt="Featured image of post 游戏开发笔记" /&gt;</description>
+        </item>
+        <item>
         <title>Lua编程笔记</title>
         <link>https://wmf.im/categories/lua%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/</link>
         <pubDate>Sun, 10 Apr 2022 22:56:27 +0800</pubDate>
         
         <guid>https://wmf.im/categories/lua%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/</guid>
         <description>&lt;img src="https://wmf.im/categories/lua%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/lua_source.jpg" alt="Featured image of post Lua编程笔记" /&gt;</description>
-        </item>
-        <item>
-        <title>游戏开发笔记</title>
-        <link>https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/</link>
-        <pubDate>Fri, 08 Apr 2022 22:38:27 +0800</pubDate>
-        
-        <guid>https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/</guid>
-        <description>&lt;img src="https://wmf.im/categories/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E7%AC%94%E8%AE%B0/game_dev.jpg" alt="Featured image of post 游戏开发笔记" /&gt;</description>
         </item>
         <item>
         <title>网络编程笔记</title>
@@ -53,6 +53,14 @@
         
         <guid>https://wmf.im/categories/%E6%9D%82%E8%B0%88/</guid>
         <description>&lt;img src="https://wmf.im/categories/%E6%9D%82%E8%B0%88/talk.jpg" alt="Featured image of post 杂谈" /&gt;</description>
+        </item>
+        <item>
+        <title>C编程笔记</title>
+        <link>https://wmf.im/categories/c%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/</link>
+        <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+        
+        <guid>https://wmf.im/categories/c%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/</guid>
+        <description>&lt;img src="https://wmf.im/categories/c%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/c_program.jpg" alt="Featured image of post C编程笔记" /&gt;</description>
         </item>
         
     </channel>
