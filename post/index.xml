@@ -872,6 +872,178 @@
 　　在游戏开发中寻路是个偏前端的问题，除了 SLG 游戏以外，寻路一般都是在前端实现的，后端只会拿前端得到的路径判断一下点的合法性就行了。但是寻路算法的复杂性还并不是这些算法的理解，而是要搞定策划的需求，很多时候高效简洁的实现可能无法满足策划的想法，要在算法的基础上做各种贴近业务的定制化修改。&lt;/p&gt;</description>
         </item>
         <item>
+        <title>内存对齐</title>
+        <link>https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/</link>
+        <pubDate>Sat, 02 Apr 2022 12:16:57 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/</guid>
+        <description>&lt;p&gt;　　内存对齐是操作系统为了可以让 CPU 高效读取内存中的数据采用的一种策略，它使得数据在内存中都按一定的规则排列。本篇来解释一下内存对齐。&lt;/p&gt;
+&lt;h2 id=&#34;为什么需要对齐&#34;&gt;为什么需要对齐&lt;/h2&gt;
+&lt;p&gt;　　计算机一般使用字节（byte）作为最小可寻址的内存单位，内存中的每个字节都有一个唯一的数字标识，也就是它的地址了，通常使用一个十六进制的数来表示。如果是占用多个字节内存的数据，则它的地址就是所使用字节中最小的地址。&lt;br&gt;
+　　虽然字节是最小可寻址单位，但是并不是 CPU 的最小读取单位。CPU 从内存中读取数据时需要通过 cache 来作为中间层，会根据目标地址首先在 cache 中找，如果找不到，就会首先从内存加载数据到 cache 中，然后再读取。单次从内存加载到 cache 的数据大小叫做 cache line，它的大小跟硬件有关，一般是 16 到 256 字节。在 Linux 下可以很方便查询这个值，下面给出两种查询方法，可以看到在我本地的平台上这个长度是 64 字节。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-Shell&#34; data-lang=&#34;Shell&#34;&gt;$ cat /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size
+&lt;span class=&#34;m&#34;&gt;64&lt;/span&gt;
+
+$ getconf LEVEL1_DCACHE_LINESIZE
+&lt;span class=&#34;m&#34;&gt;64&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　CPU 在使用数据时，需要再次从 cache 中加载内容到寄存器里，这个步骤每次加载的最大长度是一个字长（word size），字长的大小等于我们常说的 xx 位 CPU 的那个数字，常用的 64 位 CPU 的字长就是 64 比特，也就是 8 个字节。当要处理大于 8 个字节的数据时，CPU 需要多次加载处理。&lt;br&gt;
+　　到这里铺垫已经结束了，但是还没有回答真正的问题，因为不管一次读多少，只要按字节来读就可以了，并不需要对齐。比如一个 long 类型变量地址是 6，长度是 8，那 CPU 从 6 开始读 8 个字节就可以了，并不会有什么问题。&lt;br&gt;
+　　真正导致需要内存对齐的原因是，内存条的编址方式导致了 CPU 无法从指定位置开始访问。因为内存条的 IO 采用了多个颗粒并行执行，逻辑上连续的 8 个字节其实是分布在 8 个不同的 bank 上，并行读取可以为内存的访问加速。内存条寻址的规则就是以 8 个字节为单位的，这就导致了 CPU 也只能以 8 个字节为粒度进行读取，且起始地址也要是 8 的倍数。来看一个例子。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align.jpg&#34;
+	width=&#34;1806&#34;
+	height=&#34;786&#34;
+	srcset=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_huc8dd876172758c362556d8267a682a8a_117086_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_huc8dd876172758c362556d8267a682a8a_117086_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;memory_align&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;229&#34;
+		data-flex-basis=&#34;551px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　如上图所示，假设一个占用 8 字节的 long 类型整数存放在内存中，如果使用第一张图中的存放方式的话，那么在 64 位环境下，需要读取两次，分别是 0 - 7 字节 和 8 - 15 字节，两次组合才能得到该数字。如果它对齐到 8 的倍数的地址，那么一次读取即可完成。&lt;/p&gt;
+&lt;h2 id=&#34;实现&#34;&gt;实现&lt;/h2&gt;
+&lt;h3 id=&#34;对齐的规则&#34;&gt;对齐的规则&lt;/h3&gt;
+&lt;p&gt;　　内存对齐的规则大概可以总结为四点：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;对于内置类型，只要它的地址是它长度的整数倍即可。&lt;/li&gt;
+&lt;li&gt;对于 struct，其中的每个数据都要对齐，struct 本身也要向其中最大的那个数据对齐。&lt;/li&gt;
+&lt;li&gt;对于 union，按照其中最长的那个数据对齐。&lt;/li&gt;
+&lt;li&gt;对于数组，无需特殊处理，因为其中每一个数据都对齐了，数组本身就对齐了。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;对齐的操作&#34;&gt;对齐的操作&lt;/h3&gt;
+&lt;p&gt;　　在 struct 中，如果内存紧密排布可能会出现其中一些数据无法对齐的情况。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;double&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　比如结构体 s，如果紧密排布的话，i 占用 0 - 3 字节，d 占用 4 - 11 字节，这样就导致了 d 没有对齐。所以会在 i 和 d 之间增加一个填充部分（padding），长度为 4 字节，使 i 和 d 都对齐。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct.jpg&#34;
+	width=&#34;1326&#34;
+	height=&#34;786&#34;
+	srcset=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_hu085fb6d0f263fc4bf7213581dc4137ba_103471_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_hu085fb6d0f263fc4bf7213581dc4137ba_103471_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;memory_align_struct&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;168&#34;
+		data-flex-basis=&#34;404px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　可以看到填充部分的增加使结构体中每一个数据都对齐了，但是也浪费了一部分的内存。当使用 sizeof 查询 s 的长度时，得到的结果是 16 字节。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;double&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　如果将 d 和 i 的顺序反过来，情况会有所不同，虽然看起来 d 和 i 都对齐了，但是它本身的长度为 12 字节，没有对 8 字节对齐，需要在它的末尾追加一个 8 字节的填充部分。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2.jpg&#34;
+	width=&#34;1326&#34;
+	height=&#34;786&#34;
+	srcset=&#34;https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2_hu085fb6d0f263fc4bf7213581dc4137ba_104101_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2_hu085fb6d0f263fc4bf7213581dc4137ba_104101_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;memory_align_struct_2&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;168&#34;
+		data-flex-basis=&#34;404px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　使用 sizeof 查询 s 的长度可以发现它的长度依然是 16 字节。&lt;/p&gt;
+&lt;h2 id=&#34;优化内存占用&#34;&gt;优化内存占用&lt;/h2&gt;
+&lt;p&gt;　　可以看到因为填充部分的存在，如果我们设计 struct 时随意写数据的顺序可能会造成一定程度的空间浪费，而当熟悉对齐的规则时就可以排布出一个最省内存的顺序。来看一道 CSAPP 上的题目。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;   &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;a&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;short&lt;/span&gt;   &lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;double&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; 
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;float&lt;/span&gt;   &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;long&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;g&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;     &lt;span class=&#34;n&#34;&gt;h&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;rec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　rec 当前以 8 字节对齐，长度为 56 字节。其中为了让 c 对齐在 b 和 c 之间有一个 6 字节的填充，为了让 e 对齐在 d 和 e 之间有一个 3 字节的填充，为了让 g 对齐在 f 和 g 之间有一个 7 字节的填充，为了让整个 rec 对齐在 h 后面还有一个 4 字节的填充。一共 36 字节的结构，多使用了 20 字节的填充，浪费率比较惊人。下面来重排一下它的顺序。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;rec&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;   &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;a&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;double&lt;/span&gt;  &lt;span class=&#34;n&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; 
+    &lt;span class=&#34;kt&#34;&gt;long&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;g&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;float&lt;/span&gt;   &lt;span class=&#34;n&#34;&gt;e&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt;     &lt;span class=&#34;n&#34;&gt;h&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;short&lt;/span&gt;   &lt;span class=&#34;n&#34;&gt;b&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;d&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt;    &lt;span class=&#34;n&#34;&gt;f&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　经过重排以后，可以发现数据之间已经完全不需要填充部分了，不过因为 rec 要向 8 字节对齐，所以最后的 4 字节填充是必不可少的。重排以后的长度为 40 字节，减少了 16 字节的空间浪费。&lt;/p&gt;</description>
+        </item>
+        <item>
         <title>如何将一个 Lua Table 序列化</title>
         <link>https://wmf.im/p/%E5%A6%82%E4%BD%95%E5%B0%86%E4%B8%80%E4%B8%AA-lua-table-%E5%BA%8F%E5%88%97%E5%8C%96/</link>
         <pubDate>Thu, 31 Mar 2022 02:18:47 +0800</pubDate>

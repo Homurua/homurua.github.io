@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　内存对齐是操作系统为了可以让 CPU 高效读取内存中的数据采用的一种策略，它使得数据在内存中都按一定的规则排列。本篇来解释一下内存对齐。
+'><title>内存对齐</title>
+
+<link rel='canonical' href='https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='内存对齐'>
+<meta property='og:description' content='　内存对齐是操作系统为了可以让 CPU 高效读取内存中的数据采用的一种策略，它使得数据在内存中都按一定的规则排列。本篇来解释一下内存对齐。
+'>
+<meta property='og:url' content='https://wmf.im/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='内存对齐' /><meta property='article:published_time' content='2022-04-02T12:16:57&#43;08:00'/><meta property='article:modified_time' content='2022-04-02T12:16:57&#43;08:00'/>
+<meta name="twitter:title" content="内存对齐">
+<meta name="twitter:description" content="　内存对齐是操作系统为了可以让 CPU 高效读取内存中的数据采用的一种策略，它使得数据在内存中都按一定的规则排列。本篇来解释一下内存对齐。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/c/c&#43;&#43;%E7%BC%96%E7%A8%8B%E7%AC%94%E8%AE%B0/" style="background-color: #c494ee; color: #fff;">
+                C/C&#43;&#43;编程笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/">内存对齐</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Apr 02, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 4 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　内存对齐是操作系统为了可以让 CPU 高效读取内存中的数据采用的一种策略，它使得数据在内存中都按一定的规则排列。本篇来解释一下内存对齐。</p>
+<h2 id="为什么需要对齐">为什么需要对齐</h2>
+<p>　　计算机一般使用字节（byte）作为最小可寻址的内存单位，内存中的每个字节都有一个唯一的数字标识，也就是它的地址了，通常使用一个十六进制的数来表示。如果是占用多个字节内存的数据，则它的地址就是所使用字节中最小的地址。<br>
+　　虽然字节是最小可寻址单位，但是并不是 CPU 的最小读取单位。CPU 从内存中读取数据时需要通过 cache 来作为中间层，会根据目标地址首先在 cache 中找，如果找不到，就会首先从内存加载数据到 cache 中，然后再读取。单次从内存加载到 cache 的数据大小叫做 cache line，它的大小跟硬件有关，一般是 16 到 256 字节。在 Linux 下可以很方便查询这个值，下面给出两种查询方法，可以看到在我本地的平台上这个长度是 64 字节。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Shell" data-lang="Shell">$ cat /sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size
+<span class="m">64</span>
+
+$ getconf LEVEL1_DCACHE_LINESIZE
+<span class="m">64</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　CPU 在使用数据时，需要再次从 cache 中加载内容到寄存器里，这个步骤每次加载的最大长度是一个字长（word size），字长的大小等于我们常说的 xx 位 CPU 的那个数字，常用的 64 位 CPU 的字长就是 64 比特，也就是 8 个字节。当要处理大于 8 个字节的数据时，CPU 需要多次加载处理。<br>
+　　到这里铺垫已经结束了，但是还没有回答真正的问题，因为不管一次读多少，只要按字节来读就可以了，并不需要对齐。比如一个 long 类型变量地址是 6，长度是 8，那 CPU 从 6 开始读 8 个字节就可以了，并不会有什么问题。<br>
+　　真正导致需要内存对齐的原因是，内存条的编址方式导致了 CPU 无法从指定位置开始访问。因为内存条的 IO 采用了多个颗粒并行执行，逻辑上连续的 8 个字节其实是分布在 8 个不同的 bank 上，并行读取可以为内存的访问加速。内存条寻址的规则就是以 8 个字节为单位的，这就导致了 CPU 也只能以 8 个字节为粒度进行读取，且起始地址也要是 8 的倍数。来看一个例子。</p>
+<p><img src="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align.jpg"
+	width="1806"
+	height="786"
+	srcset="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_huc8dd876172758c362556d8267a682a8a_117086_480x0_resize_q75_box.jpg 480w, /p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_huc8dd876172758c362556d8267a682a8a_117086_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="memory_align"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="229"
+		data-flex-basis="551px"
+	
+></p>
+<p>　　如上图所示，假设一个占用 8 字节的 long 类型整数存放在内存中，如果使用第一张图中的存放方式的话，那么在 64 位环境下，需要读取两次，分别是 0 - 7 字节 和 8 - 15 字节，两次组合才能得到该数字。如果它对齐到 8 的倍数的地址，那么一次读取即可完成。</p>
+<h2 id="实现">实现</h2>
+<h3 id="对齐的规则">对齐的规则</h3>
+<p>　　内存对齐的规则大概可以总结为四点：</p>
+<ol>
+<li>对于内置类型，只要它的地址是它长度的整数倍即可。</li>
+<li>对于 struct，其中的每个数据都要对齐，struct 本身也要向其中最大的那个数据对齐。</li>
+<li>对于 union，按照其中最长的那个数据对齐。</li>
+<li>对于数组，无需特殊处理，因为其中每一个数据都对齐了，数组本身就对齐了。</li>
+</ol>
+<h3 id="对齐的操作">对齐的操作</h3>
+<p>　　在 struct 中，如果内存紧密排布可能会出现其中一些数据无法对齐的情况。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">s</span><span class="p">{</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+    <span class="kt">double</span> <span class="n">d</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　比如结构体 s，如果紧密排布的话，i 占用 0 - 3 字节，d 占用 4 - 11 字节，这样就导致了 d 没有对齐。所以会在 i 和 d 之间增加一个填充部分（padding），长度为 4 字节，使 i 和 d 都对齐。</p>
+<p><img src="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct.jpg"
+	width="1326"
+	height="786"
+	srcset="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_hu085fb6d0f263fc4bf7213581dc4137ba_103471_480x0_resize_q75_box.jpg 480w, /p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_hu085fb6d0f263fc4bf7213581dc4137ba_103471_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="memory_align_struct"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="168"
+		data-flex-basis="404px"
+	
+></p>
+<p>　　可以看到填充部分的增加使结构体中每一个数据都对齐了，但是也浪费了一部分的内存。当使用 sizeof 查询 s 的长度时，得到的结果是 16 字节。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">s</span><span class="p">{</span>
+    <span class="kt">double</span> <span class="n">d</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　如果将 d 和 i 的顺序反过来，情况会有所不同，虽然看起来 d 和 i 都对齐了，但是它本身的长度为 12 字节，没有对 8 字节对齐，需要在它的末尾追加一个 8 字节的填充部分。</p>
+<p><img src="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2.jpg"
+	width="1326"
+	height="786"
+	srcset="/p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2_hu085fb6d0f263fc4bf7213581dc4137ba_104101_480x0_resize_q75_box.jpg 480w, /p/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/memory_align_struct_2_hu085fb6d0f263fc4bf7213581dc4137ba_104101_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="memory_align_struct_2"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="168"
+		data-flex-basis="404px"
+	
+></p>
+<p>　　使用 sizeof 查询 s 的长度可以发现它的长度依然是 16 字节。</p>
+<h2 id="优化内存占用">优化内存占用</h2>
+<p>　　可以看到因为填充部分的存在，如果我们设计 struct 时随意写数据的顺序可能会造成一定程度的空间浪费，而当熟悉对齐的规则时就可以排布出一个最省内存的顺序。来看一道 CSAPP 上的题目。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span><span class="p">{</span>
+    <span class="kt">char</span>   <span class="o">*</span><span class="n">a</span><span class="p">;</span>
+    <span class="kt">short</span>   <span class="n">b</span><span class="p">;</span>
+    <span class="kt">double</span>  <span class="n">c</span><span class="p">;</span> 
+    <span class="kt">char</span>    <span class="n">d</span><span class="p">;</span>
+    <span class="kt">float</span>   <span class="n">e</span><span class="p">;</span>
+    <span class="kt">char</span>    <span class="n">f</span><span class="p">;</span>
+    <span class="kt">long</span>    <span class="n">g</span><span class="p">;</span>
+    <span class="kt">int</span>     <span class="n">h</span><span class="p">;</span>
+<span class="p">}</span><span class="n">rec</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　rec 当前以 8 字节对齐，长度为 56 字节。其中为了让 c 对齐在 b 和 c 之间有一个 6 字节的填充，为了让 e 对齐在 d 和 e 之间有一个 3 字节的填充，为了让 g 对齐在 f 和 g 之间有一个 7 字节的填充，为了让整个 rec 对齐在 h 后面还有一个 4 字节的填充。一共 36 字节的结构，多使用了 20 字节的填充，浪费率比较惊人。下面来重排一下它的顺序。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">rec</span><span class="p">{</span>
+    <span class="kt">char</span>   <span class="o">*</span><span class="n">a</span><span class="p">;</span>
+    <span class="kt">double</span>  <span class="n">c</span><span class="p">;</span> 
+    <span class="kt">long</span>    <span class="n">g</span><span class="p">;</span>
+    <span class="kt">float</span>   <span class="n">e</span><span class="p">;</span>
+    <span class="kt">int</span>     <span class="n">h</span><span class="p">;</span>
+    <span class="kt">short</span>   <span class="n">b</span><span class="p">;</span>
+    <span class="kt">char</span>    <span class="n">d</span><span class="p">;</span>
+    <span class="kt">char</span>    <span class="n">f</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　经过重排以后，可以发现数据之间已经完全不需要填充部分了，不过因为 rec 要向 8 字节对齐，所以最后的 4 字节填充是必不可少的。重排以后的长度为 40 字节，减少了 16 字节的空间浪费。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90/">内存对齐</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#为什么需要对齐">为什么需要对齐</a></li>
+    <li><a href="#实现">实现</a>
+      <ol>
+        <li><a href="#对齐的规则">对齐的规则</a></li>
+        <li><a href="#对齐的操作">对齐的操作</a></li>
+      </ol>
+    </li>
+    <li><a href="#优化内存占用">优化内存占用</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>
