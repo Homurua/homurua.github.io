@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　似乎拿一个 C &#43; Lua 实现的框架跟一门语言来比较不太恰当，但是由于 golang 自带了一套并发机制，所以比较一下两者并发机制的实现还是可以的。
+'><title>skynet 与 golang 并发机制比较</title>
+
+<link rel='canonical' href='https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/'>
+
+<link rel="stylesheet" href="/scss/style.min.8a41ae0add25dcbd4194ebcd3fdcfafa13536196dd0fb69cd5cd6479b6366808.css"><meta property='og:title' content='skynet 与 golang 并发机制比较'>
+<meta property='og:description' content='　似乎拿一个 C &#43; Lua 实现的框架跟一门语言来比较不太恰当，但是由于 golang 自带了一套并发机制，所以比较一下两者并发机制的实现还是可以的。
+'>
+<meta property='og:url' content='https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='skynet' /><meta property='article:tag' content='golang' /><meta property='article:published_time' content='2022-05-05T12:31:17&#43;08:00'/><meta property='article:modified_time' content='2022-05-05T12:31:17&#43;08:00'/>
+<meta name="twitter:title" content="skynet 与 golang 并发机制比较">
+<meta name="twitter:description" content="　似乎拿一个 C &#43; Lua 实现的框架跟一门语言来比较不太恰当，但是由于 golang 自带了一套并发机制，所以比较一下两者并发机制的实现还是可以的。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/skynet%E7%AC%94%E8%AE%B0/" style="background-color: #46BDBA; color: #fff;">
+                skynet笔记
+            </a>
+        
+            <a href="/categories/golang%E7%AC%94%E8%AE%B0/" style="background-color: #79D4FD; color: #fff;">
+                golang笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/">skynet 与 golang 并发机制比较</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">May 05, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 5 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　似乎拿一个 C + Lua 实现的框架跟一门语言来比较不太恰当，但是由于 golang 自带了一套并发机制，所以比较一下两者并发机制的实现还是可以的。</p>
+<h2 id="并发模型">并发模型</h2>
+<h3 id="actor-模型">Actor 模型</h3>
+<p>　　Actor 模型推崇的是 “一切皆为 Actor” ，每个 Actor 都是独立的个体，拥有一个属于自己的 mailbox 用来接收消息。它们可以接收消息，处理消息，发送消息，但是两个 Actor 之间的数据是完全独立的，无法直接通过内存共享。<br>
+　　skynet 使用的就是 Actor 模型，每个服务是一个 Actor，服务的消息队列对应了 Actor 的 mailbox，服务之间的交互全都通过发送消息来处理。</p>
+<h3 id="csp-模型">CSP 模型</h3>
+<p>　　CSP 全称 Communicating sequential processes，译名为通信顺序进程。但是这个译名很少有人用，还是叫 CSP 的人居多。不过从它的全称可以看出它也是一个基于通信进行通信的并发模型。<br>
+　　Golang 使用的并发模型就是 CSP 模型，使用多个 goroutine 并行执行任务，在 goroutine 之间使用 channel 进行通信。</p>
+<h3 id="区别">区别</h3>
+<p>　　Actor 和 CSP 有很多相似之处，最大的共同点是都是使用消息来通信，Go 语言的作者之一也说过一句很有名的话，“不要通过共享内存来通信，应该通过通信来共享内存。”<br>
+　　虽然都是通过通信来共享内存，但是还是有一些不同。Actor 模式是直接面向 Actor 通信的，在发送消息的时候清楚的知道接收方是谁。CSP 模式是面向通道通信的，在发送消息的时候只针对通道，至于通道的接收方是谁并不不需要关注。</p>
+<h2 id="线程模型">线程模型</h2>
+<h3 id="用户线程和内核线程">用户线程和内核线程</h3>
+<p>　　内核线程是实现在内核态的线程，也就是内核原生提供的线程支持。多个内核线程的指令可以使用多个 CPU 核心来并行执行。但是它的缺点是创建、切换和销毁的操作消耗都比较大。<br>
+　　用户线程就是实现在用户态的线程，它对内核是透明的，主要对业务层负责。由于实现在用户态，它的策略比较容易做定制修改，同时它的创建、切换和销毁相比内核线程都要小很多。但是它只是一个逻辑概念上的线程，并不能真正执行指令，在执行指令的时候需要绑定到内核线程上才行，这个绑定的规则又有很多种实现。</p>
+<h3 id="1--1">1 : 1</h3>
+<p>　　使用一个用户线程对应一个内核线程，或者是直接使用内核线程。这种方式的好处是简单直观，没什么理解成本，使用常规的多线程开发思路保证线程安全即可。<br>
+　　缺点是没有缓解系统线程的使用成本问题，如果使用了大量内核线程的话，上下文切换的成本问题会比较严重。</p>
+<h3 id="m--1">M : 1</h3>
+<p>　　使用 M 个用户线程绑定到一个内核线程最常见的实现就是协程了。这种实现虽然有多个逻辑线程，但是不会存在真正的并行执行。比如在 Lua 中可以有很多个协程，但是正在执行的永远只有一个，协程会在需要时主动或者被动交出控制权。<br>
+　　这种模式只是方便了逻辑开发，实际只使用了一个内核线程，所以在开发中不需要考虑线程安全的问题。但是这就导致它无法真正完全用到多核心 CPU 的处理能力，亦无法做到真正的并行执行。</p>
+<h3 id="m--n">M : N</h3>
+<p>　　使用 M 的用户线程动态绑定到 N 个内核线程是最近几年的流行做法，既兼顾的逻辑开发的便利性，又可以完全使用到 CPU 的多核心处理能力，实现真正的并行执行。<br>
+　　缺点是高效率的 M : N 调度器比较难实现。在使用这种模式进行开发的时候，因为存在真并行的情况，也需要考虑线程安全的问题。</p>
+<h2 id="实现原理">实现原理</h2>
+<h3 id="skynet-的并发模型原理">skynet 的并发模型原理</h3>
+<p>　　skynet 是 C 和 Lua 混合实现的，在 C 语言层面使用的是 POSIX 线程，在 Lua 层使用协程来进行消息处理。所以 skynet 采用的是 1 : 1 和 M : 1 混合的线程模型。<br>
+　　在 skynet 中有四种线程，分别是 monitor 线程、timer 线程、socket 线程和 worker 线程，这四种线程都可以产生消息，但是只有 worker 线程负责处理消息。</p>
+<p><img src="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch.jpg"
+	width="1844"
+	height="1568"
+	srcset="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch_hud5a12bbd9dd2e759442a8c13b325cbbe_569454_480x0_resize_q75_box.jpg 480w, /p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch_hud5a12bbd9dd2e759442a8c13b325cbbe_569454_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="skynet_dispatch"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="117"
+		data-flex-basis="282px"
+	
+></p>
+<p>　　可以看到 skynet 中不管是任何线程产生的动作都是转化为消息的。当需要通知某个服务什么事情的时候，需要知道服务的名字或者地址，以此来找到服务。然后通过服务结构中保存的消息队列的指针找到它的消息队列，将消息加入到消息队列中。<br>
+　　有一个全局队列中保存了所有非空的服务消息队列，当消息被加入到服务消息队列中时，会检查服务消息队列是否在全局队列中，如果不在的话要将它加入全局队列。<br>
+　　worker 线程会定期被唤醒，当它被唤醒以后，会尝试从全局队列中拿出一个消息队列。如果可以拿到消息队列，就尝试从消息队列中依次取出待处理的消息，调用服务注册过的消息回调函数，对消息进行处理。</p>
+<h3 id="golang-的并发模型原理">Golang 的并发模型原理</h3>
+<p>　　Golang 的分层比较清晰，采用的是 GMP 模型。其中 G 代表了 Goroutine，M 代表了 Machine 即内核线程，P 代表了 Processor，可以理解为逻辑处理器。线程模型采用了 M : N 模型，每个 Goroutine 是一个用户线程，多个内核线程来负责用户线程的调度。</p>
+<p><img src="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch.jpg"
+	width="1216"
+	height="1524"
+	srcset="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch_hufbe549fb8adc15c5c50d8a363812999b_546658_480x0_resize_q75_box.jpg 480w, /p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch_hufbe549fb8adc15c5c50d8a363812999b_546658_1024x0_resize_q75_box.jpg 1024w"
+	loading="lazy"
+	
+		alt="go_dispatch"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="79"
+		data-flex-basis="191px"
+	
+></p>
+<p>　　每个 M 在任意时刻可以绑定一个任意的 P，P 有一个属于自己的本地队列，它会依次执行其中的 G，当执行队列中没有 G 时，它会尝试去全局队列中取一批 G 放进自己的本地队列。<br>
+　　调度机制中实现了 <a class="link" href="https://en.wikipedia.org/wiki/Work_stealing"  target="_blank" rel="noopener"
+    >工作窃取</a> ，当 P 尝试取全局队列中取 G 时，如果没有取到，它会尝试将其它 P 的本地队列中一半的 G 拿到自己的本地队列中。<br>
+　　同时在调度机制中也实现了<a class="link" href="https://en.wikipedia.org/wiki/Preemption_%28computing%29"  target="_blank" rel="noopener"
+    >任务抢占</a>，单个 Goroutine 单次运行如果超过了一定的期限就会被置换出来，将当前的运行权交给下一个 Goroutine，换出的 Goroutine 会被放在队尾等待下一次调用。</p>
+<h3 id="区别-1">区别</h3>
+<p>　　在处理的单位上二者不太一样，skynet 以每条消息作为处理单位，每条消息处理一次即完成。golang 以 goroutine 为处理单位，goroutine 更接近于线程的概念，当它尚未执行完毕时会长期存在于进程中。<br>
+　　skynet 的并发模型的层级更加简单，没有维护一个 Processor 的概念，直接为内核线程分配要处理的消息。golang 中因为存在了 Processor，它有自己的本地队列，这样的设计弱化了全局队列的存在感，减少了部分锁竞争。<br>
+　　golang 实现了工作窃取，不过因为 skynet 中没有 Processor 的概念，也就没有了本地队列，所以它并不需要工作窃取，worker 线程每次都是从全局队列中取出消息队列的。<br>
+　　任务抢占是 golang 的一个优势，skynet 中如果在处理一条消息的时候碰到了死循环的逻辑，那么会无限期占用一个线程。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/skynet/">skynet</a>
+        
+            <a href="/tags/golang/">golang</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AB%E7%83%AD%E6%9B%B4%E6%96%B0%E6%93%8D%E4%BD%9C/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十八）热更新操作</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%B8%83sharetable%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十七）ShareTable的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%85%AD%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十六）内存管理</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十五）CodeCache的实现</h2>
+        </div>
+    </a>
+</article>
+            
+                
+<article class="">
+    <a href="/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E5%9B%9B%E5%8D%8F%E7%A8%8B%E7%9A%84%E4%BD%BF%E7%94%A8/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet源码分析（十四）协程的使用</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#并发模型">并发模型</a>
+      <ol>
+        <li><a href="#actor-模型">Actor 模型</a></li>
+        <li><a href="#csp-模型">CSP 模型</a></li>
+        <li><a href="#区别">区别</a></li>
+      </ol>
+    </li>
+    <li><a href="#线程模型">线程模型</a>
+      <ol>
+        <li><a href="#用户线程和内核线程">用户线程和内核线程</a></li>
+        <li><a href="#1--1">1 : 1</a></li>
+        <li><a href="#m--1">M : 1</a></li>
+        <li><a href="#m--n">M : N</a></li>
+      </ol>
+    </li>
+    <li><a href="#实现原理">实现原理</a>
+      <ol>
+        <li><a href="#skynet-的并发模型原理">skynet 的并发模型原理</a></li>
+        <li><a href="#golang-的并发模型原理">Golang 的并发模型原理</a></li>
+        <li><a href="#区别-1">区别</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+    :root {
+        --article-font-family: "Noto Serif SC", var(--base-font-family);
+    }
+</style>
+
+<script>
+		(function () {
+		    const customFont = document.createElement('link');
+		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
+		
+		    customFont.type = "text/css";
+		    customFont.rel = "stylesheet";
+		
+		    document.head.appendChild(customFont);
+		}());
+</script>
+
+
+    </body>
+</html>

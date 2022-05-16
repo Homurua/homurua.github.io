@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>golang笔记 on 放学后茶会</title>
+        <link>https://wmf.im/categories/golang%E7%AC%94%E8%AE%B0/</link>
+        <description>Recent content in golang笔记 on 放学后茶会</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>zh-cn</language>
+        <lastBuildDate>Thu, 05 May 2022 12:31:17 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/golang%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>skynet 与 golang 并发机制比较</title>
+        <link>https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/</link>
+        <pubDate>Thu, 05 May 2022 12:31:17 +0800</pubDate>
+        
+        <guid>https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/</guid>
+        <description>&lt;p&gt;　　似乎拿一个 C + Lua 实现的框架跟一门语言来比较不太恰当，但是由于 golang 自带了一套并发机制，所以比较一下两者并发机制的实现还是可以的。&lt;/p&gt;
+&lt;h2 id=&#34;并发模型&#34;&gt;并发模型&lt;/h2&gt;
+&lt;h3 id=&#34;actor-模型&#34;&gt;Actor 模型&lt;/h3&gt;
+&lt;p&gt;　　Actor 模型推崇的是 “一切皆为 Actor” ，每个 Actor 都是独立的个体，拥有一个属于自己的 mailbox 用来接收消息。它们可以接收消息，处理消息，发送消息，但是两个 Actor 之间的数据是完全独立的，无法直接通过内存共享。&lt;br&gt;
+　　skynet 使用的就是 Actor 模型，每个服务是一个 Actor，服务的消息队列对应了 Actor 的 mailbox，服务之间的交互全都通过发送消息来处理。&lt;/p&gt;
+&lt;h3 id=&#34;csp-模型&#34;&gt;CSP 模型&lt;/h3&gt;
+&lt;p&gt;　　CSP 全称 Communicating sequential processes，译名为通信顺序进程。但是这个译名很少有人用，还是叫 CSP 的人居多。不过从它的全称可以看出它也是一个基于通信进行通信的并发模型。&lt;br&gt;
+　　Golang 使用的并发模型就是 CSP 模型，使用多个 goroutine 并行执行任务，在 goroutine 之间使用 channel 进行通信。&lt;/p&gt;
+&lt;h3 id=&#34;区别&#34;&gt;区别&lt;/h3&gt;
+&lt;p&gt;　　Actor 和 CSP 有很多相似之处，最大的共同点是都是使用消息来通信，Go 语言的作者之一也说过一句很有名的话，“不要通过共享内存来通信，应该通过通信来共享内存。”&lt;br&gt;
+　　虽然都是通过通信来共享内存，但是还是有一些不同。Actor 模式是直接面向 Actor 通信的，在发送消息的时候清楚的知道接收方是谁。CSP 模式是面向通道通信的，在发送消息的时候只针对通道，至于通道的接收方是谁并不不需要关注。&lt;/p&gt;
+&lt;h2 id=&#34;线程模型&#34;&gt;线程模型&lt;/h2&gt;
+&lt;h3 id=&#34;用户线程和内核线程&#34;&gt;用户线程和内核线程&lt;/h3&gt;
+&lt;p&gt;　　内核线程是实现在内核态的线程，也就是内核原生提供的线程支持。多个内核线程的指令可以使用多个 CPU 核心来并行执行。但是它的缺点是创建、切换和销毁的操作消耗都比较大。&lt;br&gt;
+　　用户线程就是实现在用户态的线程，它对内核是透明的，主要对业务层负责。由于实现在用户态，它的策略比较容易做定制修改，同时它的创建、切换和销毁相比内核线程都要小很多。但是它只是一个逻辑概念上的线程，并不能真正执行指令，在执行指令的时候需要绑定到内核线程上才行，这个绑定的规则又有很多种实现。&lt;/p&gt;
+&lt;h3 id=&#34;1--1&#34;&gt;1 : 1&lt;/h3&gt;
+&lt;p&gt;　　使用一个用户线程对应一个内核线程，或者是直接使用内核线程。这种方式的好处是简单直观，没什么理解成本，使用常规的多线程开发思路保证线程安全即可。&lt;br&gt;
+　　缺点是没有缓解系统线程的使用成本问题，如果使用了大量内核线程的话，上下文切换的成本问题会比较严重。&lt;/p&gt;
+&lt;h3 id=&#34;m--1&#34;&gt;M : 1&lt;/h3&gt;
+&lt;p&gt;　　使用 M 个用户线程绑定到一个内核线程最常见的实现就是协程了。这种实现虽然有多个逻辑线程，但是不会存在真正的并行执行。比如在 Lua 中可以有很多个协程，但是正在执行的永远只有一个，协程会在需要时主动或者被动交出控制权。&lt;br&gt;
+　　这种模式只是方便了逻辑开发，实际只使用了一个内核线程，所以在开发中不需要考虑线程安全的问题。但是这就导致它无法真正完全用到多核心 CPU 的处理能力，亦无法做到真正的并行执行。&lt;/p&gt;
+&lt;h3 id=&#34;m--n&#34;&gt;M : N&lt;/h3&gt;
+&lt;p&gt;　　使用 M 的用户线程动态绑定到 N 个内核线程是最近几年的流行做法，既兼顾的逻辑开发的便利性，又可以完全使用到 CPU 的多核心处理能力，实现真正的并行执行。&lt;br&gt;
+　　缺点是高效率的 M : N 调度器比较难实现。在使用这种模式进行开发的时候，因为存在真并行的情况，也需要考虑线程安全的问题。&lt;/p&gt;
+&lt;h2 id=&#34;实现原理&#34;&gt;实现原理&lt;/h2&gt;
+&lt;h3 id=&#34;skynet-的并发模型原理&#34;&gt;skynet 的并发模型原理&lt;/h3&gt;
+&lt;p&gt;　　skynet 是 C 和 Lua 混合实现的，在 C 语言层面使用的是 POSIX 线程，在 Lua 层使用协程来进行消息处理。所以 skynet 采用的是 1 : 1 和 M : 1 混合的线程模型。&lt;br&gt;
+　　在 skynet 中有四种线程，分别是 monitor 线程、timer 线程、socket 线程和 worker 线程，这四种线程都可以产生消息，但是只有 worker 线程负责处理消息。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch.jpg&#34;
+	width=&#34;1844&#34;
+	height=&#34;1568&#34;
+	srcset=&#34;https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch_hud5a12bbd9dd2e759442a8c13b325cbbe_569454_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/skynet_dispatch_hud5a12bbd9dd2e759442a8c13b325cbbe_569454_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;skynet_dispatch&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;117&#34;
+		data-flex-basis=&#34;282px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　可以看到 skynet 中不管是任何线程产生的动作都是转化为消息的。当需要通知某个服务什么事情的时候，需要知道服务的名字或者地址，以此来找到服务。然后通过服务结构中保存的消息队列的指针找到它的消息队列，将消息加入到消息队列中。&lt;br&gt;
+　　有一个全局队列中保存了所有非空的服务消息队列，当消息被加入到服务消息队列中时，会检查服务消息队列是否在全局队列中，如果不在的话要将它加入全局队列。&lt;br&gt;
+　　worker 线程会定期被唤醒，当它被唤醒以后，会尝试从全局队列中拿出一个消息队列。如果可以拿到消息队列，就尝试从消息队列中依次取出待处理的消息，调用服务注册过的消息回调函数，对消息进行处理。&lt;/p&gt;
+&lt;h3 id=&#34;golang-的并发模型原理&#34;&gt;Golang 的并发模型原理&lt;/h3&gt;
+&lt;p&gt;　　Golang 的分层比较清晰，采用的是 GMP 模型。其中 G 代表了 Goroutine，M 代表了 Machine 即内核线程，P 代表了 Processor，可以理解为逻辑处理器。线程模型采用了 M : N 模型，每个 Goroutine 是一个用户线程，多个内核线程来负责用户线程的调度。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch.jpg&#34;
+	width=&#34;1216&#34;
+	height=&#34;1524&#34;
+	srcset=&#34;https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch_hufbe549fb8adc15c5c50d8a363812999b_546658_480x0_resize_q75_box.jpg 480w, https://wmf.im/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/go_dispatch_hufbe549fb8adc15c5c50d8a363812999b_546658_1024x0_resize_q75_box.jpg 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;go_dispatch&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;79&#34;
+		data-flex-basis=&#34;191px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;　　每个 M 在任意时刻可以绑定一个任意的 P，P 有一个属于自己的本地队列，它会依次执行其中的 G，当执行队列中没有 G 时，它会尝试去全局队列中取一批 G 放进自己的本地队列。&lt;br&gt;
+　　调度机制中实现了 &lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Work_stealing&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;工作窃取&lt;/a&gt; ，当 P 尝试取全局队列中取 G 时，如果没有取到，它会尝试将其它 P 的本地队列中一半的 G 拿到自己的本地队列中。&lt;br&gt;
+　　同时在调度机制中也实现了&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Preemption_%28computing%29&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;任务抢占&lt;/a&gt;，单个 Goroutine 单次运行如果超过了一定的期限就会被置换出来，将当前的运行权交给下一个 Goroutine，换出的 Goroutine 会被放在队尾等待下一次调用。&lt;/p&gt;
+&lt;h3 id=&#34;区别-1&#34;&gt;区别&lt;/h3&gt;
+&lt;p&gt;　　在处理的单位上二者不太一样，skynet 以每条消息作为处理单位，每条消息处理一次即完成。golang 以 goroutine 为处理单位，goroutine 更接近于线程的概念，当它尚未执行完毕时会长期存在于进程中。&lt;br&gt;
+　　skynet 的并发模型的层级更加简单，没有维护一个 Processor 的概念，直接为内核线程分配要处理的消息。golang 中因为存在了 Processor，它有自己的本地队列，这样的设计弱化了全局队列的存在感，减少了部分锁竞争。&lt;br&gt;
+　　golang 实现了工作窃取，不过因为 skynet 中没有 Processor 的概念，也就没有了本地队列，所以它并不需要工作窃取，worker 线程每次都是从全局队列中取出消息队列的。&lt;br&gt;
+　　任务抢占是 golang 的一个优势，skynet 中如果在处理一条消息的时候碰到了死循环的逻辑，那么会无限期占用一个线程。&lt;/p&gt;</description>
+        </item>
+        
+    </channel>
+</rss>
