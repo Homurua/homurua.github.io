@@ -77,12 +77,12 @@
 　　调度机制中实现了 &lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Work_stealing&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;工作窃取&lt;/a&gt; ，当 P 尝试取全局队列中取 G 时，如果没有取到，它会尝试将其它 P 的本地队列中一半的 G 拿到自己的本地队列中。&lt;br&gt;
 　　同时在调度机制中也实现了&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Preemption_%28computing%29&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;任务抢占&lt;/a&gt;，单个 Goroutine 单次运行如果超过了一定的期限就会被置换出来，将当前的运行权交给下一个 Goroutine，换出的 Goroutine 会被放在队尾等待下一次调用。&lt;/p&gt;
+    &gt;任务抢占&lt;/a&gt;，使用一个特殊线程来监控运行状态，如果单个 Goroutine 单次运行如果超过了一定的时间就会被抢占，抢占的实现提高了平均响应时间。&lt;/p&gt;
 &lt;h3 id=&#34;区别-1&#34;&gt;区别&lt;/h3&gt;
 &lt;p&gt;　　在处理的单位上二者不太一样，skynet 以每条消息作为处理单位，每条消息处理一次即完成。golang 以 goroutine 为处理单位，goroutine 更接近于线程的概念，当它尚未执行完毕时会长期存在于进程中。&lt;br&gt;
 　　skynet 的并发模型的层级更加简单，没有维护一个 Processor 的概念，直接为内核线程分配要处理的消息。golang 中因为存在了 Processor，它有自己的本地队列，这样的设计弱化了全局队列的存在感，减少了部分锁竞争。&lt;br&gt;
 　　golang 实现了工作窃取，不过因为 skynet 中没有 Processor 的概念，也就没有了本地队列，所以它并不需要工作窃取，worker 线程每次都是从全局队列中取出消息队列的。&lt;br&gt;
-　　任务抢占是 golang 的一个优势，skynet 中如果在处理一条消息的时候碰到了死循环的逻辑，那么会无限期占用一个线程。&lt;/p&gt;</description>
+　　任务抢占是 golang 的一个优势，skynet 也有一个监控线程，但是它并没有实现抢占功能，如果在处理一条消息的时候碰到了死循环的逻辑，那么会无限期占用一个线程，skynet 只能输出一条警告日志，需要开发者通过后台手动处理。&lt;/p&gt;</description>
         </item>
         <item>
         <title>skynet源码分析（十八）热更新操作</title>
