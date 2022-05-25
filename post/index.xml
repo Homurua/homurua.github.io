@@ -1606,7 +1606,7 @@ $ getconf LEVEL1_DCACHE_LINESIZE
 &lt;h3 id=&#34;触发模式&#34;&gt;触发模式&lt;/h3&gt;
 &lt;p&gt;　　I/O 复用的事件触发模式可以分为两种，水平触发和边缘触发。&lt;br&gt;
 　　水平触发指的是，只要当前事件仍然成立，就会返回就绪，比如套接口的接收缓冲区中有数据，那么每一次检查都会返回当前套接口可读。&lt;br&gt;
-　　边缘触发是指，事件之前不成立，现在成立了，就会返回，一直到下一次再触发。即使缓冲区中的数据没有被读完，在下一次有新的数据进来之前检查也不会返回可读。
+　　边缘触发是指，事件之前不成立，现在成立了，就会返回，一直到下一次再触发。即使缓冲区中的数据没有被读完，在下一次有新的数据进来之前检查也不会返回可读。&lt;br&gt;
 　　select，poll 只支持水平触发，epoll 两种都支持，默认情况下使用的是水平触发，可以在增加事件关注列表时对某个套接口的事件使用边缘触发。&lt;br&gt;
 　　可以看到如果使用边缘触发，那么就需要在收到一个事件以后，不断处理完它，因为再也不会有第二次检测到这个事件的机会了。同时使用边缘触发的话，最好搭配非阻塞套接口使用，因为需要不断读取直到没有数据，如果使用阻塞套接口会很麻烦。&lt;br&gt;
 　　使用边缘触发的时候需要注意套接口饥饿的问题，因为如果一个套接口上有大量的数据，然后读取的时候使用无限循环的方式调用 read 去读的话，可能会在这一个套接口上花费大量时间，从而导致其它套接口上的数据一直得不到处理。有一种规避的方法是，记录下来所有触发过的套接口描述字，不立即读完其中的数据，而是每次对每个套接口读取一定长度的数据，不断遍历全部的可读套接口，如果某一个套接口上的数据已经读完了，就将它从数组中移除，一直这样直到所有就绪套接口都处理完毕。&lt;/p&gt;</description>
@@ -4259,10 +4259,10 @@ Q query info&lt;/p&gt;
 &lt;span class=&#34;k&#34;&gt;static&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;handle_storage&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;H&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;nb&#34;&gt;NULL&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　每个 skynet 进程都有一个全局的 handle 管理器，会在进程启动时被初始化。它是个带有读写锁的结构，因为大部分的操作都是查询操作，所以读写锁保证了查询的效率。保存 &lt;strong&gt;handle的哈希→服务&lt;/strong&gt; 键值对的 &lt;strong&gt;slot&lt;/strong&gt; 是一个动态数组，不够了会扩容，初始长度是 4，每次扩容会在原长度上翻倍。&lt;strong&gt;name&lt;/strong&gt; 用来保存全部的 handle 和名字的对应关系，是一个有序的动态数组，按 &lt;strong&gt;handle_name&lt;/strong&gt; 的 &lt;strong&gt;name&lt;/strong&gt; 字段的字符顺序进行排序，初始长度是 2，每次扩容在原长度上翻倍。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　每个 skynet 进程都有一个全局的 handle 管理器，会在进程启动时被初始化。它是个带有读写锁的结构，因为大部分的操作都是查询操作，所以读写锁保证了查询的效率。保存 handle的哈希→服务 键值对的 slot 是一个动态数组，不够了会扩容，初始长度是 4，每次扩容会在原长度上翻倍。name 用来保存全部的 handle 和名字的对应关系，是一个有序的动态数组，按 handle_name 的 name 字段的字符顺序进行排序，初始长度是 2，每次扩容在原长度上翻倍。&lt;/p&gt;
 &lt;h2 id=&#34;通过-handle-查询服务地址&#34;&gt;通过 handle 查询服务地址&lt;/h2&gt;
 &lt;h3 id=&#34;注册-handle&#34;&gt;注册 handle&lt;/h3&gt;
-&lt;p&gt;　　想要查询首先要注册数据。服务在创建的时候会调用 &lt;strong&gt;skynet_handle_register&lt;/strong&gt; 为服务注册一个 handle 并且插入到 &lt;strong&gt;slot&lt;/strong&gt; 中。&lt;/p&gt;
+&lt;p&gt;　　想要查询首先要注册数据。服务在创建的时候会调用 skynet_handle_register 为服务注册一个 handle 并且插入到 slot 中。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -4271,7 +4271,7 @@ Q query info&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;kt&#34;&gt;uint32_t&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_handle_register&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_context&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;ctx&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　插入数据的部分值得讲一讲，&lt;strong&gt;slot&lt;/strong&gt; 的 key 是通过 handle 对 &lt;strong&gt;slot_size&lt;/strong&gt; 取余数的来的。handle 有一个 &lt;strong&gt;handle_index&lt;/strong&gt; 做标记量，是从 1 开始的。如果不考虑服务退出的话，其实 handle 就一直累加就好了，也不需要取余数了，不够了就扩容。实际在服务退出的时候，handle 不会回收，但是 &lt;strong&gt;slot&lt;/strong&gt; 中占据的位置要清掉。这就造成了 &lt;strong&gt;slot&lt;/strong&gt; 的空洞问题，插入数据就变得麻烦了起来，因为要找到空洞安放数据。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　插入数据的部分值得讲一讲，slot 的 key 是通过 handle 对 slot_size 取余数的来的。handle 有一个 handle_index 做标记量，是从 1 开始的。如果不考虑服务退出的话，其实 handle 就一直累加就好了，也不需要取余数了，不够了就扩容。实际在服务退出的时候，handle 不会回收，但是 slot 中占据的位置要清掉。这就造成了 slot 的空洞问题，插入数据就变得麻烦了起来，因为要找到空洞安放数据。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;以写模式锁住读写锁&lt;/li&gt;
 &lt;li&gt;把 handle 赋值为 handle_index 的值&lt;/li&gt;
@@ -4282,7 +4282,7 @@ Q query info&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;　　这里有两个小限制，首先 slot_size 不能超过 16777215，还有就是当 handle 超过 16777215 以后，handle 会从 1 再次开始，理论上来说有重复的风险。&lt;/p&gt;
 &lt;h3 id=&#34;释放-handle&#34;&gt;释放 handle&lt;/h3&gt;
-&lt;p&gt;　　skynet 会在服务退出后移除掉 &lt;strong&gt;slot&lt;/strong&gt; 中对应的项。在 &lt;strong&gt;slot&lt;/strong&gt; 中形成空洞，这也是为什么在插入的时候要遍历整个 &lt;strong&gt;slot&lt;/strong&gt; 找空位置的原因。&lt;/p&gt;
+&lt;p&gt;　　skynet 会在服务退出后移除掉 slot 中对应的项。在 slot 中形成空洞，这也是为什么在插入的时候要遍历整个 slot 找空位置的原因。&lt;/p&gt;
 &lt;h3 id=&#34;查询&#34;&gt;查询&lt;/h3&gt;
 &lt;p&gt;　　可以通过 handle 直接查询到服务的地址。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -4293,7 +4293,7 @@ Q query info&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;skynet_context&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;skynet_handle_grab&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uint32_t&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;handle&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　有了上面的注册以后，这个查询就很简单了，算出 handle 的哈希，直接从 &lt;strong&gt;slot&lt;/strong&gt; 里面取出来服务的地址返回即可。因为不涉及到修改，所以查询只锁读锁就行了。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　有了上面的注册以后，这个查询就很简单了，算出 handle 的哈希，直接从 slot 里面取出来服务的地址返回即可。因为不涉及到修改，所以查询只锁读锁就行了。&lt;/p&gt;
 &lt;h2 id=&#34;通过服务名字查询-handle&#34;&gt;通过服务名字查询 handle&lt;/h2&gt;
 &lt;h3 id=&#34;注册名字&#34;&gt;注册名字&lt;/h3&gt;
 &lt;p&gt;　　可以通过调用 skynet.name 来注册一个指定服务的名字。该接口最终会调用到 C 层的&lt;/p&gt;
@@ -4305,10 +4305,10 @@ Q query info&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-C&#34; data-lang=&#34;C&#34;&gt;&lt;span class=&#34;k&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;skynet_handle_namehandle&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;kt&#34;&gt;uint32_t&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;handle&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;const&lt;/span&gt; &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;*&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;name&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 &lt;strong&gt;name&lt;/strong&gt; 数组中去。因为 &lt;strong&gt;name&lt;/strong&gt; 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 &lt;strong&gt;name&lt;/strong&gt; 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。&lt;br&gt;
+&lt;/div&gt;&lt;p&gt;　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 name 数组中去。因为 name 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 name 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。&lt;br&gt;
 　　注册名字是如果是本地名字则应该在前面加上一个点号，类似 &amp;ldquo;.xxx&amp;rdquo; 来区别本地名字和 harbor 的全局名字。本地名字没限制，harbor 的服务名字不能超过 16 个字符。&lt;/p&gt;
 &lt;h3 id=&#34;查询-1&#34;&gt;查询&lt;/h3&gt;
-&lt;p&gt;　　因为 &lt;strong&gt;name&lt;/strong&gt; 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。&lt;/p&gt;</description>
+&lt;p&gt;　　因为 name 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。&lt;/p&gt;</description>
         </item>
         <item>
         <title>skynet源码分析（五）认识服务</title>

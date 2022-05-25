@@ -298,10 +298,10 @@
 <span class="k">static</span> <span class="k">struct</span> <span class="n">handle_storage</span> <span class="o">*</span><span class="n">H</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　每个 skynet 进程都有一个全局的 handle 管理器，会在进程启动时被初始化。它是个带有读写锁的结构，因为大部分的操作都是查询操作，所以读写锁保证了查询的效率。保存 <strong>handle的哈希→服务</strong> 键值对的 <strong>slot</strong> 是一个动态数组，不够了会扩容，初始长度是 4，每次扩容会在原长度上翻倍。<strong>name</strong> 用来保存全部的 handle 和名字的对应关系，是一个有序的动态数组，按 <strong>handle_name</strong> 的 <strong>name</strong> 字段的字符顺序进行排序，初始长度是 2，每次扩容在原长度上翻倍。</p>
+</div><p>　　每个 skynet 进程都有一个全局的 handle 管理器，会在进程启动时被初始化。它是个带有读写锁的结构，因为大部分的操作都是查询操作，所以读写锁保证了查询的效率。保存 handle的哈希→服务 键值对的 slot 是一个动态数组，不够了会扩容，初始长度是 4，每次扩容会在原长度上翻倍。name 用来保存全部的 handle 和名字的对应关系，是一个有序的动态数组，按 handle_name 的 name 字段的字符顺序进行排序，初始长度是 2，每次扩容在原长度上翻倍。</p>
 <h2 id="通过-handle-查询服务地址">通过 handle 查询服务地址</h2>
 <h3 id="注册-handle">注册 handle</h3>
-<p>　　想要查询首先要注册数据。服务在创建的时候会调用 <strong>skynet_handle_register</strong> 为服务注册一个 handle 并且插入到 <strong>slot</strong> 中。</p>
+<p>　　想要查询首先要注册数据。服务在创建的时候会调用 skynet_handle_register 为服务注册一个 handle 并且插入到 slot 中。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -310,7 +310,7 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="kt">uint32_t</span> <span class="n">skynet_handle_register</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　插入数据的部分值得讲一讲，<strong>slot</strong> 的 key 是通过 handle 对 <strong>slot_size</strong> 取余数的来的。handle 有一个 <strong>handle_index</strong> 做标记量，是从 1 开始的。如果不考虑服务退出的话，其实 handle 就一直累加就好了，也不需要取余数了，不够了就扩容。实际在服务退出的时候，handle 不会回收，但是 <strong>slot</strong> 中占据的位置要清掉。这就造成了 <strong>slot</strong> 的空洞问题，插入数据就变得麻烦了起来，因为要找到空洞安放数据。</p>
+</div><p>　　插入数据的部分值得讲一讲，slot 的 key 是通过 handle 对 slot_size 取余数的来的。handle 有一个 handle_index 做标记量，是从 1 开始的。如果不考虑服务退出的话，其实 handle 就一直累加就好了，也不需要取余数了，不够了就扩容。实际在服务退出的时候，handle 不会回收，但是 slot 中占据的位置要清掉。这就造成了 slot 的空洞问题，插入数据就变得麻烦了起来，因为要找到空洞安放数据。</p>
 <ul>
 <li>以写模式锁住读写锁</li>
 <li>把 handle 赋值为 handle_index 的值</li>
@@ -321,7 +321,7 @@
 </ul>
 <p>　　这里有两个小限制，首先 slot_size 不能超过 16777215，还有就是当 handle 超过 16777215 以后，handle 会从 1 再次开始，理论上来说有重复的风险。</p>
 <h3 id="释放-handle">释放 handle</h3>
-<p>　　skynet 会在服务退出后移除掉 <strong>slot</strong> 中对应的项。在 <strong>slot</strong> 中形成空洞，这也是为什么在插入的时候要遍历整个 <strong>slot</strong> 找空位置的原因。</p>
+<p>　　skynet 会在服务退出后移除掉 slot 中对应的项。在 slot 中形成空洞，这也是为什么在插入的时候要遍历整个 slot 找空位置的原因。</p>
 <h3 id="查询">查询</h3>
 <p>　　可以通过 handle 直接查询到服务的地址。</p>
 <div class="highlight"><div class="chroma">
@@ -332,7 +332,7 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">skynet_handle_grab</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　有了上面的注册以后，这个查询就很简单了，算出 handle 的哈希，直接从 <strong>slot</strong> 里面取出来服务的地址返回即可。因为不涉及到修改，所以查询只锁读锁就行了。</p>
+</div><p>　　有了上面的注册以后，这个查询就很简单了，算出 handle 的哈希，直接从 slot 里面取出来服务的地址返回即可。因为不涉及到修改，所以查询只锁读锁就行了。</p>
 <h2 id="通过服务名字查询-handle">通过服务名字查询 handle</h2>
 <h3 id="注册名字">注册名字</h3>
 <p>　　可以通过调用 skynet.name 来注册一个指定服务的名字。该接口最终会调用到 C 层的</p>
@@ -344,10 +344,10 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">skynet_handle_namehandle</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 <strong>name</strong> 数组中去。因为 <strong>name</strong> 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 <strong>name</strong> 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。<br>
+</div><p>　　这个函数会锁上管理器的写锁，并且把自己的名字和 handle 插入到管理器的 name 数组中去。因为 name 是一个有序的动态数组，所以在插入的时候同样需要维持顺序。实际实现是通过二分查找搜索目标的名字，如果查到了，则说明名字重复了，返回了 NULL，不会覆盖旧名字。如果没有查到，则结果位置就是合适的插入位置，然后把名字和 handle 组合一下插入到 name 的合适位置中去。插入过程有可能引起数组的扩容，每次把容量扩充到当前容量的两倍。<br>
 　　注册名字是如果是本地名字则应该在前面加上一个点号，类似 &ldquo;.xxx&rdquo; 来区别本地名字和 harbor 的全局名字。本地名字没限制，harbor 的服务名字不能超过 16 个字符。</p>
 <h3 id="查询-1">查询</h3>
-<p>　　因为 <strong>name</strong> 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。</p>
+<p>　　因为 name 是个有序的数组，所以查询这一步同样使用二分查找搜索数组即可。因为不涉及到修改，所以只锁上读锁即可。</p>
 </section>
 
 
