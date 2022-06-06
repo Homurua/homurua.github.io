@@ -1119,7 +1119,26 @@ $ getconf LEVEL1_DCACHE_LINESIZE
 &lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　经过重排以后，可以发现数据之间已经完全不需要填充部分了，不过因为 rec 要向 8 字节对齐，所以最后的 4 字节填充是必不可少的。重排以后的长度为 40 字节，减少了 16 字节的空间浪费。&lt;/p&gt;</description>
+&lt;/div&gt;&lt;p&gt;　　经过重排以后，可以发现数据之间已经完全不需要填充部分了，不过因为 rec 要向 8 字节对齐，所以最后的 4 字节填充是必不可少的。重排以后的长度为 40 字节，减少了 16 字节的空间浪费。&lt;/p&gt;
+&lt;h2 id=&#34;我不想对齐行不行&#34;&gt;我不想对齐行不行&lt;/h2&gt;
+&lt;p&gt;　　可以看到内存对齐在大部分情况下不管怎么优化，都会浪费一部分空间。它虽然提升了一点内存访问的速度，但是可能很多时候我们并不十分在乎，反而更在意内存的额外占用。&lt;br&gt;
+　　早年间的一些 CPU 是不支持没有对齐的内存访问的，但是在现代 CPU 上已经没有了这个问题，编译器也提供了一些选项可以让我们明确指出不需要内存对齐。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-c++&#34; data-lang=&#34;c++&#34;&gt;&lt;span class=&#34;k&#34;&gt;struct&lt;/span&gt; &lt;span class=&#34;nf&#34;&gt;__attribute__&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;((&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;packed&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;))&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;testc&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;int&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;i&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+    &lt;span class=&#34;kt&#34;&gt;char&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;c&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;
+&lt;span class=&#34;p&#34;&gt;};&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　如果加上了 &lt;strong&gt;attribute&lt;/strong&gt;((packed))，则编译器会使内存紧密排布，去掉所有对齐的优化。这个时候再输出类的长度，可以发现它的长度是 5，就是一个 int 加上一个 char 的长度。如果去掉紧密排布的声明，则类的长度是 8，char 后面会增加 3 个字节的填充。&lt;br&gt;
+　　让类的空间密集排布一定会影响内存的读取效率，但是实际测试一下就会发现，这个影响其实非常非常有限，基本上可以忽略不计了。所以如果对内存占用更敏感的程序，可以主动放弃内存对齐，比如 Redis 的 sds 的结构体就全都是紧密排布的。&lt;/p&gt;</description>
         </item>
         <item>
         <title>如何将一个 Lua Table 序列化</title>
@@ -2535,12 +2554,81 @@ GC 方法的定义和实现在 lgc.h 和 lgc.c 中。&lt;/li&gt;
 　　Android 平台下可以使用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Kr328/ClashForAndroid&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;ClashForAndroid&lt;/a&gt;，很稳定，功能也比较齐全。&lt;/p&gt;
 &lt;h2 id=&#34;命令行客户端&#34;&gt;命令行客户端&lt;/h2&gt;
-&lt;h3 id=&#34;部署服务&#34;&gt;部署服务&lt;/h3&gt;
-&lt;p&gt;　　在 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Dreamacro/clash/releases&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+&lt;h3 id=&#34;下载配置&#34;&gt;下载配置&lt;/h3&gt;
+&lt;p&gt;　　要使用 clash 需要两个文件，第一个是 clash 的配置文件 config.yaml，另一个是用于判断主机位置的 Country.mmdb 文件。&lt;br&gt;
+　　第一个文件从服务提供商那里下载，下载以后重命名成 config.yaml 即可。第二个文件可以从 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Dreamacro/maxmind-geoip/releases&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;maxmind-geoip&lt;/a&gt; 下载最新的一版即可。&lt;br&gt;
+　　config.yaml 中可能有一些参数需要修改，主要涉及四个配置，将它们修改成你需要的即可。port 和 socks-port 可以不再配置，只配置 mixed-port 即可。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;7890&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# http 代理端口&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;socks-port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;7891&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# socket 代理端口&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;mixed-port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;7892&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 混合端口，http 和 socket 都可以用&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;external-controller&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;0.0.0.0&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;m&#34;&gt;9090&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# 外部控制 http 服务监听的地址和端口&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　external-controller 要注意一下，它是给外部控制服务提供的端口，后面会用到它。它默认可能是 127.0.0.1:9090，绑定的地址要按需修改，如果无所谓或者不知道要怎么改，那么使用 0.0.0.0:9090 即可，它会使这个服务在本机和外部都可以访问。&lt;/p&gt;
+&lt;h3 id=&#34;使用-docker-部署&#34;&gt;使用 Docker 部署&lt;/h3&gt;
+&lt;p&gt;　　创建一个文件夹，将上述的两个配置文件放在里面，然后再在这个文件夹下创建一个 Dockerfile 文件来创建镜像。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;./clash-core
+├── clash.Dockerfile
+├── config.yaml
+└── Country.mmdb
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　因为 docker hub 的仓库中已经有 clash 的作者创建好的一个镜像了，所以可以简单的以这个镜像为基础，将配置文件复制到容器中即可。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-dockerfile&#34; data-lang=&#34;dockerfile&#34;&gt;&lt;span class=&#34;c&#34;&gt;# syntax=docker/dockerfile:1&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;FROM&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; dreamacro/clash-premium:latest&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;COPY&lt;/span&gt; config.yaml /root/.config/clash/&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;COPY&lt;/span&gt; Country.mmdb /root/.config/clash/&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;EXPOSE&lt;/span&gt;&lt;span class=&#34;s&#34;&gt; 7892 9090&lt;/span&gt;&lt;span class=&#34;err&#34;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　在本目录中使用一行命令打包生成镜像。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;docker build -f ./clash.Dockerfile -t clash:my . 
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;　　生成好镜像以后，创建容器并执行。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;docker run -d -p 7892:7892 -p 9090:9090 --rm clash:my
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;二进制部署&#34;&gt;二进制部署&lt;/h3&gt;
+&lt;p&gt;　　如果觉得自己做 Docker 镜像太麻烦了，也可以直接使用打包好的二进制程序部署。在 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Dreamacro/clash/releases&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;clash&lt;/a&gt; 下载适合自己使用的 clash 执行程序。新式 CPU 可以下载 linux-amd64-v3 版本，旧式的 CPU 下载 linux-amd64 版。&lt;a class=&#34;link&#34; href=&#34;https://github.com/golang/go/wiki/MinimumRequirements#amd64&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;v3&lt;/a&gt; 版本可以使用更多的指令集。&lt;br&gt;
-　　在 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Dreamacro/maxmind-geoip/releases&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;maxmind-geoip&lt;/a&gt; 下载用于判断主机地址位置的 Country.mmdb 文件。从自己的服务提供商那里下载 config.yaml 文件。执行下面的命令将文件放在对应的位置上。&lt;/p&gt;
+    &gt;v3&lt;/a&gt; 版本可以使用更多的指令集。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -2611,7 +2699,8 @@ sudo systemctl status clash
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;docker run -p 1234:80 -d --rm haishanh/yacd
 &lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;h2 id=&#34;使用代理&#34;&gt;使用代理&lt;/h2&gt;
+&lt;/div&gt;&lt;p&gt;　　接下来只要访问 xxx.xxx.xxx.xxx:1234 就是本地的 yacd 服务了。然后在连接上填写上自己的 clash 配置文件中配置的外部控制端口即可使用了。&lt;/p&gt;
+&lt;h2 id=&#34;使用代理&#34;&gt;使用代理&lt;/h2&gt;
 &lt;p&gt;　　由于 clash 是自带分流的，不需要在使用的地方进行二次地址过滤，所以使用起来非常简单，直接修改系统代理即可。&lt;br&gt;
 　　Windows 和 Linux 直接修改系统代理指向目标地址和端口即可，移动设备也可以在 WIFI 设置里填写代理的地址和端口。&lt;br&gt;
 　　如果不希望修改系统代理，则可以修改浏览器的代理，比如 Firefox 可以直接在 “设置” 的 “网络设置” 里填写代理的设置。Chrome 系的浏览器可能不支持，需要使用 &lt;a class=&#34;link&#34; href=&#34;https://chrome.google.com/webstore/detail/proxy-switchyomega/padekgcemlokbadohgkifijomclgjgif?hl=zh-CN&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;

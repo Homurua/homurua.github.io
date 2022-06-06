@@ -240,7 +240,7 @@
 
 
                 <time class="article-time--reading">
-                    阅读时长: 2 分钟
+                    阅读时长: 3 分钟
                 </time>
             </div>
         
@@ -261,12 +261,81 @@
 　　Android 平台下可以使用 <a class="link" href="https://github.com/Kr328/ClashForAndroid"  target="_blank" rel="noopener"
     >ClashForAndroid</a>，很稳定，功能也比较齐全。</p>
 <h2 id="命令行客户端">命令行客户端</h2>
-<h3 id="部署服务">部署服务</h3>
-<p>　　在 <a class="link" href="https://github.com/Dreamacro/clash/releases"  target="_blank" rel="noopener"
+<h3 id="下载配置">下载配置</h3>
+<p>　　要使用 clash 需要两个文件，第一个是 clash 的配置文件 config.yaml，另一个是用于判断主机位置的 Country.mmdb 文件。<br>
+　　第一个文件从服务提供商那里下载，下载以后重命名成 config.yaml 即可。第二个文件可以从 <a class="link" href="https://github.com/Dreamacro/maxmind-geoip/releases"  target="_blank" rel="noopener"
+    >maxmind-geoip</a> 下载最新的一版即可。<br>
+　　config.yaml 中可能有一些参数需要修改，主要涉及四个配置，将它们修改成你需要的即可。port 和 socks-port 可以不再配置，只配置 mixed-port 即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">7890</span><span class="w"> </span><span class="c"># http 代理端口</span><span class="w">
+</span><span class="w"></span><span class="nt">socks-port</span><span class="p">:</span><span class="w"> </span><span class="m">7891</span><span class="w"> </span><span class="c"># socket 代理端口</span><span class="w">
+</span><span class="w"></span><span class="nt">mixed-port</span><span class="p">:</span><span class="w"> </span><span class="m">7892</span><span class="w"> </span><span class="c"># 混合端口，http 和 socket 都可以用</span><span class="w">
+</span><span class="w"></span><span class="nt">external-controller</span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9090</span><span class="w"> </span><span class="c"># 外部控制 http 服务监听的地址和端口</span><span class="w">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　external-controller 要注意一下，它是给外部控制服务提供的端口，后面会用到它。它默认可能是 127.0.0.1:9090，绑定的地址要按需修改，如果无所谓或者不知道要怎么改，那么使用 0.0.0.0:9090 即可，它会使这个服务在本机和外部都可以访问。</p>
+<h3 id="使用-docker-部署">使用 Docker 部署</h3>
+<p>　　创建一个文件夹，将上述的两个配置文件放在里面，然后再在这个文件夹下创建一个 Dockerfile 文件来创建镜像。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text">./clash-core
+├── clash.Dockerfile
+├── config.yaml
+└── Country.mmdb
+</code></pre></td></tr></table>
+</div>
+</div><p>　　因为 docker hub 的仓库中已经有 clash 的作者创建好的一个镜像了，所以可以简单的以这个镜像为基础，将配置文件复制到容器中即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="c"># syntax=docker/dockerfile:1</span><span class="err">
+</span><span class="err"></span><span class="k">FROM</span><span class="s"> dreamacro/clash-premium:latest</span><span class="err">
+</span><span class="err"></span><span class="k">COPY</span> config.yaml /root/.config/clash/<span class="err">
+</span><span class="err"></span><span class="k">COPY</span> Country.mmdb /root/.config/clash/<span class="err">
+</span><span class="err"></span><span class="k">EXPOSE</span><span class="s"> 7892 9090</span><span class="err">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>　　在本目录中使用一行命令打包生成镜像。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">docker build -f ./clash.Dockerfile -t clash:my . 
+</code></pre></td></tr></table>
+</div>
+</div><p>　　生成好镜像以后，创建容器并执行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">docker run -d -p 7892:7892 -p 9090:9090 --rm clash:my
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="二进制部署">二进制部署</h3>
+<p>　　如果觉得自己做 Docker 镜像太麻烦了，也可以直接使用打包好的二进制程序部署。在 <a class="link" href="https://github.com/Dreamacro/clash/releases"  target="_blank" rel="noopener"
     >clash</a> 下载适合自己使用的 clash 执行程序。新式 CPU 可以下载 linux-amd64-v3 版本，旧式的 CPU 下载 linux-amd64 版。<a class="link" href="https://github.com/golang/go/wiki/MinimumRequirements#amd64"  target="_blank" rel="noopener"
-    >v3</a> 版本可以使用更多的指令集。<br>
-　　在 <a class="link" href="https://github.com/Dreamacro/maxmind-geoip/releases"  target="_blank" rel="noopener"
-    >maxmind-geoip</a> 下载用于判断主机地址位置的 Country.mmdb 文件。从自己的服务提供商那里下载 config.yaml 文件。执行下面的命令将文件放在对应的位置上。</p>
+    >v3</a> 版本可以使用更多的指令集。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -337,7 +406,8 @@ sudo systemctl status clash
 <pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell">docker run -p 1234:80 -d --rm haishanh/yacd
 </code></pre></td></tr></table>
 </div>
-</div><h2 id="使用代理">使用代理</h2>
+</div><p>　　接下来只要访问 xxx.xxx.xxx.xxx:1234 就是本地的 yacd 服务了。然后在连接上填写上自己的 clash 配置文件中配置的外部控制端口即可使用了。</p>
+<h2 id="使用代理">使用代理</h2>
 <p>　　由于 clash 是自带分流的，不需要在使用的地方进行二次地址过滤，所以使用起来非常简单，直接修改系统代理即可。<br>
 　　Windows 和 Linux 直接修改系统代理指向目标地址和端口即可，移动设备也可以在 WIFI 设置里填写代理的地址和端口。<br>
 　　如果不希望修改系统代理，则可以修改浏览器的代理，比如 Firefox 可以直接在 “设置” 的 “网络设置” 里填写代理的设置。Chrome 系的浏览器可能不支持，需要使用 <a class="link" href="https://chrome.google.com/webstore/detail/proxy-switchyomega/padekgcemlokbadohgkifijomclgjgif?hl=zh-CN"  target="_blank" rel="noopener"
@@ -520,7 +590,9 @@ sudo systemctl status clash
     <li><a href="#gui客户端">GUI客户端</a></li>
     <li><a href="#命令行客户端">命令行客户端</a>
       <ol>
-        <li><a href="#部署服务">部署服务</a></li>
+        <li><a href="#下载配置">下载配置</a></li>
+        <li><a href="#使用-docker-部署">使用 Docker 部署</a></li>
+        <li><a href="#二进制部署">二进制部署</a></li>
         <li><a href="#部署网页控制台">部署网页控制台</a></li>
       </ol>
     </li>

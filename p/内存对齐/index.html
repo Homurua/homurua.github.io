@@ -240,7 +240,7 @@
 
 
                 <time class="article-time--reading">
-                    阅读时长: 4 分钟
+                    阅读时长: 5 分钟
                 </time>
             </div>
         
@@ -419,6 +419,25 @@ $ getconf LEVEL1_DCACHE_LINESIZE
 </code></pre></td></tr></table>
 </div>
 </div><p>　　经过重排以后，可以发现数据之间已经完全不需要填充部分了，不过因为 rec 要向 8 字节对齐，所以最后的 4 字节填充是必不可少的。重排以后的长度为 40 字节，减少了 16 字节的空间浪费。</p>
+<h2 id="我不想对齐行不行">我不想对齐行不行</h2>
+<p>　　可以看到内存对齐在大部分情况下不管怎么优化，都会浪费一部分空间。它虽然提升了一点内存访问的速度，但是可能很多时候我们并不十分在乎，反而更在意内存的额外占用。<br>
+　　早年间的一些 CPU 是不支持没有对齐的内存访问的，但是在现代 CPU 上已经没有了这个问题，编译器也提供了一些选项可以让我们明确指出不需要内存对齐。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="k">struct</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">testc</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　如果加上了 <strong>attribute</strong>((packed))，则编译器会使内存紧密排布，去掉所有对齐的优化。这个时候再输出类的长度，可以发现它的长度是 5，就是一个 int 加上一个 char 的长度。如果去掉紧密排布的声明，则类的长度是 8，char 后面会增加 3 个字节的填充。<br>
+　　让类的空间密集排布一定会影响内存的读取效率，但是实际测试一下就会发现，这个影响其实非常非常有限，基本上可以忽略不计了。所以如果对内存占用更敏感的程序，可以主动放弃内存对齐，比如 Redis 的 sds 的结构体就全都是紧密排布的。</p>
 </section>
 
 
@@ -581,6 +600,7 @@ $ getconf LEVEL1_DCACHE_LINESIZE
       </ol>
     </li>
     <li><a href="#优化内存占用">优化内存占用</a></li>
+    <li><a href="#我不想对齐行不行">我不想对齐行不行</a></li>
   </ol>
 </nav>
         </div>
