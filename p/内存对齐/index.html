@@ -438,6 +438,26 @@ $ getconf LEVEL1_DCACHE_LINESIZE
 </div>
 </div><p>　　如果加上了 <strong>attribute</strong>((packed))，则编译器会使内存紧密排布，去掉所有对齐的优化。这个时候再输出类的长度，可以发现它的长度是 5，就是一个 int 加上一个 char 的长度。如果去掉紧密排布的声明，则类的长度是 8，char 后面会增加 3 个字节的填充。<br>
 　　让类的空间密集排布一定会影响内存的读取效率，但是实际测试一下就会发现，这个影响其实非常非常有限，基本上可以忽略不计了。所以如果对内存占用更敏感的程序，可以主动放弃内存对齐，比如 Redis 的 sds 的结构体就全都是紧密排布的。</p>
+<h2 id="指定对齐的字节数">指定对齐的字节数</h2>
+<p>　　默认情况下类内的对齐是按照本类中最大长度的成员变量对齐的，可以指定让一个类向一个固定的值对齐。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c++" data-lang="c++"><span class="k">struct</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">8</span><span class="p">)))</span> <span class="n">testc</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">c1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">c2</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>　　如果没有指定对齐到 8 字节的话，testc 的长度应该是 (1 + 3) + 4 + (1 + 3) = 12，当指定向 8 字节对齐以后，testc 的长度就是 (1 + 3) + 4 + (1 + 7) = 16。<br>
+　　需要注意的是，指定的长度是整个结构对齐的长度。即使指定了对齐的长度，c1 和 i 之间的填充部分还是只填到 i 长度的整数倍就可以了，只是最后整个 testc 需要对齐的 8 字节的倍数，所以向后补充了 7 个字节。</p>
 </section>
 
 
@@ -601,6 +621,7 @@ $ getconf LEVEL1_DCACHE_LINESIZE
     </li>
     <li><a href="#优化内存占用">优化内存占用</a></li>
     <li><a href="#我不想对齐行不行">我不想对齐行不行</a></li>
+    <li><a href="#指定对齐的字节数">指定对齐的字节数</a></li>
   </ol>
 </nav>
         </div>
