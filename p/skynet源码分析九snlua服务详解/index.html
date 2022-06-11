@@ -269,16 +269,16 @@
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">snlua</span> <span class="p">{</span>
-    <span class="n">lua_State</span> <span class="o">*</span><span class="n">L</span><span class="p">;</span> <span class="c1">// 状态机
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span> <span class="c1">// 关联的 skynet context
-</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem</span><span class="p">;</span> <span class="c1">// 已经使用的内存
-</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem_report</span><span class="p">;</span> <span class="c1">// 触发内存警告的阈值
-</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem_limit</span><span class="p">;</span> <span class="c1">// 内存的上限设置
-</span><span class="c1"></span>    <span class="n">lua_State</span> <span class="o">*</span><span class="n">activeL</span><span class="p">;</span> <span class="c1">// 目前正在运行的状态机
-</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">trap</span><span class="p">;</span> <span class="c1">// 打断状态
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">snlua</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lua_State</span> <span class="o">*</span><span class="n">L</span><span class="p">;</span> <span class="c1">// 状态机
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span> <span class="c1">// 关联的 skynet context
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem</span><span class="p">;</span> <span class="c1">// 已经使用的内存
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem_report</span><span class="p">;</span> <span class="c1">// 触发内存警告的阈值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">size_t</span> <span class="n">mem_limit</span><span class="p">;</span> <span class="c1">// 内存的上限设置
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">lua_State</span> <span class="o">*</span><span class="n">activeL</span><span class="p">;</span> <span class="c1">// 目前正在运行的状态机
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">trap</span><span class="p">;</span> <span class="c1">// 打断状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　snlua 的核心数据就是一个 lua 状态机，围绕状态机，skynet 做了一些扩展工作，主要是为其自定义了内存分配函数，以及为其提供了一个接受外部信号打断其运行状态的机制。</p>
 <h2 id="创建">创建</h2>
@@ -297,18 +297,18 @@
 </span><span class="lnt">11
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define MEMORY_WARNING_REPORT (1024 * 1024 * 32)
-</span><span class="cp"></span><span class="k">struct</span> <span class="n">snlua</span> <span class="o">*</span><span class="nf">snlua_create</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">snlua</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="n">skynet_malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">));</span>
-    <span class="n">memset</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">));</span>
-    <span class="n">l</span><span class="o">-&gt;</span><span class="n">mem_report</span> <span class="o">=</span> <span class="n">MEMORY_WARNING_REPORT</span><span class="p">;</span>
-    <span class="n">l</span><span class="o">-&gt;</span><span class="n">mem_limit</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="n">l</span><span class="o">-&gt;</span><span class="n">L</span> <span class="o">=</span> <span class="n">lua_newstate</span><span class="p">(</span><span class="n">lalloc</span><span class="p">,</span> <span class="n">l</span><span class="p">);</span>
-    <span class="n">l</span><span class="o">-&gt;</span><span class="n">activeL</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
-    <span class="n">ATOM_INIT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">trap</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-    <span class="k">return</span> <span class="n">l</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define MEMORY_WARNING_REPORT (1024 * 1024 * 32)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">struct</span> <span class="n">snlua</span> <span class="o">*</span><span class="nf">snlua_create</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">snlua</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="n">skynet_malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="n">memset</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="n">l</span><span class="o">-&gt;</span><span class="n">mem_report</span> <span class="o">=</span> <span class="n">MEMORY_WARNING_REPORT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">l</span><span class="o">-&gt;</span><span class="n">mem_limit</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">l</span><span class="o">-&gt;</span><span class="n">L</span> <span class="o">=</span> <span class="n">lua_newstate</span><span class="p">(</span><span class="n">lalloc</span><span class="p">,</span> <span class="n">l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">l</span><span class="o">-&gt;</span><span class="n">activeL</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ATOM_INIT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">trap</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">l</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　module 的创建主要就是对其私有数据的创建，snlua 中也不例外，过程就是创建一个 snlua 的结构体变量，然后初始化它其中的变量。<br>
 　　可以看到单个 snlua 服务的内存警告的初始阈值是 32M 大小。这个并不是硬上限，只是一个警告阈值，超过了会触发一次警告，然后这个值会被修改为原来的两倍，直到下一次触发警告。内存分配使用了自定义的 lalloc 来做，还有一点需要注意，在创建状态机的时候，把 snlua 的指针也传进去了，这个在协程部分会用到。</p>
@@ -586,21 +586,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

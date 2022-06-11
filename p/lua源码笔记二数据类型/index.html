@@ -283,29 +283,29 @@
 </span><span class="lnt">22
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
-</span><span class="cm">** Union of all Lua values
-</span><span class="cm">*/</span>
-<span class="k">typedef</span> <span class="k">union</span> <span class="n">Value</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">GCObject</span> <span class="o">*</span><span class="n">gc</span><span class="p">;</span>    <span class="cm">/* collectable objects */</span>
-    <span class="kt">void</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>         <span class="cm">/* light userdata */</span>
-    <span class="n">lua_CFunction</span> <span class="n">f</span><span class="p">;</span> <span class="cm">/* light C functions */</span>
-    <span class="n">lua_Integer</span> <span class="n">i</span><span class="p">;</span>   <span class="cm">/* integer numbers */</span>
-    <span class="n">lua_Number</span> <span class="n">n</span><span class="p">;</span>    <span class="cm">/* float numbers */</span>
-<span class="p">}</span> <span class="n">Value</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">lu_byte</span><span class="p">;</span>
-
-<span class="cm">/*
-</span><span class="cm">** Tagged Values. This is the basic representation of values in Lua:
-</span><span class="cm">** an actual value plus a tag with its type.
-</span><span class="cm">*/</span>
-<span class="cp">#define TValuefields    Value value_; lu_byte tt_
-</span><span class="cp"></span>
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">TValue</span> <span class="p">{</span>
-    <span class="n">TValuefields</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">TValue</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Union of all Lua values
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">union</span> <span class="n">Value</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">GCObject</span> <span class="o">*</span><span class="n">gc</span><span class="p">;</span>    <span class="cm">/* collectable objects */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>         <span class="cm">/* light userdata */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lua_CFunction</span> <span class="n">f</span><span class="p">;</span> <span class="cm">/* light C functions */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lua_Integer</span> <span class="n">i</span><span class="p">;</span>   <span class="cm">/* integer numbers */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lua_Number</span> <span class="n">n</span><span class="p">;</span>    <span class="cm">/* float numbers */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Value</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">lu_byte</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Tagged Values. This is the basic representation of values in Lua:
+</span></span></span><span class="line"><span class="cl"><span class="cm">** an actual value plus a tag with its type.
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define TValuefields    Value value_; lu_byte tt_
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">TValue</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TValuefields</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">TValue</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　可以看到 TValue 中的结构很简单，只包含了一个宏定义 TValuefields，它里面又包含了一个表示值数据的 value_ 和一个表示值类型的 tt_ 。<br>
 　　value_ 是一个 union Value 联合体变量，它可以表示 Lua 中所有类型值的数据，不同字段对应的类型注释中已经给出，其中所有需要进行 GC 的数据类型的指针都会保存在 gc 字段中。<br>
@@ -357,35 +357,35 @@
 </span><span class="lnt">28
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
-</span><span class="cm">** basic types
-</span><span class="cm">*/</span>
-<span class="cp">#define LUA_TNONE           (-1)
-</span><span class="cp"></span>
-<span class="cp">#define LUA_TNIL            0
-</span><span class="cp">#define LUA_TBOOLEAN        1
-</span><span class="cp">#define LUA_TLIGHTUSERDATA  2
-</span><span class="cp">#define LUA_TNUMBER         3
-</span><span class="cp">#define LUA_TSTRING         4
-</span><span class="cp">#define LUA_TTABLE          5
-</span><span class="cp">#define LUA_TFUNCTION       6
-</span><span class="cp">#define LUA_TUSERDATA       7
-</span><span class="cp">#define LUA_TTHREAD         8 </span><span class="c1">// LX, LG
-</span><span class="c1"></span>
-<span class="cp">#define LUA_NUMTYPES        9
-</span><span class="cp"></span>
-<span class="cm">/*
-</span><span class="cm">** Extra types for collectable non-values
-</span><span class="cm">*/</span>
-<span class="cp">#define LUA_TUPVAL    LUA_NUMTYPES  </span><span class="cm">/* upvalues */</span><span class="cp">
-</span><span class="cp">#define LUA_TPROTO    (LUA_NUMTYPES+1)  </span><span class="cm">/* function prototypes */</span><span class="cp">
-</span><span class="cp">#define LUA_TDEADKEY    (LUA_NUMTYPES+2)  </span><span class="cm">/* removed keys in tables */</span><span class="cp">
-</span><span class="cp"></span>
-<span class="cm">/*
-</span><span class="cm">** number of all possible types (including LUA_TNONE but excluding DEADKEY)
-</span><span class="cm">*/</span>
-<span class="cp">#define LUA_TOTALTYPES        (LUA_TPROTO + 2)
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** basic types
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TNONE           (-1)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TNIL            0
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TBOOLEAN        1
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TLIGHTUSERDATA  2
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TNUMBER         3
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TSTRING         4
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TTABLE          5
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TFUNCTION       6
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TUSERDATA       7
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TTHREAD         8 </span><span class="c1">// LX, LG
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define LUA_NUMTYPES        9
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Extra types for collectable non-values
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TUPVAL    LUA_NUMTYPES  </span><span class="cm">/* upvalues */</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TPROTO    (LUA_NUMTYPES+1)  </span><span class="cm">/* function prototypes */</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TDEADKEY    (LUA_NUMTYPES+2)  </span><span class="cm">/* removed keys in tables */</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** number of all possible types (including LUA_TNONE but excluding DEADKEY)
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define LUA_TOTALTYPES        (LUA_TPROTO + 2)
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="gcunion--gcobject">GCUnion &amp;&amp; GCObject</h2>
 <p>　　在了解 GCObject 之前首先要看一下 GCUnion 这个联合体，它是所有 GC 对象真正保存的位置。在 GCUnion 中，有一个 GCObject gc 的字段，它并不真正代表某一种类型，而是一个抽象的公共字段，来提供类型转换。</p>
@@ -403,17 +403,17 @@
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">union</span> <span class="n">GCUnion</span> <span class="p">{</span>
-    <span class="n">GCObject</span> <span class="n">gc</span><span class="p">;</span>  <span class="cm">/* common header */</span>
-    <span class="k">struct</span> <span class="n">TString</span> <span class="n">ts</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">Udata</span> <span class="n">u</span><span class="p">;</span>
-    <span class="k">union</span> <span class="n">Closure</span> <span class="n">cl</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">Table</span> <span class="n">h</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">Proto</span> <span class="n">p</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">lua_State</span> <span class="n">th</span><span class="p">;</span>  <span class="cm">/* thread */</span>
-    <span class="k">struct</span> <span class="n">UpVal</span> <span class="n">upv</span><span class="p">;</span>
-<span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">union</span> <span class="n">GCUnion</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">GCObject</span> <span class="n">gc</span><span class="p">;</span>  <span class="cm">/* common header */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">TString</span> <span class="n">ts</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Udata</span> <span class="n">u</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">union</span> <span class="n">Closure</span> <span class="n">cl</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Table</span> <span class="n">h</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Proto</span> <span class="n">p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">lua_State</span> <span class="n">th</span><span class="p">;</span>  <span class="cm">/* thread */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">UpVal</span> <span class="n">upv</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　需要 GC 的值虽然有各自的结构，但是对外的时候都是统一以 GCObject 为标准的。GCObject 中包含了三部分的内容，next 是整个 GC 链表的一部分，所有需要 GC 的对象都通过 next 连接了起来。tt 又是数据类型，它跟上面的 tt_ 的用法是一样的，只不过它里面表示的是 GC 对象的类型。marked 用于在 GC 阶段的标识。</p>
 <div class="highlight"><div class="chroma">
@@ -430,17 +430,17 @@
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
-</span><span class="cm">** Common Header for all collectable objects (in macro form, to be
-</span><span class="cm">** included in other objects)
-</span><span class="cm">*/</span>
-<span class="cp">#define CommonHeader    struct GCObject *next; lu_byte tt; lu_byte marked
-</span><span class="cp"></span>
-<span class="cm">/* Common type for all collectable objects */</span>
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">GCObject</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">GCObject</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Common Header for all collectable objects (in macro form, to be
+</span></span></span><span class="line"><span class="cl"><span class="cm">** included in other objects)
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define CommonHeader    struct GCObject *next; lu_byte tt; lu_byte marked
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* Common type for all collectable objects */</span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">GCObject</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">GCObject</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　Lua 中定义了很多 GCUnion 到 GCObject 之间互相转换的方法。gco2xx 用来将 GCObject 转为目标类型的 Lua 变量，obj2gco 用来将 Lua 变量转为 GCObject 类型。</p>
 <div class="highlight"><div class="chroma">
@@ -460,20 +460,20 @@
 </span><span class="lnt">13
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define cast_u(o)    cast(union GCUnion *, (o))
-</span><span class="cp"></span>
-<span class="cp">#define gco2ts(o)   check_exp(novariant((o)-&gt;tt) == LUA_TSTRING, &amp;((cast_u(o))-&gt;ts))
-</span><span class="cp">#define gco2u(o)    check_exp((o)-&gt;tt == LUA_VUSERDATA, &amp;((cast_u(o))-&gt;u))
-</span><span class="cp">#define gco2lcl(o)  check_exp((o)-&gt;tt == LUA_VLCL, &amp;((cast_u(o))-&gt;cl.l))
-</span><span class="cp">#define gco2ccl(o)  check_exp((o)-&gt;tt == LUA_VCCL, &amp;((cast_u(o))-&gt;cl.c))
-</span><span class="cp">#define gco2cl(o)   check_exp(novariant((o)-&gt;tt) == LUA_TFUNCTION, &amp;((cast_u(o))-&gt;cl))
-</span><span class="cp">#define gco2t(o)    check_exp((o)-&gt;tt == LUA_VTABLE, &amp;((cast_u(o))-&gt;h))
-</span><span class="cp">#define gco2p(o)    check_exp((o)-&gt;tt == LUA_VPROTO, &amp;((cast_u(o))-&gt;p))
-</span><span class="cp">#define gco2th(o)   check_exp((o)-&gt;tt == LUA_VTHREAD, &amp;((cast_u(o))-&gt;th))
-</span><span class="cp">#define gco2upv(o)  check_exp((o)-&gt;tt == LUA_VUPVAL, &amp;((cast_u(o))-&gt;upv))
-</span><span class="cp"></span>
-<span class="cp">#define obj2gco(v)    check_exp((v)-&gt;tt &gt;= LUA_TSTRING, &amp;(cast_u(v)-&gt;gc))
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define cast_u(o)    cast(union GCUnion *, (o))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define gco2ts(o)   check_exp(novariant((o)-&gt;tt) == LUA_TSTRING, &amp;((cast_u(o))-&gt;ts))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2u(o)    check_exp((o)-&gt;tt == LUA_VUSERDATA, &amp;((cast_u(o))-&gt;u))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2lcl(o)  check_exp((o)-&gt;tt == LUA_VLCL, &amp;((cast_u(o))-&gt;cl.l))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2ccl(o)  check_exp((o)-&gt;tt == LUA_VCCL, &amp;((cast_u(o))-&gt;cl.c))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2cl(o)   check_exp(novariant((o)-&gt;tt) == LUA_TFUNCTION, &amp;((cast_u(o))-&gt;cl))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2t(o)    check_exp((o)-&gt;tt == LUA_VTABLE, &amp;((cast_u(o))-&gt;h))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2p(o)    check_exp((o)-&gt;tt == LUA_VPROTO, &amp;((cast_u(o))-&gt;p))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2th(o)   check_exp((o)-&gt;tt == LUA_VTHREAD, &amp;((cast_u(o))-&gt;th))
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define gco2upv(o)  check_exp((o)-&gt;tt == LUA_VUPVAL, &amp;((cast_u(o))-&gt;upv))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define obj2gco(v)    check_exp((v)-&gt;tt &gt;= LUA_TSTRING, &amp;(cast_u(v)-&gt;gc))
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="创建-gcobject">创建 GCObject</h2>
 <p>　　可以通过调用 luaC_newobj 接口创建一个 GCObject 变量。它会首先为 GCObject 分配所需大小的内存，然后把 GCObject 的 marked 标记为白色，保存数据类型 tt，最后将自己加入到全局的 global_State 的 allgc 链表的最前面。</p>
@@ -520,19 +520,19 @@
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
-</span><span class="cm">** Header for userdata with user values;
-</span><span class="cm">** memory area follows the end of this structure.
-</span><span class="cm">*/</span>
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">Udata</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span>
-    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">nuvalue</span><span class="p">;</span>  <span class="cm">/* number of user values */</span>
-    <span class="n">size_t</span> <span class="n">len</span><span class="p">;</span>  <span class="cm">/* number of bytes */</span>
-    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span>
-    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
-    <span class="n">UValue</span> <span class="n">uv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* user values */</span>
-<span class="p">}</span> <span class="n">Udata</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Header for userdata with user values;
+</span></span></span><span class="line"><span class="cl"><span class="cm">** memory area follows the end of this structure.
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Udata</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">nuvalue</span><span class="p">;</span>  <span class="cm">/* number of user values */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">len</span><span class="p">;</span>  <span class="cm">/* number of bytes */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">UValue</span> <span class="n">uv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* user values */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Udata</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="thread">thread</h2>
 <p>　　thread 在 Lua 中用来指代协程，所有协程的类型都是 LUA_TTHREAD，只有这一个基础类型。变种类型也只有一个 LUA_VTHREAD，它的 variant 值为 0。<br>
@@ -562,21 +562,21 @@
 </span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cm">/*
-</span><span class="cm">** Header for a string value.
-</span><span class="cm">*/</span>
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">TString</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span> <span class="c1">// struct GCObject *next; lu_byte tt; lu_byte marked
-</span><span class="c1"></span>    <span class="n">lu_byte</span> <span class="n">extra</span><span class="p">;</span>  <span class="cm">/* reserved words for short strings; &#34;has hash&#34; for longs */</span>
-    <span class="n">lu_byte</span> <span class="n">shrlen</span><span class="p">;</span>  <span class="cm">/* length for short strings */</span>
-    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希值
-</span><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
-        <span class="n">size_t</span> <span class="n">lnglen</span><span class="p">;</span>  <span class="cm">/* length for long strings */</span>
-        <span class="k">struct</span> <span class="n">TString</span> <span class="o">*</span><span class="n">hnext</span><span class="p">;</span>  <span class="cm">/* linked list for hash table */</span>
-    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
-    <span class="kt">char</span> <span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// 保存字符串的内容
-</span><span class="c1"></span><span class="p">}</span> <span class="n">TString</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">** Header for a string value.
+</span></span></span><span class="line"><span class="cl"><span class="cm">*/</span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">TString</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span> <span class="c1">// struct GCObject *next; lu_byte tt; lu_byte marked
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">lu_byte</span> <span class="n">extra</span><span class="p">;</span>  <span class="cm">/* reserved words for short strings; &#34;has hash&#34; for longs */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">shrlen</span><span class="p">;</span>  <span class="cm">/* length for short strings */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">size_t</span> <span class="n">lnglen</span><span class="p">;</span>  <span class="cm">/* length for long strings */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">TString</span> <span class="o">*</span><span class="n">hnext</span><span class="p">;</span>  <span class="cm">/* linked list for hash table */</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// 保存字符串的内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span> <span class="n">TString</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　短字符串与长字符串使用同一种结构体表示。除了所有 GCObject 都有的 CommonHeader 以外，extra 在短字符串中表示是否是保留字，在长字符串中表示是否已经计算过了哈希值。shrlen 表示短字符串的长度，hash 表示本字符串的哈希值，union u 中的 lnglen 表示长字符串的长度，hnext 用来当作短字符串哈希桶的链表指针，contents 保存了字符串的内容。</p>
 <h3 id="全局字符串表">全局字符串表</h3>
@@ -590,12 +590,12 @@
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">stringtable</span> <span class="p">{</span>
-    <span class="n">TString</span> <span class="o">**</span><span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希桶
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">nuse</span><span class="p">;</span>  <span class="cm">/* number of elements */</span>
-    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
-</span><span class="c1"></span><span class="p">}</span> <span class="n">stringtable</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">stringtable</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TString</span> <span class="o">**</span><span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希桶
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">nuse</span><span class="p">;</span>  <span class="cm">/* number of elements */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span> <span class="n">stringtable</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　它的 nuse 表示的是当前哈希桶中总共的元素个数，size 表示的是哈希桶的长度。<br>
 　　全局字符串表会在 luaS_init 中被初始化，它的初始长度是 128，给哈希桶分配内存以后，会调用 tablerehash 填充哈希桶。<br>
@@ -666,49 +666,49 @@
 </span><span class="lnt">42
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Upvaldesc</span> <span class="p">{</span>
-    <span class="n">TString</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>  <span class="cm">/* upvalue name (for debug information) */</span>
-    <span class="n">lu_byte</span> <span class="n">instack</span><span class="p">;</span>  <span class="cm">/* whether it is in stack (register) */</span>
-    <span class="n">lu_byte</span> <span class="n">idx</span><span class="p">;</span>  <span class="cm">/* index of upvalue (in stack or in outer function&#39;s list) */</span>
-    <span class="n">lu_byte</span> <span class="n">kind</span><span class="p">;</span>  <span class="cm">/* kind of corresponding variable */</span>
-<span class="p">}</span> <span class="n">Upvaldesc</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">LocVar</span> <span class="p">{</span>
-    <span class="n">TString</span> <span class="o">*</span><span class="n">varname</span><span class="p">;</span>
-    <span class="kt">int</span> <span class="n">startpc</span><span class="p">;</span>  <span class="cm">/* first point where variable is active */</span>
-    <span class="kt">int</span> <span class="n">endpc</span><span class="p">;</span>    <span class="cm">/* first point where variable is dead */</span>
-<span class="p">}</span> <span class="n">LocVar</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">AbsLineInfo</span> <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">pc</span><span class="p">;</span>
-    <span class="kt">int</span> <span class="n">line</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">AbsLineInfo</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">Proto</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span>
-    <span class="n">lu_byte</span> <span class="n">numparams</span><span class="p">;</span>  <span class="cm">/* number of fixed (named) parameters */</span>
-    <span class="n">lu_byte</span> <span class="n">is_vararg</span><span class="p">;</span> <span class="c1">// 是否用了可变参数
-</span><span class="c1"></span>    <span class="n">lu_byte</span> <span class="n">maxstacksize</span><span class="p">;</span>  <span class="cm">/* number of registers needed by this function */</span>
-    <span class="kt">int</span> <span class="n">sizeupvalues</span><span class="p">;</span>  <span class="cm">/* size of &#39;upvalues&#39; */</span>
-    <span class="kt">int</span> <span class="n">sizek</span><span class="p">;</span>  <span class="cm">/* size of &#39;k&#39; */</span>
-    <span class="kt">int</span> <span class="n">sizecode</span><span class="p">;</span> <span class="c1">// code 的长度
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizelineinfo</span><span class="p">;</span> <span class="c1">// lineinfo 的长度
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizep</span><span class="p">;</span>  <span class="cm">/* size of &#39;p&#39; */</span>
-    <span class="kt">int</span> <span class="n">sizelocvars</span><span class="p">;</span> <span class="c1">// locvars 的长度
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizeabslineinfo</span><span class="p">;</span>  <span class="cm">/* size of &#39;abslineinfo&#39; */</span>
-    <span class="kt">int</span> <span class="n">linedefined</span><span class="p">;</span>  <span class="cm">/* debug information  */</span> <span class="c1">// 函数定义的起始位置行数
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">lastlinedefined</span><span class="p">;</span>  <span class="cm">/* debug information  */</span> <span class="c1">// 函数定义的末尾位置行数
-</span><span class="c1"></span>    <span class="n">TValue</span> <span class="o">*</span><span class="n">k</span><span class="p">;</span>  <span class="cm">/* constants used by the function */</span>
-    <span class="n">Instruction</span> <span class="o">*</span><span class="n">code</span><span class="p">;</span>  <span class="cm">/* opcodes */</span> <span class="c1">// 字节码保存的位置
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">Proto</span> <span class="o">**</span><span class="n">p</span><span class="p">;</span>  <span class="cm">/* functions defined inside the function */</span>
-    <span class="n">Upvaldesc</span> <span class="o">*</span><span class="n">upvalues</span><span class="p">;</span>  <span class="cm">/* upvalue information */</span>
-    <span class="n">ls_byte</span> <span class="o">*</span><span class="n">lineinfo</span><span class="p">;</span>  <span class="cm">/* information about source lines (debug information) */</span>
-    <span class="n">AbsLineInfo</span> <span class="o">*</span><span class="n">abslineinfo</span><span class="p">;</span>  <span class="cm">/* idem */</span>
-    <span class="n">LocVar</span> <span class="o">*</span><span class="n">locvars</span><span class="p">;</span>  <span class="cm">/* information about local variables (debug information) */</span>
-    <span class="n">TString</span> <span class="o">*</span><span class="n">source</span><span class="p">;</span>  <span class="cm">/* used for debug information */</span>
-    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">Proto</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Upvaldesc</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TString</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>  <span class="cm">/* upvalue name (for debug information) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">instack</span><span class="p">;</span>  <span class="cm">/* whether it is in stack (register) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">idx</span><span class="p">;</span>  <span class="cm">/* index of upvalue (in stack or in outer function&#39;s list) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">kind</span><span class="p">;</span>  <span class="cm">/* kind of corresponding variable */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Upvaldesc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">LocVar</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TString</span> <span class="o">*</span><span class="n">varname</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">startpc</span><span class="p">;</span>  <span class="cm">/* first point where variable is active */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">endpc</span><span class="p">;</span>    <span class="cm">/* first point where variable is dead */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">LocVar</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">AbsLineInfo</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">pc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">line</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">AbsLineInfo</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Proto</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">numparams</span><span class="p">;</span>  <span class="cm">/* number of fixed (named) parameters */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">is_vararg</span><span class="p">;</span> <span class="c1">// 是否用了可变参数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">lu_byte</span> <span class="n">maxstacksize</span><span class="p">;</span>  <span class="cm">/* number of registers needed by this function */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">sizeupvalues</span><span class="p">;</span>  <span class="cm">/* size of &#39;upvalues&#39; */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">sizek</span><span class="p">;</span>  <span class="cm">/* size of &#39;k&#39; */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">sizecode</span><span class="p">;</span> <span class="c1">// code 的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizelineinfo</span><span class="p">;</span> <span class="c1">// lineinfo 的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizep</span><span class="p">;</span>  <span class="cm">/* size of &#39;p&#39; */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">sizelocvars</span><span class="p">;</span> <span class="c1">// locvars 的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">sizeabslineinfo</span><span class="p">;</span>  <span class="cm">/* size of &#39;abslineinfo&#39; */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">linedefined</span><span class="p">;</span>  <span class="cm">/* debug information  */</span> <span class="c1">// 函数定义的起始位置行数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">lastlinedefined</span><span class="p">;</span>  <span class="cm">/* debug information  */</span> <span class="c1">// 函数定义的末尾位置行数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">TValue</span> <span class="o">*</span><span class="n">k</span><span class="p">;</span>  <span class="cm">/* constants used by the function */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">Instruction</span> <span class="o">*</span><span class="n">code</span><span class="p">;</span>  <span class="cm">/* opcodes */</span> <span class="c1">// 字节码保存的位置
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">Proto</span> <span class="o">**</span><span class="n">p</span><span class="p">;</span>  <span class="cm">/* functions defined inside the function */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">Upvaldesc</span> <span class="o">*</span><span class="n">upvalues</span><span class="p">;</span>  <span class="cm">/* upvalue information */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ls_byte</span> <span class="o">*</span><span class="n">lineinfo</span><span class="p">;</span>  <span class="cm">/* information about source lines (debug information) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">AbsLineInfo</span> <span class="o">*</span><span class="n">abslineinfo</span><span class="p">;</span>  <span class="cm">/* idem */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">LocVar</span> <span class="o">*</span><span class="n">locvars</span><span class="p">;</span>  <span class="cm">/* information about local variables (debug information) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TString</span> <span class="o">*</span><span class="n">source</span><span class="p">;</span>  <span class="cm">/* used for debug information */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Proto</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　可以看到 proto 的结构中数据还是比较多的，除了所有 GCObject 都有的 CommonHeader 以外，其余的数据大概可以分为几种类型。</p>
 <ul>
@@ -747,11 +747,11 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">union</span> <span class="n">Closure</span> <span class="p">{</span>
-    <span class="n">CClosure</span> <span class="n">c</span><span class="p">;</span>
-    <span class="n">LClosure</span> <span class="n">l</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">Closure</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">union</span> <span class="n">Closure</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CClosure</span> <span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">LClosure</span> <span class="n">l</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Closure</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="lua-闭包">Lua 闭包</h3>
 <div class="highlight"><div class="chroma">
@@ -778,27 +778,27 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 </span><span class="lnt">20
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define ClosureHeader CommonHeader; lu_byte nupvalues; GCObject *gclist
-</span><span class="cp"></span>
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">UpVal</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span>
-    <span class="n">lu_byte</span> <span class="n">tbc</span><span class="p">;</span>  <span class="cm">/* true if it represents a to-be-closed variable */</span>
-    <span class="n">TValue</span> <span class="o">*</span><span class="n">v</span><span class="p">;</span>  <span class="cm">/* points to stack or to its own value */</span>
-    <span class="k">union</span> <span class="p">{</span>
-        <span class="k">struct</span> <span class="p">{</span>  <span class="cm">/* (when open) */</span>
-            <span class="k">struct</span> <span class="n">UpVal</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>  <span class="cm">/* linked list */</span>
-            <span class="k">struct</span> <span class="n">UpVal</span> <span class="o">**</span><span class="n">previous</span><span class="p">;</span>
-        <span class="p">}</span> <span class="n">open</span><span class="p">;</span>
-        <span class="n">TValue</span> <span class="n">value</span><span class="p">;</span>  <span class="cm">/* the value (when closed) */</span>
-    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">UpVal</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">LClosure</span> <span class="p">{</span>
-    <span class="n">ClosureHeader</span><span class="p">;</span> <span class="c1">// gc 相关字段
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">Proto</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span> <span class="c1">// 函数原型
-</span><span class="c1"></span>    <span class="n">UpVal</span> <span class="o">*</span><span class="n">upvals</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* list of upvalues */</span>
-<span class="p">}</span> <span class="n">LClosure</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define ClosureHeader CommonHeader; lu_byte nupvalues; GCObject *gclist
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">UpVal</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">tbc</span><span class="p">;</span>  <span class="cm">/* true if it represents a to-be-closed variable */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TValue</span> <span class="o">*</span><span class="n">v</span><span class="p">;</span>  <span class="cm">/* points to stack or to its own value */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="p">{</span>  <span class="cm">/* (when open) */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">struct</span> <span class="n">UpVal</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>  <span class="cm">/* linked list */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">struct</span> <span class="n">UpVal</span> <span class="o">**</span><span class="n">previous</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> <span class="n">open</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">TValue</span> <span class="n">value</span><span class="p">;</span>  <span class="cm">/* the value (when closed) */</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">UpVal</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">LClosure</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ClosureHeader</span><span class="p">;</span> <span class="c1">// gc 相关字段
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">Proto</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span> <span class="c1">// 函数原型
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">UpVal</span> <span class="o">*</span><span class="n">upvals</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* list of upvalues */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">LClosure</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　每个 Lua 闭包是一个 LClosure 变量，它主要包括了一个函数原型和一个 upvalue 的数组。这个 upvalue 是函数所在位置的 upvalue，要注意跟函数原型所在位置的 upvalue 区分。<br>
 　　UpVal 中值保存的情况有两种，open 和 closed，open 代表的是原值没有被释放的情况，比如当子函数在父函数中运行时，父函数里 upvalue 就是 open 状态，在 open 状态下的 upvalue 并不会保存它的值，而是只使用 TValue *v 保存了一个指针。<br>
@@ -813,12 +813,12 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">CClosure</span> <span class="p">{</span>
-    <span class="n">ClosureHeader</span><span class="p">;</span> <span class="c1">// gc 相关字段
-</span><span class="c1"></span>    <span class="n">lua_CFunction</span> <span class="n">f</span><span class="p">;</span> <span class="c1">// 函数
-</span><span class="c1"></span>    <span class="n">TValue</span> <span class="n">upvalue</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* list of upvalues */</span>
-<span class="p">}</span> <span class="n">CClosure</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">CClosure</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ClosureHeader</span><span class="p">;</span> <span class="c1">// gc 相关字段
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">lua_CFunction</span> <span class="n">f</span><span class="p">;</span> <span class="c1">// 函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">TValue</span> <span class="n">upvalue</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* list of upvalues */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">CClosure</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　不管是轻量 C 函数还是 C 闭包，都是使用 CClosure 变量表示。upvalue 全部是由 TValue 的值组成的，不存在用指针的情况。当闭包不需要 upvalue 时，也就是只有函数指针的时候，就是轻量 C 函数了。</p>
 <h2 id="table">table</h2>
@@ -850,28 +850,28 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 </span><span class="lnt">21
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">union</span> <span class="n">Node</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">NodeKey</span> <span class="p">{</span>
-        <span class="n">TValuefields</span><span class="p">;</span>  <span class="cm">/* fields for value */</span>
-        <span class="n">lu_byte</span> <span class="n">key_tt</span><span class="p">;</span>  <span class="cm">/* key type */</span>
-        <span class="kt">int</span> <span class="n">next</span><span class="p">;</span>  <span class="cm">/* for chaining (offset for next node)*/</span>
-        <span class="n">Value</span> <span class="n">key_val</span><span class="p">;</span>  <span class="cm">/* key value */</span>
-    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
-    <span class="n">TValue</span> <span class="n">i_val</span><span class="p">;</span>  <span class="cm">/* direct access to node&#39;s value as a proper &#39;TValue&#39; */</span>
-<span class="p">}</span> <span class="n">Node</span><span class="p">;</span>
-
-<span class="k">typedef</span> <span class="k">struct</span> <span class="n">Table</span> <span class="p">{</span>
-    <span class="n">CommonHeader</span><span class="p">;</span>
-    <span class="n">lu_byte</span> <span class="n">flags</span><span class="p">;</span>  <span class="cm">/* 1&lt;&lt;p means tagmethod(p) is not present */</span>
-    <span class="n">lu_byte</span> <span class="n">lsizenode</span><span class="p">;</span>  <span class="cm">/* log2 of size of &#39;node&#39; array */</span>
-    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">alimit</span><span class="p">;</span>  <span class="cm">/* &#34;limit&#34; of &#39;array&#39; array */</span>
-    <span class="n">TValue</span> <span class="o">*</span><span class="n">array</span><span class="p">;</span>  <span class="cm">/* array part */</span>
-    <span class="n">Node</span> <span class="o">*</span><span class="n">node</span><span class="p">;</span> <span class="c1">// 哈希表
-</span><span class="c1"></span>    <span class="n">Node</span> <span class="o">*</span><span class="n">lastfree</span><span class="p">;</span>  <span class="cm">/* any free position is before this position */</span>
-    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span> <span class="c1">// 元表
-</span><span class="c1"></span>    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">Table</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">union</span> <span class="n">Node</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">NodeKey</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">TValuefields</span><span class="p">;</span>  <span class="cm">/* fields for value */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">lu_byte</span> <span class="n">key_tt</span><span class="p">;</span>  <span class="cm">/* key type */</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">next</span><span class="p">;</span>  <span class="cm">/* for chaining (offset for next node)*/</span>
+</span></span><span class="line"><span class="cl">        <span class="n">Value</span> <span class="n">key_val</span><span class="p">;</span>  <span class="cm">/* key value */</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TValue</span> <span class="n">i_val</span><span class="p">;</span>  <span class="cm">/* direct access to node&#39;s value as a proper &#39;TValue&#39; */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Node</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Table</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">flags</span><span class="p">;</span>  <span class="cm">/* 1&lt;&lt;p means tagmethod(p) is not present */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">lsizenode</span><span class="p">;</span>  <span class="cm">/* log2 of size of &#39;node&#39; array */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">alimit</span><span class="p">;</span>  <span class="cm">/* &#34;limit&#34; of &#39;array&#39; array */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">TValue</span> <span class="o">*</span><span class="n">array</span><span class="p">;</span>  <span class="cm">/* array part */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">Node</span> <span class="o">*</span><span class="n">node</span><span class="p">;</span> <span class="c1">// 哈希表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">Node</span> <span class="o">*</span><span class="n">lastfree</span><span class="p">;</span>  <span class="cm">/* any free position is before this position */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span> <span class="c1">// 元表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">Table</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　由于在 table 中数组和哈希表的混用，所以在结构体中会包含这两类的数据。<br>
 　　数组部分包括了 array 和 alimit 这两个值，array 是一个 TValue 结构体的数组，alimit 是它的长度上限，不一定是真实的长度。<br>
@@ -1172,21 +1172,19 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

@@ -319,37 +319,37 @@
 </span><span class="lnt">30
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// m_fixed.h
-</span><span class="c1"></span><span class="cp">#define FRACBITS   16
-</span><span class="cp">#define FRACUNIT   (1&lt;&lt;FRACBITS)
-</span><span class="cp">#define MAXINT     ((int)0x7fffffff)
-</span><span class="cp">#define MININT     ((int)0x80000000)
-</span><span class="cp"></span>
-<span class="k">typedef</span> <span class="kt">int</span> <span class="n">fixed_t</span><span class="p">;</span>
-
-<span class="n">fixed_t</span> <span class="nf">FixedMul</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
-<span class="n">fixed_t</span> <span class="nf">FixedDiv</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
-<span class="n">fixed_t</span> <span class="nf">FixedDiv2</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
-
-<span class="c1">// m_fixed.c
-</span><span class="c1"></span><span class="n">fixed_t</span> <span class="nf">FixedMul</span> <span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
-    <span class="k">return</span> <span class="p">((</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span> <span class="n">b</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="n">FRACBITS</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="n">fixed_t</span> <span class="nf">FixedDiv</span><span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
-    <span class="k">if</span> <span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">14</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">abs</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">^</span> <span class="n">b</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="nl">MININT</span> <span class="p">:</span> <span class="n">MAXINT</span><span class="p">;</span>
-    <span class="k">return</span> <span class="n">FixedDiv2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
-<span class="p">}</span>
-
-<span class="n">fixed_t</span> <span class="nf">FixedDiv2</span><span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
-    <span class="kt">double</span> <span class="n">c</span><span class="p">;</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="p">((</span><span class="kt">double</span><span class="p">)</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="kt">double</span><span class="p">)</span><span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">FRACUNIT</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">&gt;=</span> <span class="mf">2147483648.0</span> <span class="o">||</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">2147483648.0</span><span class="p">)</span>
-        <span class="n">I_Error</span><span class="p">(</span><span class="s">&#34;FixedDiv: divide by zero&#34;</span><span class="p">);</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">fixed_t</span><span class="p">)</span><span class="n">c</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// m_fixed.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define FRACBITS   16
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define FRACUNIT   (1&lt;&lt;FRACBITS)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MAXINT     ((int)0x7fffffff)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MININT     ((int)0x80000000)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="kt">int</span> <span class="n">fixed_t</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="nf">FixedMul</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="nf">FixedDiv</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="nf">FixedDiv2</span>	<span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// m_fixed.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">fixed_t</span> <span class="nf">FixedMul</span> <span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">((</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="kt">long</span> <span class="kt">long</span><span class="p">)</span> <span class="n">b</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="n">FRACBITS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="nf">FixedDiv</span><span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="n">abs</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">14</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">abs</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="p">(</span><span class="n">a</span> <span class="o">^</span> <span class="n">b</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="nl">MININT</span> <span class="p">:</span> <span class="n">MAXINT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">FixedDiv2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="nf">FixedDiv2</span><span class="p">(</span><span class="n">fixed_t</span> <span class="n">a</span><span class="p">,</span> <span class="n">fixed_t</span> <span class="n">b</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">double</span> <span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">c</span> <span class="o">=</span> <span class="p">((</span><span class="kt">double</span><span class="p">)</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="kt">double</span><span class="p">)</span><span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="n">FRACUNIT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">&gt;=</span> <span class="mf">2147483648.0</span> <span class="o">||</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">2147483648.0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">I_Error</span><span class="p">(</span><span class="s">&#34;FixedDiv: divide by zero&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="n">fixed_t</span><span class="p">)</span><span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　m_fixed 提供了乘除法的接口，举一个例子来测试一下定点数和浮点数。</p>
 <div class="highlight"><div class="chroma">
@@ -359,10 +359,10 @@
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="n">fixed_t</span> <span class="n">n</span> <span class="o">=</span> <span class="n">FixedDiv</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span> <span class="c1">// n = 209715
-</span><span class="c1"></span><span class="n">printf</span><span class="p">(</span><span class="s">&#34;fixed: %lf</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">n</span> <span class="o">/</span> <span class="mf">65536.0f</span><span class="p">);</span> <span class="c1">// fixed: 3.199997
-</span><span class="c1"></span><span class="n">printf</span><span class="p">(</span><span class="s">&#34;float: %lf</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="mi">16</span> <span class="o">/</span> <span class="mf">5.0f</span><span class="p">);</span> <span class="c1">// float: 3.200000
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="n">fixed_t</span> <span class="n">n</span> <span class="o">=</span> <span class="n">FixedDiv</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span> <span class="c1">// n = 209715
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">printf</span><span class="p">(</span><span class="s">&#34;fixed: %lf</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">n</span> <span class="o">/</span> <span class="mf">65536.0f</span><span class="p">);</span> <span class="c1">// fixed: 3.199997
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">printf</span><span class="p">(</span><span class="s">&#34;float: %lf</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="mi">16</span> <span class="o">/</span> <span class="mf">5.0f</span><span class="p">);</span> <span class="c1">// float: 3.200000
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　可以看到定点数的精度是不如浮点数的，并且使用同样大小的空间时，定点数可以表示的范围也远不及浮点数。<br>
 　　定点数的最大的优势是自主实现，规则可控，这就意味着可以非常轻易的做到跨平台的一致性。在部分开发场景下，一致性远比高精度更加重要。</p>
@@ -607,21 +607,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

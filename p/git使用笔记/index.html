@@ -266,10 +266,10 @@
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[http]
-[http &#34;https://github.com&#34;]
-    proxy = http://x.x.x.x:xxx
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[http]
+</span></span><span class="line"><span class="cl">[http &#34;https://github.com&#34;]
+</span></span><span class="line"><span class="cl">    proxy = http://x.x.x.x:xxx
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="ssh-协议">SSH 协议</h3>
 <p>　　如果使用 SSH 协议进行 git 操作的话，则需要设置 ssh 程序的代理。在用户的根目录下，ssh 程序会创建一个 .ssh 目录，在 Linux 下是隐藏的。其中的 config 是 ssh 客户端的配置文件，可以增加配置对指定主机设置是否使用代理。</p>
@@ -280,10 +280,10 @@
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Host github.com
-    User git
-    ProxyCommand connect -H xxx.xxx.xxx.xxx:1234 %h %p
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">Host github.com
+</span></span><span class="line"><span class="cl">    User git
+</span></span><span class="line"><span class="cl">    ProxyCommand connect -H xxx.xxx.xxx.xxx:1234 %h %p
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　上面是 Windows 平台下的配置，但是 Linux 下没有 connect 这个程序，应该使用 nc 程序来连接代理服务。</p>
 <div class="highlight"><div class="chroma">
@@ -293,10 +293,10 @@
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">Host github.com
-  User git
-  ProxyCommand nc -X 5 -x xxx.xxx.xxx.xxx:1234 %h %p
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">Host github.com
+</span></span><span class="line"><span class="cl">  User git
+</span></span><span class="line"><span class="cl">  ProxyCommand nc -X 5 -x xxx.xxx.xxx.xxx:1234 %h %p
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　-X 5 表示使用了 socks 5 版本的代理协议。</p>
 <h2 id="设置用户">设置用户</h2>
@@ -308,10 +308,10 @@
 </span><span class="lnt">3
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">[user]
-    name = xxx
-    email = xxx@xxx.com
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[user]
+</span></span><span class="line"><span class="cl">    name = xxx
+</span></span><span class="line"><span class="cl">    email = xxx@xxx.com
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="github">Github</h2>
 <h3 id="配置密钥">配置密钥</h3>
@@ -534,21 +534,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

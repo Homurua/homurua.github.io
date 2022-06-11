@@ -277,24 +277,24 @@
 </span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define skynet_malloc malloc
-</span><span class="cp">#define skynet_calloc calloc
-</span><span class="cp">#define skynet_realloc realloc
-</span><span class="cp">#define skynet_free free
-</span><span class="cp">#define skynet_memalign memalign
-</span><span class="cp">#define skynet_aligned_alloc aligned_alloc
-</span><span class="cp">#define skynet_posix_memalign posix_memalign
-</span><span class="cp"></span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_malloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">sz</span><span class="p">);</span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_calloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">nmemb</span><span class="p">,</span><span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_realloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-<span class="kt">void</span> <span class="nf">skynet_free</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
-<span class="kt">char</span> <span class="o">*</span> <span class="nf">skynet_strdup</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">);</span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_lalloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">osize</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">nsize</span><span class="p">);</span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_memalign</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-<span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_aligned_alloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-<span class="kt">int</span> <span class="nf">skynet_posix_memalign</span><span class="p">(</span><span class="kt">void</span> <span class="o">**</span><span class="n">memptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define skynet_malloc malloc
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_calloc calloc
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_realloc realloc
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_free free
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_memalign memalign
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_aligned_alloc aligned_alloc
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_posix_memalign posix_memalign
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_malloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">sz</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_calloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">nmemb</span><span class="p">,</span><span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_realloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">skynet_free</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">char</span> <span class="o">*</span> <span class="nf">skynet_strdup</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_lalloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">osize</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">nsize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_memalign</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_aligned_alloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">skynet_posix_memalign</span><span class="p">(</span><span class="kt">void</span> <span class="o">**</span><span class="n">memptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　这一套接口跟标准库的接口命名完全一样，只是在名字前面加了 skynet_ 的前缀，同时参数和功能也是完全一样的。<br>
 　　这里有一个小技巧，除了声明了这些函数以外，每个接口还有一个同名的 define 定义，如果加了编译选项 NOUSE_JEMALLOC 的话，则这些函数声明都不会有实现，这时候调用这些函数实际就是使用的同名的 define 定义。</p>
@@ -320,24 +320,24 @@
 </span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="n">ATOM_SIZET</span> <span class="n">_used_memory</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-<span class="k">static</span> <span class="n">ATOM_SIZET</span> <span class="n">_memory_block</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-
-<span class="k">struct</span> <span class="n">mem_data</span> <span class="p">{</span>
-    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
-    <span class="n">ssize_t</span> <span class="n">allocated</span><span class="p">;</span>
-<span class="p">};</span>
-
-<span class="k">struct</span> <span class="n">mem_cookie</span> <span class="p">{</span>
-    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
-<span class="cp">#ifdef MEMORY_CHECK
-</span><span class="cp"></span>    <span class="kt">uint32_t</span> <span class="n">dogtag</span><span class="p">;</span>
-<span class="cp">#endif
-</span><span class="cp"></span><span class="p">};</span>
-
-<span class="cp">#define SLOT_SIZE 0x10000
-</span><span class="cp"></span><span class="k">static</span> <span class="k">struct</span> <span class="n">mem_data</span> <span class="n">mem_stats</span><span class="p">[</span><span class="n">SLOT_SIZE</span><span class="p">];</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">ATOM_SIZET</span> <span class="n">_used_memory</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">ATOM_SIZET</span> <span class="n">_memory_block</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">mem_data</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ssize_t</span> <span class="n">allocated</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">mem_cookie</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef MEMORY_CHECK
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="kt">uint32_t</span> <span class="n">dogtag</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#define SLOT_SIZE 0x10000
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">static</span> <span class="k">struct</span> <span class="n">mem_data</span> <span class="n">mem_stats</span><span class="p">[</span><span class="n">SLOT_SIZE</span><span class="p">];</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　上面是内存数据相关的记录，_used_memory 是本进程内通过 skynet_malloc 分配的所有内存数量，_memory_block 是本进程内通过 skynet_malloc 分配的内存块数，跟分配次数相等。<br>
 　　mem_data 是针对服务的，每个服务都会有一个 mem_data 结构的变量在 mem_stats 里面保存。handle 用来保存服务的 handle，allocated 用来保存该服务已分配的内存字节数。这里有个小问题，就是 SLOT_SIZE 是小于 handle 的增长上限的，而且数组长度也不会增长，所以并不是所有服务都可以统计分配的内存数量。<br>
@@ -602,21 +602,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

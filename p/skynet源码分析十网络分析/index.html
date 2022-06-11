@@ -286,30 +286,30 @@
 </span><span class="lnt">23
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define MAX_INFO 128
-</span><span class="cp"></span><span class="c1">// MAX_SOCKET will be 2^MAX_SOCKET_P
-</span><span class="c1"></span><span class="cp">#define MAX_SOCKET_P 16
-</span><span class="cp">#define MAX_SOCKET (1&lt;&lt;MAX_SOCKET_P)
-</span><span class="cp">#define MAX_EVENT 64
-</span><span class="cp">#define MAX_UDP_PACKAGE 65535
-</span><span class="cp"></span>
-<span class="k">struct</span> <span class="n">socket_server</span> <span class="p">{</span>
-    <span class="k">volatile</span> <span class="kt">uint64_t</span> <span class="n">time</span><span class="p">;</span> <span class="c1">// 当前时间，由 timer 线程更新，socket 线程直接读这个值
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">recvctrl_fd</span><span class="p">;</span> <span class="c1">// 接收命令的管道套接字
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sendctrl_fd</span><span class="p">;</span> <span class="c1">// 发送命令的管道套接字
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">checkctrl</span><span class="p">;</span> <span class="c1">// 用来标记是否要检查控制台命令的标志
-</span><span class="c1"></span>    <span class="n">poll_fd</span> <span class="n">event_fd</span><span class="p">;</span> <span class="c1">// 全局的 epoll 套接字
-</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">alloc_id</span><span class="p">;</span> <span class="c1">// 已分配的id，不断累加
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_n</span><span class="p">;</span> <span class="c1">// 本次调用 epoll 得到的就绪的 fd 个数
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_index</span><span class="p">;</span> <span class="c1">// 目前处理到的 fd 序号
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_object_interface</span> <span class="n">soi</span><span class="p">;</span> <span class="c1">// userobject 接口
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">event</span> <span class="n">ev</span><span class="p">[</span><span class="n">MAX_EVENT</span><span class="p">];</span> <span class="c1">// 捕获的事件数组
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket</span> <span class="n">slot</span><span class="p">[</span><span class="n">MAX_SOCKET</span><span class="p">];</span> <span class="c1">// 全部的 socket 哈希，key 为经过哈希算法计算以后的 id
-</span><span class="c1"></span>    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="n">MAX_INFO</span><span class="p">];</span> <span class="c1">// 临时缓冲区
-</span><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">udpbuffer</span><span class="p">[</span><span class="n">MAX_UDP_PACKAGE</span><span class="p">];</span> <span class="c1">// udp 数据缓冲区
-</span><span class="c1"></span>    <span class="n">fd_set</span> <span class="n">rfds</span><span class="p">;</span> <span class="c1">// 要监听的读描述符集合，用于命令的 select
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define MAX_INFO 128
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="c1">// MAX_SOCKET will be 2^MAX_SOCKET_P
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define MAX_SOCKET_P 16
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MAX_SOCKET (1&lt;&lt;MAX_SOCKET_P)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MAX_EVENT 64
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MAX_UDP_PACKAGE 65535
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">socket_server</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">uint64_t</span> <span class="n">time</span><span class="p">;</span> <span class="c1">// 当前时间，由 timer 线程更新，socket 线程直接读这个值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">recvctrl_fd</span><span class="p">;</span> <span class="c1">// 接收命令的管道套接字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">sendctrl_fd</span><span class="p">;</span> <span class="c1">// 发送命令的管道套接字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">checkctrl</span><span class="p">;</span> <span class="c1">// 用来标记是否要检查控制台命令的标志
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">poll_fd</span> <span class="n">event_fd</span><span class="p">;</span> <span class="c1">// 全局的 epoll 套接字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">alloc_id</span><span class="p">;</span> <span class="c1">// 已分配的id，不断累加
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_n</span><span class="p">;</span> <span class="c1">// 本次调用 epoll 得到的就绪的 fd 个数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">event_index</span><span class="p">;</span> <span class="c1">// 目前处理到的 fd 序号
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_object_interface</span> <span class="n">soi</span><span class="p">;</span> <span class="c1">// userobject 接口
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">event</span> <span class="n">ev</span><span class="p">[</span><span class="n">MAX_EVENT</span><span class="p">];</span> <span class="c1">// 捕获的事件数组
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket</span> <span class="n">slot</span><span class="p">[</span><span class="n">MAX_SOCKET</span><span class="p">];</span> <span class="c1">// 全部的 socket 哈希，key 为经过哈希算法计算以后的 id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="n">MAX_INFO</span><span class="p">];</span> <span class="c1">// 临时缓冲区
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">udpbuffer</span><span class="p">[</span><span class="n">MAX_UDP_PACKAGE</span><span class="p">];</span> <span class="c1">// udp 数据缓冲区
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">fd_set</span> <span class="n">rfds</span><span class="p">;</span> <span class="c1">// 要监听的读描述符集合，用于命令的 select
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　每个 skynet 进程都有一个全局的 socket 管理器，它会在 skynet 进程启动的时候被初始化。从其中的变量大概可以看出一些实现的端倪。比较重要的部分是 epoll 相关的部分和命令相关的部分。<br>
 　　在其初始化函数 <strong>socket_server_create</strong> 中，主要的操作是</p>
@@ -350,32 +350,32 @@
 </span><span class="lnt">25
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket</span> <span class="p">{</span>
-    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 本结构关联的服务 handle
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">high</span><span class="p">;</span> <span class="c1">// 高优先级队列
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">low</span><span class="p">;</span> <span class="c1">// 低优先级队列
-</span><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">wb_size</span><span class="p">;</span> <span class="c1">// 等待写入的字节长度
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_stat</span> <span class="n">stat</span><span class="p">;</span> <span class="c1">// 统计数据
-</span><span class="c1"></span>    <span class="n">ATOM_ULONG</span> <span class="n">sending</span><span class="p">;</span> <span class="c1">// 是否正在发送数据，是一个引用计数，会累加
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span> <span class="c1">// 套接字
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 分配的 id
-</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">type</span><span class="p">;</span> <span class="c1">// 当前连接状态
-</span><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">protocol</span><span class="p">;</span> <span class="c1">// 连接协议
-</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">reading</span><span class="p">;</span> <span class="c1">// fd 的 read 监听标记
-</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">writing</span><span class="p">;</span> <span class="c1">// fd 的 write 监听标记
-</span><span class="c1"></span>    <span class="kt">bool</span> <span class="n">closing</span><span class="p">;</span> <span class="c1">// fd 的 close 标记
-</span><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">udpconnecting</span><span class="p">;</span> <span class="c1">// udp 正在连接
-</span><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">warn_size</span><span class="p">;</span> <span class="c1">// 报警阈值
-</span><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
-        <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
-        <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
-    <span class="p">}</span> <span class="n">p</span><span class="p">;</span> <span class="c1">// 如果是 tcp 连接则用 size 表示每次读取的字节数，如果是 udp 则用 udp_address 表示地址
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">dw_lock</span><span class="p">;</span> <span class="c1">// 自旋锁
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">dw_offset</span><span class="p">;</span> <span class="c1">// 已经写入的大小
-</span><span class="c1"></span>    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">dw_buffer</span><span class="p">;</span> <span class="c1">// 数据指针
-</span><span class="c1"></span>    <span class="n">size_t</span> <span class="n">dw_size</span><span class="p">;</span> <span class="c1">// 总大小
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">socket</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 本结构关联的服务 handle
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">high</span><span class="p">;</span> <span class="c1">// 高优先级队列
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">wb_list</span> <span class="n">low</span><span class="p">;</span> <span class="c1">// 低优先级队列
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">wb_size</span><span class="p">;</span> <span class="c1">// 等待写入的字节长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">socket_stat</span> <span class="n">stat</span><span class="p">;</span> <span class="c1">// 统计数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ATOM_ULONG</span> <span class="n">sending</span><span class="p">;</span> <span class="c1">// 是否正在发送数据，是一个引用计数，会累加
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span> <span class="c1">// 套接字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 分配的 id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">type</span><span class="p">;</span> <span class="c1">// 当前连接状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">uint8_t</span> <span class="n">protocol</span><span class="p">;</span> <span class="c1">// 连接协议
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">bool</span> <span class="n">reading</span><span class="p">;</span> <span class="c1">// fd 的 read 监听标记
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">bool</span> <span class="n">writing</span><span class="p">;</span> <span class="c1">// fd 的 write 监听标记
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">bool</span> <span class="n">closing</span><span class="p">;</span> <span class="c1">// fd 的 close 标记
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ATOM_INT</span> <span class="n">udpconnecting</span><span class="p">;</span> <span class="c1">// udp 正在连接
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int64_t</span> <span class="n">warn_size</span><span class="p">;</span> <span class="c1">// 报警阈值
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">p</span><span class="p">;</span> <span class="c1">// 如果是 tcp 连接则用 size 表示每次读取的字节数，如果是 udp 则用 udp_address 表示地址
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">spinlock</span> <span class="n">dw_lock</span><span class="p">;</span> <span class="c1">// 自旋锁
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">dw_offset</span><span class="p">;</span> <span class="c1">// 已经写入的大小
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">dw_buffer</span><span class="p">;</span> <span class="c1">// 数据指针
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">size_t</span> <span class="n">dw_size</span><span class="p">;</span> <span class="c1">// 总大小
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　socket 连接是个很复杂的结构，因为内存对齐的缘故，变量的先后顺序排列并不是按照关联性分布的，后面会按照功能相关性分开讨论其中的变量。</p>
 <h3 id="socket-的基础数据">socket 的基础数据</h3>
@@ -400,17 +400,17 @@ id 是由 skynet 分配的用来标识 socket 结构体变量的唯一标识符�
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define SOCKET_TYPE_INVALID 0 </span><span class="c1">// 初始状态，表示未使用
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_RESERVE 1 </span><span class="c1">// 保留状态
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PLISTEN 2 </span><span class="c1">// 监听前状态
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_LISTEN 3 </span><span class="c1">// 监听中状态
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTING 4 </span><span class="c1">// 连接中状态
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTED 5 </span><span class="c1">// 已连接状态
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_READ 6 </span><span class="c1">// 半关闭剩下读
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_WRITE 7 </span><span class="c1">// 半关闭剩下写
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PACCEPT 8 </span><span class="c1">// 已 accept 但是还未加入 epoll
-</span><span class="c1"></span><span class="cp">#define SOCKET_TYPE_BIND 9 </span><span class="c1">// 绑定状态
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define SOCKET_TYPE_INVALID 0 </span><span class="c1">// 初始状态，表示未使用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_RESERVE 1 </span><span class="c1">// 保留状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PLISTEN 2 </span><span class="c1">// 监听前状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_LISTEN 3 </span><span class="c1">// 监听中状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTING 4 </span><span class="c1">// 连接中状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_CONNECTED 5 </span><span class="c1">// 已连接状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_READ 6 </span><span class="c1">// 半关闭剩下读
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_HALFCLOSE_WRITE 7 </span><span class="c1">// 半关闭剩下写
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_PACCEPT 8 </span><span class="c1">// 已 accept 但是还未加入 epoll
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_TYPE_BIND 9 </span><span class="c1">// 绑定状态
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div></li>
 <li><strong>uint8_t protocol</strong><br>
@@ -423,11 +423,11 @@ protocol 表示的是 socket 关联的协议类型，在处理网络事件时，
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define PROTOCOL_TCP 0
-</span><span class="cp">#define PROTOCOL_UDP 1
-</span><span class="cp">#define PROTOCOL_UDPv6 2
-</span><span class="cp">#define PROTOCOL_UNKNOWN 255
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define PROTOCOL_TCP 0
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define PROTOCOL_UDP 1
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define PROTOCOL_UDPv6 2
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define PROTOCOL_UNKNOWN 255
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div></li>
 <li><strong>uintptr_t opaque</strong><br>
@@ -450,13 +450,13 @@ stat 用来记录当前 socket 的读写数据状态。
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket_stat</span> <span class="p">{</span>
-  <span class="kt">uint64_t</span> <span class="n">rtime</span><span class="p">;</span> <span class="c1">// 最近一次读取时间
-</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">wtime</span><span class="p">;</span> <span class="c1">// 最近一次写入时间
-</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的总数据长度
-</span><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">write</span><span class="p">;</span> <span class="c1">// 已写入的总数据长度
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">socket_stat</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">uint64_t</span> <span class="n">rtime</span><span class="p">;</span> <span class="c1">// 最近一次读取时间
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">wtime</span><span class="p">;</span> <span class="c1">// 最近一次写入时间
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的总数据长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">uint64_t</span> <span class="n">write</span><span class="p">;</span> <span class="c1">// 已写入的总数据长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div></li>
 <li><strong>ATOM_INT udpconnecting</strong><br>
@@ -482,19 +482,19 @@ wb_list 即 write buffer list，发送队列是一个单向链表。每个 socke
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">write_buffer</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
-    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
-    <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
-    <span class="n">size_t</span> <span class="n">sz</span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="n">userobject</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
-<span class="p">};</span>
-<span class="k">struct</span> <span class="n">wb_list</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">head</span><span class="p">;</span>
-    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">tail</span><span class="p">;</span>
-<span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">write_buffer</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">sz</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">bool</span> <span class="n">userobject</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint8_t</span> <span class="n">udp_address</span><span class="p">[</span><span class="n">UDP_ADDRESS_SIZE</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">wb_list</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">head</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">write_buffer</span> <span class="o">*</span><span class="n">tail</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div></li>
 <li><strong>int64_t wb_size</strong><br>
@@ -536,13 +536,13 @@ socket 等待发送数据的警告阈值，如果超过了这个值，会输出�
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">socket_message</span> <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// socket id
-</span><span class="c1"></span>    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 目标服务的 handle 句柄
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">ud</span><span class="p">;</span>	<span class="c1">// accept 事件中 ud 是新连接的 id，别的时候是 data 的长度
-</span><span class="c1"></span>    <span class="kt">char</span> <span class="o">*</span> <span class="n">data</span><span class="p">;</span> <span class="c1">//数据指针
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">socket_message</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// socket id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">uintptr_t</span> <span class="n">opaque</span><span class="p">;</span> <span class="c1">// 目标服务的 handle 句柄
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">ud</span><span class="p">;</span>	<span class="c1">// accept 事件中 ud 是新连接的 id，别的时候是 data 的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">char</span> <span class="o">*</span> <span class="n">data</span><span class="p">;</span> <span class="c1">//数据指针
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="socket_server_poll">socket_server_poll</h3>
 <p>　　本函数是 skynet 网络部分处理网络事件的最终循环。该函数大部分情况下都阻塞在 sp_wait 上，等待 socket 事件触发或者是网络命令过来。<br>
@@ -562,15 +562,15 @@ socket 等待发送数据的警告阈值，如果超过了这个值，会输出�
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define SOCKET_DATA 0       </span><span class="c1">// 读取数据
-</span><span class="c1"></span><span class="cp">#define SOCKET_CLOSE 1      </span><span class="c1">// socket 关闭
-</span><span class="c1"></span><span class="cp">#define SOCKET_OPEN 2       </span><span class="c1">// socket 连接成功
-</span><span class="c1"></span><span class="cp">#define SOCKET_ACCEPT 3     </span><span class="c1">// accept 成功
-</span><span class="c1"></span><span class="cp">#define SOCKET_ERR 4        </span><span class="c1">// socket 错误
-</span><span class="c1"></span><span class="cp">#define SOCKET_EXIT 5       </span><span class="c1">// 退出 socket 线程
-</span><span class="c1"></span><span class="cp">#define SOCKET_UDP 6        </span><span class="c1">// 接收 udp 数据
-</span><span class="c1"></span><span class="cp">#define SOCKET_WARNING 7    </span><span class="c1">// socket 警告
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define SOCKET_DATA 0       </span><span class="c1">// 读取数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_CLOSE 1      </span><span class="c1">// socket 关闭
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_OPEN 2       </span><span class="c1">// socket 连接成功
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_ACCEPT 3     </span><span class="c1">// accept 成功
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_ERR 4        </span><span class="c1">// socket 错误
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_EXIT 5       </span><span class="c1">// 退出 socket 线程
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_UDP 6        </span><span class="c1">// 接收 udp 数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define SOCKET_WARNING 7    </span><span class="c1">// socket 警告
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="网络指令处理">网络指令处理</h3>
 <p>　　每当 epoll_wait 返回时，新的一轮网络事件的处理就会开始，指令的检查标记 checkctrl 也会被设为 1，来开启指令检查。每轮只会处理一次指令，会一直连续处理指令直到全部处理完。<br>
@@ -604,24 +604,24 @@ socket 等待发送数据的警告阈值，如果超过了这个值，会输出�
 </span><span class="lnt">17
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">request_package</span> <span class="p">{</span>
-    <span class="kt">uint8_t</span> <span class="n">header</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span> <span class="c1">// 6 bytes dummy, 第 7 个字节表示类型，第 8 个字节表示长度
-</span><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
-        <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
-        <span class="k">struct</span> <span class="n">request_open</span> <span class="n">open</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_send</span> <span class="n">send</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_send_udp</span> <span class="n">send_udp</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_close</span> <span class="n">close</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_listen</span> <span class="n">listen</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_bind</span> <span class="n">bind</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_resumepause</span> <span class="n">resumepause</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_setopt</span> <span class="n">setopt</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_udp</span> <span class="n">udp</span><span class="p">;</span>
-        <span class="k">struct</span> <span class="n">request_setudp</span> <span class="n">set_udp</span><span class="p">;</span>
-    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="n">dummy</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span> <span class="c1">// 预留了 256 个字节
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">request_package</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint8_t</span> <span class="n">header</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span> <span class="c1">// 6 bytes dummy, 第 7 个字节表示类型，第 8 个字节表示长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_open</span> <span class="n">open</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_send</span> <span class="n">send</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_send_udp</span> <span class="n">send_udp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_close</span> <span class="n">close</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_listen</span> <span class="n">listen</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_bind</span> <span class="n">bind</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_resumepause</span> <span class="n">resumepause</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_setopt</span> <span class="n">setopt</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_udp</span> <span class="n">udp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">request_setudp</span> <span class="n">set_udp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint8_t</span> <span class="n">dummy</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span> <span class="c1">// 预留了 256 个字节
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="处理请求包">处理请求包</h3>
 <p>　　socket 线程的主循环中，会不断读取管道中的数据，每条命令要执行两次 read 读取，第一次要读到 header 中的内容，然后根据 header[1] 的长度数据，读取剩余的数据。然后根据 hander[0] 中的类型数据，进行不同的处理。目前一共有 13 种网络操作类型。</p>
@@ -949,21 +949,19 @@ Q query info</p>
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

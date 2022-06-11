@@ -294,30 +294,30 @@
 </span><span class="lnt">23
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define QUEUESIZE 1024
-</span><span class="cp">#define HASHSIZE 4096
-</span><span class="cp"></span>
-<span class="k">struct</span> <span class="n">netpack</span> <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 套接字 id
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
-</span><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span> <span class="c1">// 数据
-</span><span class="c1"></span><span class="p">};</span>
-
-<span class="k">struct</span> <span class="n">uncomplete</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">pack</span><span class="p">;</span> <span class="c1">// 未完成数据对应的网络包结构
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">// 哈希桶的下一个
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的长度
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">header</span><span class="p">;</span> <span class="c1">// 当只有 1 字节的数据读取到时，用这个记录一下
-</span><span class="c1"></span><span class="p">};</span>
-
-<span class="k">struct</span> <span class="n">queue</span> <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">cap</span><span class="p">;</span> <span class="c1">// queue 的长度
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">head</span><span class="p">;</span> <span class="c1">// queue 的头节点索引
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">tail</span><span class="p">;</span> <span class="c1">// queue 的尾节点索引
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">hash</span><span class="p">[</span><span class="n">HASHSIZE</span><span class="p">];</span> <span class="c1">// 未完成分包的数据
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">queue</span><span class="p">[</span><span class="n">QUEUESIZE</span><span class="p">];</span> <span class="c1">// 已经完成分包的网络包队列
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define QUEUESIZE 1024
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define HASHSIZE 4096
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">netpack</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 套接字 id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span> <span class="c1">// 长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span> <span class="c1">// 数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">uncomplete</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">pack</span><span class="p">;</span> <span class="c1">// 未完成数据对应的网络包结构
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">// 哈希桶的下一个
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">read</span><span class="p">;</span> <span class="c1">// 已读取的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">header</span><span class="p">;</span> <span class="c1">// 当只有 1 字节的数据读取到时，用这个记录一下
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">queue</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">cap</span><span class="p">;</span> <span class="c1">// queue 的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">head</span><span class="p">;</span> <span class="c1">// queue 的头节点索引
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">tail</span><span class="p">;</span> <span class="c1">// queue 的尾节点索引
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">uncomplete</span> <span class="o">*</span><span class="n">hash</span><span class="p">[</span><span class="n">HASHSIZE</span><span class="p">];</span> <span class="c1">// 未完成分包的数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">netpack</span> <span class="n">queue</span><span class="p">[</span><span class="n">QUEUESIZE</span><span class="p">];</span> <span class="c1">// 已经完成分包的网络包队列
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="分包">分包</h3>
 <p>　　分包的最终处理函数是 filter_data_，这里就会用上上面提到的结构体，根据不同的情况，分别填充不同的数据，最后返回给 Lua 层的调用。<br>
@@ -580,21 +580,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 

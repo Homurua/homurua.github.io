@@ -271,15 +271,15 @@
 </span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">monitor</span> <span class="p">{</span>
-    <span class="kt">int</span> <span class="n">count</span><span class="p">;</span> <span class="c1">// worker 线程的总数
-</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="o">**</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全部的线程 monitor 指针
-</span><span class="c1"></span>    <span class="n">pthread_cond_t</span> <span class="n">cond</span><span class="p">;</span> <span class="c1">// 给 worker 线程挂起用的全局条件
-</span><span class="c1"></span>    <span class="n">pthread_mutex_t</span> <span class="n">mutex</span><span class="p">;</span> <span class="c1">// 有锁结构
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">sleep</span><span class="p">;</span> <span class="c1">// 睡眠的 worker 线程数量
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">quit</span><span class="p">;</span> <span class="c1">// 退出标记
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">monitor</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">count</span><span class="p">;</span> <span class="c1">// worker 线程的总数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="o">**</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全部的线程 monitor 指针
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">pthread_cond_t</span> <span class="n">cond</span><span class="p">;</span> <span class="c1">// 给 worker 线程挂起用的全局条件
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">pthread_mutex_t</span> <span class="n">mutex</span><span class="p">;</span> <span class="c1">// 有锁结构
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">sleep</span><span class="p">;</span> <span class="c1">// 睡眠的 worker 线程数量
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">quit</span><span class="p">;</span> <span class="c1">// 退出标记
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　monitor 结构体变量每个进程只有一个，可以看到它是一个有锁的结构，这里可以发现一个与其它地方明显的区别，锁直接使用了 pthread 库的 mutex 来做，而没有用 skynet 中更常用的 spinlock 来实现，主要是因为要配合 cond 来做线程挂起。</p>
 <h2 id="monitor-线程">monitor 线程</h2>
@@ -297,13 +297,13 @@
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="p">{</span>
-    <span class="n">ATOM_INT</span> <span class="n">version</span><span class="p">;</span> <span class="c1">// 原子 version
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">check_version</span><span class="p">;</span> <span class="c1">// 上次检查时的 version
-</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">;</span> <span class="c1">// 当前处理的消息的源 handle
-</span><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">destination</span><span class="p">;</span> <span class="c1">// 当前处理的消息的目标 handle
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">skynet_monitor</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ATOM_INT</span> <span class="n">version</span><span class="p">;</span> <span class="c1">// 原子 version
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">check_version</span><span class="p">;</span> <span class="c1">// 上次检查时的 version
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">source</span><span class="p">;</span> <span class="c1">// 当前处理的消息的源 handle
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">uint32_t</span> <span class="n">destination</span><span class="p">;</span> <span class="c1">// 当前处理的消息的目标 handle
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　每次当 worker 线程开始处理一条消息的时候，它会修改自己对应的 skynet_monitor 中变量的值。其中 version 会被一直累加，source 和 destination 设为当前处理的消息的源地址和目标地址。<br>
 　　线程的主函数会进入到一个无限循环中，在循环中，每 5s 会检查一次每个 worker 线程的 skynet_monitor 中的值。如果 version 和 check_version 不相等，则把 check_version 设为 version，如果相等，则说明从上次检查到这次检查也就是 5s 之内，worker 线程都在处理同一条消息。这时候就认为这个 worker 线程可能已经陷入了死循环中。把目标服务的 endless 属性设为 true，然后输出一条错误日志警告开发者。</p>
@@ -324,11 +324,11 @@
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">timer_event</span> <span class="p">{</span>
-    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
-    <span class="kt">int</span> <span class="n">session</span><span class="p">;</span>
-<span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">timer_event</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">session</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　等待时间轮转动到了指定的时间点以后，从里面取出这个 timer_event 结构体变量，使用其中的 session 来创建一条 PTYPE_RESPONSE 类型的消息，将消息 push 到目标 handle 的消息队列里。等 worker 线程处理这条消息时，根据 session 拿到对应的 co 执行它，一个定时器的调用就完成了。</p>
 <h2 id="socket-线程">socket 线程</h2>
@@ -352,12 +352,12 @@
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">worker_parm</span> <span class="p">{</span>
-    <span class="k">struct</span> <span class="n">monitor</span> <span class="o">*</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全局 monitor 的引用
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 线程ID
-</span><span class="c1"></span>    <span class="kt">int</span> <span class="n">weight</span><span class="p">;</span> <span class="c1">// 工作权重
-</span><span class="c1"></span><span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">worker_parm</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">monitor</span> <span class="o">*</span><span class="n">m</span><span class="p">;</span> <span class="c1">// 全局 monitor 的引用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span> <span class="c1">// 线程ID
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">weight</span><span class="p">;</span> <span class="c1">// 工作权重
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　其中 weight 表示的是工作权重，目的是为了尽量让不同的 worker 线程的步骤不一样，从而减轻在全局消息队列那里的锁竞争问题。</p>
 <div class="highlight"><div class="chroma">
@@ -370,13 +370,13 @@
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="kt">int</span> <span class="n">weight</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span>
-<span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="n">weight</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　worker 线程在拿到服务的消息队列以后，会把队列长度 n &raquo;= weight 来得到本次要处理的消息数量。所以前四个线程每次只处理一条消息，后面的四个每次处理队列中的全部消息，再后面分别是每次处理总长度的 1/2，1/4，1/8 条消息，32 以后的 worker 线程的 weight 一律为 0，也就是每次处理消息队列中的全部消息。</p>
 <h3 id="实现-1">实现</h3>
@@ -655,21 +655,19 @@
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
 <style>
-    :root {
-        --article-font-family: "Noto Serif SC", var(--base-font-family);
-    }
+     
 </style>
 
 <script>
-		(function () {
-		    const customFont = document.createElement('link');
-		    customFont.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap";
 		
-		    customFont.type = "text/css";
-		    customFont.rel = "stylesheet";
 		
-		    document.head.appendChild(customFont);
-		}());
+		
+		
+		
+		
+		
+		
+		
 </script>
 
 
