@@ -85,14 +85,6 @@
 　　任务抢占是 golang 的一个优势，skynet 也有一个监控线程，但是它并没有实现抢占功能，如果在处理一条消息的时候碰到了死循环的逻辑，那么会无限期占用一个线程，skynet 只能输出一条警告日志，需要开发者通过后台手动处理。&lt;/p&gt;</description>
         </item>
         <item>
-        <title>KCP 源码分析</title>
-        <link>https://wmf.im/p/kcp-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</link>
-        <pubDate>Mon, 18 Apr 2022 01:38:47 +0800</pubDate>
-        
-        <guid>https://wmf.im/p/kcp-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</guid>
-        <description>&lt;p&gt;　　RUDP 是 Reliable UDP 的简称，指可靠 UDP 协议。它通过一些额外的操作，为 UDP 协议提供了可靠性。本篇会来尝试比较一下 RUDP 和 TCP 的区别。&lt;/p&gt;</description>
-        </item>
-        <item>
         <title>浅谈游戏开发中的浮点数与定点数</title>
         <link>https://wmf.im/p/%E6%B5%85%E8%B0%88%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91%E4%B8%AD%E7%9A%84%E6%B5%AE%E7%82%B9%E6%95%B0%E4%B8%8E%E5%AE%9A%E7%82%B9%E6%95%B0/</link>
         <pubDate>Fri, 15 Apr 2022 09:21:57 +0800</pubDate>
