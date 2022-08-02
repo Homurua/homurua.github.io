@@ -3,18 +3,27 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://wmf.im/</loc>
-    <lastmod>2022-05-05T12:31:17+08:00</lastmod>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/</loc>
-    <lastmod>2022-05-05T12:31:17+08:00</lastmod>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
-    <loc>https://wmf.im/tags/golang/</loc>
-    <lastmod>2022-05-05T12:31:17+08:00</lastmod>
+    <loc>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</loc>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/golang%E7%AC%94%E8%AE%B0/</loc>
-    <lastmod>2022-05-05T12:31:17+08:00</lastmod>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/post/</loc>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/</loc>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/web%E5%BC%80%E5%8F%91/</loc>
+    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/golang/</loc>
     <lastmod>2022-05-05T12:31:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/tags/skynet/</loc>
@@ -24,9 +33,6 @@
     <lastmod>2022-05-05T12:31:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/skynet%E7%AC%94%E8%AE%B0/</loc>
-    <lastmod>2022-05-05T12:31:17+08:00</lastmod>
-  </url><url>
-    <loc>https://wmf.im/tags/</loc>
     <lastmod>2022-05-05T12:31:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/tags/%E5%AE%9A%E7%82%B9%E6%95%B0/</loc>

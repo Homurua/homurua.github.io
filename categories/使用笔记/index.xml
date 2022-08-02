@@ -14,8 +14,9 @@
         <guid>https://wmf.im/p/clash%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</guid>
         <description>&lt;p&gt;　　程序员基本上离不开科学上网了，clash 是我感觉体验最好的科学上网软件了，就是相比之下有点吃性能，在路由器上跑的话很多 ARM 架构的路由器都跑不利索，不过 x86 的 CPU 跑到带宽上限一般还是没问题的。&lt;/p&gt;
 &lt;h2 id=&#34;gui客户端&#34;&gt;GUI客户端&lt;/h2&gt;
-&lt;p&gt;　　不管 Windows 还是 Linux 下，都有 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Fndroid/clash_for_windows_pkg&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;clash_for_windows_pkg&lt;/a&gt; 可以用。Windows 版本支持非常全面，Bug 也很少，不过 Linux 就一般了，Bug 不少，而且修复的比较慢，只能说是凑合可以用了。&lt;br&gt;
+&lt;p&gt;　　如果有条件使用 GUI 客户端，那事情就非常简单了。&lt;br&gt;
+　　不管 Windows 还是 Linux 下，都有 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Fndroid/clash_for_windows_pkg&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;clash_for_windows_pkg&lt;/a&gt; 可以用。Windows 版本支持非常全面，Bug 也很少，不过 Linux 版本就一般了，Bug 不少，而且修复的比较慢，只是堪堪能用。&lt;br&gt;
 　　Android 平台下可以使用 &lt;a class=&#34;link&#34; href=&#34;https://github.com/Kr328/ClashForAndroid&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;ClashForAndroid&lt;/a&gt;，很稳定，功能也比较齐全。&lt;/p&gt;
 &lt;h2 id=&#34;命令行客户端&#34;&gt;命令行客户端&lt;/h2&gt;
