@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　最近在学习 Go 语言，简单学完语法以后，想找个框架看看。正好 Gin 框架的代码非常精炼，不算 test 和注释的话，只有四千多行，名字也比较好听，注释也写的比较完整，非常适合阅读，就果断 fork 一份开始看了。本篇记录下学习中的要点。
+'><title>Gin 框架源码阅读笔记</title>
+
+<link rel='canonical' href='https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/'>
+
+<link rel="stylesheet" href="/scss/style.min.d0fc03f879b1979dafde5baf7db14d269d937affb58029b024c2593d27dd9160.css"><meta property='og:title' content='Gin 框架源码阅读笔记'>
+<meta property='og:description' content='　最近在学习 Go 语言，简单学完语法以后，想找个框架看看。正好 Gin 框架的代码非常精炼，不算 test 和注释的话，只有四千多行，名字也比较好听，注释也写的比较完整，非常适合阅读，就果断 fork 一份开始看了。本篇记录下学习中的要点。
+'>
+<meta property='og:url' content='https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='web开发' /><meta property='article:published_time' content='2022-06-18T11:18:17&#43;08:00'/><meta property='article:modified_time' content='2022-06-18T11:18:17&#43;08:00'/>
+<meta name="twitter:title" content="Gin 框架源码阅读笔记">
+<meta name="twitter:description" content="　最近在学习 Go 语言，简单学完语法以后，想找个框架看看。正好 Gin 框架的代码非常精炼，不算 test 和注释的话，只有四千多行，名字也比较好听，注释也写的比较完整，非常适合阅读，就果断 fork 一份开始看了。本篇记录下学习中的要点。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar_hu9ea22d9692f3909706eda855a10f5f34_51326_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/Homurua'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/golang%E7%AC%94%E8%AE%B0/" style="background-color: #79D4FD; color: #fff;">
+                golang笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">Gin 框架源码阅读笔记</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Jun 18, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 9 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　最近在学习 Go 语言，简单学完语法以后，想找个框架看看。正好 Gin 框架的代码非常精炼，不算 test 和注释的话，只有四千多行，名字也比较好听，注释也写的比较完整，非常适合阅读，就果断 fork 一份开始看了。本篇记录下学习中的要点。</p>
+<h2 id="介绍">介绍</h2>
+<blockquote>
+<p>Gin is a web framework written in Go (Golang). It features a martini-like API with much better performance, up to 40 times faster thanks to httprouter. If you need performance and good productivity, you will love Gin.</p>
+</blockquote>
+<p>　　Gin 的官网对自己的介绍是 “高性能” 和 “良好生产效率” 的 web 框架。还提到了两个其它的库，第一个是 <a class="link" href="https://github.com/go-martini/martini"  target="_blank" rel="noopener"
+    >martini</a>，它也是一个 web 框架，名字也是酒名，Gin 说自己用了它的 API，但是速度比它快 40 倍。使用了 <a class="link" href="https://github.com/julienschmidt/httprouter"  target="_blank" rel="noopener"
+    >httprouter</a> 就是能够实现比 martini 快 40 倍的一个重要原因。<br>
+　　在官网的 Features 中，有 8 个被列出来的关键功能，后面会慢慢看到这些功能的实现。</p>
+<ul>
+<li>Fast</li>
+<li>Middleware support</li>
+<li>Crash-free</li>
+<li>JSON validation</li>
+<li>Routes grouping</li>
+<li>Error management</li>
+<li>Rendering built-in/Extendable</li>
+</ul>
+<h2 id="从一个小例子入手">从一个小例子入手</h2>
+<p>　　来看一个官网文档给出的最小例子。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kn">package</span> <span class="nx">main</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="s">&#34;github.com/gin-gonic/gin&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">r</span> <span class="o">:=</span> <span class="nx">gin</span><span class="p">.</span><span class="nf">Default</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">r</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/ping&#34;</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">gin</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">c</span><span class="p">.</span><span class="nf">JSON</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="nx">gin</span><span class="p">.</span><span class="nx">H</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="s">&#34;message&#34;</span><span class="p">:</span> <span class="s">&#34;pong&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">r</span><span class="p">.</span><span class="nf">Run</span><span class="p">()</span> <span class="c1">// listen and serve on 0.0.0.0:8080
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　运行该例子，然后使用浏览器访问 http://localhost:8080/ping 即可得到一个 &ldquo;pong&rdquo;，233。<br>
+　　这个例子很简单，拆分一下只有三步。</p>
+<ol>
+<li>使用 gin.Default() 创建一个默认配置的 Engine 对象。</li>
+<li>为 Engine 的 GET 方法的 &ldquo;/ping&rdquo; 地址注册一个回调函数，该函数会返回一个 &ldquo;pong&rdquo;。</li>
+<li>启动 Engine，开始监听端口提供服务。</li>
+</ol>
+<h2 id="http-method">HTTP Method</h2>
+<p>　　通过上面小例子中的 GET 方法可以看出在 Gin 中需要使用对应的同名函数注册 HTTP Method 的处理方法。<br>
+　　HTTP Method 有九种方法，最常用的有四种，分别是 GET/POST/PUT/DELETE，分别对应了查询、插入、更新、删除四种功能。需要注意的一点是，Gin 还提供了 Any 接口，可以直接对一个地址绑定所有的 HTTP Method 处理方法。<br>
+　　返回的结果一般包含两到三部分，其中 code 和 message 是一定会有的，data 一般用来表示额外的数据，如果没有额外数据需要返回的可以不使用。例子中的 200 就是 code 字段的值，pong 就是 message 字段的值。</p>
+<h2 id="创建-engine-变量">创建 Engine 变量</h2>
+<p>　　在上面的例子中，创建 Engine 使用的是 gin.Default()，不过这个函数是对 New 的封装，实际创建 Engine 都是通过 New 接口创建的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">New</span><span class="p">()</span> <span class="o">*</span><span class="nx">Engine</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">debugPrintWARNINGNew</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">Engine</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">RouterGroup</span><span class="p">:</span> <span class="nx">RouterGroup</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// ... 初始化 RouterGroup 的字段
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ... 初始化其余字段
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nx">RouterGroup</span><span class="p">.</span><span class="nx">engine</span> <span class="p">=</span> <span class="nx">engine</span> <span class="c1">// 将 engine 的指针保存在 RouterGroup 中
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">engine</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">New</span> <span class="p">=</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">any</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">engine</span><span class="p">.</span><span class="nf">allocateContext</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">engine</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　先来简单看一下创建的过程即可，暂时不去关注 Engine 结构中的各种成员变量的含义。可以看到 New 除了创建并初始化了一个 Engine 类型的变量 engine 以外，还把 engine.pool.New 设为了一个调用 engine.allocateContext() 的匿名函数，这个函数的作用后面再说。</p>
+<h2 id="注册路由回调函数">注册路由回调函数</h2>
+<p>　　在 Engine 中有一个内嵌结构体 RouterGroup，Engine 的与 HTTP Method 有关的接口都是继承自 RouterGroup 的，官网提到的功能点里的 <code>Routes grouping</code> 就是通过 RouterGroup 结构体来实现的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">RouterGroup</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Handlers</span> <span class="nx">HandlersChain</span> <span class="c1">// Group 自身的处理函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">basePath</span> <span class="kt">string</span>        <span class="c1">// 关联的基本路径
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">engine</span>   <span class="o">*</span><span class="nx">Engine</span>       <span class="c1">// 保存关联的 engine 对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">root</span>     <span class="kt">bool</span>          <span class="c1">// root 标志，只有 Engine 默认创建的才是 true
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　每个 RouterGroup 关联了一个基本路径 basePath，Engine 内嵌的 RouterGroup 的 basePath 为 &ldquo;/&rdquo; 。<br>
+　　还有一组处理函数 Handlers，所有本组关联的路径下的请求都会额外执行本组的处理函数，主要是用于中间件的调用。Handlers 在 Engine 创建的时候是 nil，可以通过 Use 方法导入一组函数进去，后面会看到这个用法。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">group</span> <span class="o">*</span><span class="nx">RouterGroup</span><span class="p">)</span> <span class="nf">handle</span><span class="p">(</span><span class="nx">httpMethod</span><span class="p">,</span> <span class="nx">relativePath</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">handlers</span> <span class="nx">HandlersChain</span><span class="p">)</span> <span class="nx">IRoutes</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">absolutePath</span> <span class="o">:=</span> <span class="nx">group</span><span class="p">.</span><span class="nf">calculateAbsolutePath</span><span class="p">(</span><span class="nx">relativePath</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">handlers</span> <span class="p">=</span> <span class="nx">group</span><span class="p">.</span><span class="nf">combineHandlers</span><span class="p">(</span><span class="nx">handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">group</span><span class="p">.</span><span class="nx">engine</span><span class="p">.</span><span class="nf">addRoute</span><span class="p">(</span><span class="nx">httpMethod</span><span class="p">,</span> <span class="nx">absolutePath</span><span class="p">,</span> <span class="nx">handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">group</span><span class="p">.</span><span class="nf">returnObj</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　RouterGroup 的 handle 方法是所有注册 HTTP Method 回调函数的最终入口，一开始那个例子中调用的 GET 以及其它与 HTTP Method 有关的方法都只是对 handle 方法的封装。<br>
+　　handle 方法会根据 RouterGroup 的 basePath 和相对地址参数计算出绝对地址，同时调用 combineHandlers 方法得到最终的 handlers 数组。将这些结果作为参数，传给 Engine 的 addRoute 方法来注册处理函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">group</span> <span class="o">*</span><span class="nx">RouterGroup</span><span class="p">)</span> <span class="nf">combineHandlers</span><span class="p">(</span><span class="nx">handlers</span> <span class="nx">HandlersChain</span><span class="p">)</span> <span class="nx">HandlersChain</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">finalSize</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">group</span><span class="p">.</span><span class="nx">Handlers</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="nx">handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">assert1</span><span class="p">(</span><span class="nx">finalSize</span> <span class="p">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="nx">abortIndex</span><span class="p">),</span> <span class="s">&#34;too many handlers&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">mergedHandlers</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="nx">HandlersChain</span><span class="p">,</span> <span class="nx">finalSize</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">copy</span><span class="p">(</span><span class="nx">mergedHandlers</span><span class="p">,</span> <span class="nx">group</span><span class="p">.</span><span class="nx">Handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">copy</span><span class="p">(</span><span class="nx">mergedHandlers</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="nx">group</span><span class="p">.</span><span class="nx">Handlers</span><span class="p">):],</span> <span class="nx">handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">mergedHandlers</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　combineHandlers 方法做的事情就是创建了一个切片 mergedHandlers，然后先将 RouterGroup 本身的 Handlers 复制进去，再将参数的 handlers 复制进去，最后将 mergedHandlers 返回。也就是说使用 handle 注册任何方法的时候，实际的结果都是包括了 RouterGroup 本身的 Handlers 的。</p>
+<h2 id="使用基数树加速路由检索">使用基数树加速路由检索</h2>
+<p>　　在官网提到的功能点的 <code>Fast</code> 里提到了网络请求的路由是基于基数树（Radix Tree）实现的。这部分并不是 Gin 实现的，而是开篇在 Gin 的介绍里提到的 httprouter 实现的，Gin 使用了 httprouter 来做了这部分的功能。有关于基数树的实现这里暂且不提，暂时只关注它的用法，可能后面会另开一篇专门写一下基数树的实现。<br>
+　　在 Engine 中有一个 trees 变量，它是一个 methodTree 结构的切片，正是这个变量保存了所有的基数树的引用。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">methodTree</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">method</span> <span class="kt">string</span> <span class="c1">// method 的名字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">root</span>   <span class="o">*</span><span class="nx">node</span>  <span class="c1">// 链表的 root 节点指针
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　Engine 为每个 HTTP Method 维护了一颗基数树，这棵树的 root 节点与 Method 的名字一起被保存在了一个 methodTree 变量中，所有的 methodTree 变量又都在 trees 里。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">addRoute</span><span class="p">(</span><span class="nx">method</span><span class="p">,</span> <span class="nx">path</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">handlers</span> <span class="nx">HandlersChain</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">root</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">trees</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="nx">method</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">root</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">root</span> <span class="p">=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">node</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">root</span><span class="p">.</span><span class="nx">fullPath</span> <span class="p">=</span> <span class="s">&#34;/&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">engine</span><span class="p">.</span><span class="nx">trees</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">engine</span><span class="p">.</span><span class="nx">trees</span><span class="p">,</span> <span class="nx">methodTree</span><span class="p">{</span><span class="nx">method</span><span class="p">:</span> <span class="nx">method</span><span class="p">,</span> <span class="nx">root</span><span class="p">:</span> <span class="nx">root</span><span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">root</span><span class="p">.</span><span class="nf">addRoute</span><span class="p">(</span><span class="nx">path</span><span class="p">,</span> <span class="nx">handlers</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到在 Engine 的 addRoute 方法中，会首先使用 trees 的 get 方法拿到 method 对应的基数树的 root 节点。如果没有取到基数树的 root 节点，则说明之前没有对该 method 注册过方法，会创建一个树节点作为树的根节点并将其加入到 trees 中。<br>
+　　在拿到 root 节点以后，使用 root 节点的 addRoute 方法为路径 path 注册一组处理函数 handlers，这一步就是为 path 和 handlers 创建一个节点存入基数树中，如果试图注册一个已经注册过的地址，addRoute 会直接抛出一个 panic 错误。<br>
+　　在处理 HTTP 请求的时候，就需要通过 path 查找对应的节点的值。root 节点有一个 getValue 的方法负责处理查询的操作，后面讲到 Gin 处理 HTTP 请求的时候会提到。</p>
+<h2 id="导入中间件处理函数">导入中间件处理函数</h2>
+<p>　　RouterGroup 的 Use 方法可以导入一组中间件处理函数。官网提到的功能点里的 <code>Middleware support</code> 就是通过 Use 方法实现的。<br>
+　　在一开始的例子中，创建 Engine 结构体变量的时候并没有使用 New，而是使用了 Default，我们来看一下 Default 做了什么额外的东西。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">Default</span><span class="p">()</span> <span class="o">*</span><span class="nx">Engine</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">debugPrintWARNINGDefault</span><span class="p">()</span>       <span class="c1">// 输出日志
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">engine</span> <span class="o">:=</span> <span class="nf">New</span><span class="p">()</span>                  <span class="c1">// 创建对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">engine</span><span class="p">.</span><span class="nf">Use</span><span class="p">(</span><span class="nf">Logger</span><span class="p">(),</span> <span class="nf">Recovery</span><span class="p">())</span> <span class="c1">// 导入中间件处理函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="nx">engine</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到它是个很简单的函数，除了调用 New 创建 Engine 对象以外，只对它调用了 Use 来导入了两个中间件函数，Logger 和 Recovery 的返回值。Logger 的返回值是用来记录日志的函数，Recovery 的返回值是用来处理 panic 的函数，这里我们先带过，后面再来看这两个函数。<br>
+　　Engine 虽然内嵌了 RouterGroup，但是它本身也实现了 Use 方法，不过只是对 RouterGroup 的 Use 方法的调用，以及一些辅助操作。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Golang" data-lang="Golang"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">Use</span><span class="p">(</span><span class="nx">middleware</span> <span class="o">...</span><span class="nx">HandlerFunc</span><span class="p">)</span> <span class="nx">IRoutes</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nx">RouterGroup</span><span class="p">.</span><span class="nf">Use</span><span class="p">(</span><span class="nx">middleware</span><span class="o">...</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nf">rebuild404Handlers</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nf">rebuild405Handlers</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">engine</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">group</span> <span class="o">*</span><span class="nx">RouterGroup</span><span class="p">)</span> <span class="nf">Use</span><span class="p">(</span><span class="nx">middleware</span> <span class="o">...</span><span class="nx">HandlerFunc</span><span class="p">)</span> <span class="nx">IRoutes</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">group</span><span class="p">.</span><span class="nx">Handlers</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">group</span><span class="p">.</span><span class="nx">Handlers</span><span class="p">,</span> <span class="nx">middleware</span><span class="o">...</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">group</span><span class="p">.</span><span class="nf">returnObj</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　可以看到 RouterGroup 的 Use 方法也很简单，就是将参数的中间件处理函数通过 append 加入到了自己的 Handlers 中。</p>
+<h2 id="开始运行">开始运行</h2>
+<p>　　在小例子中，最后一步是调用了 Engine 的 Run 方法，无参数。调用以后整个框架开始运行，使用浏览器访问注册好的地址就可以正确触发回调了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">Run</span><span class="p">(</span><span class="nx">addr</span> <span class="o">...</span><span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">address</span> <span class="o">:=</span> <span class="nf">resolveAddress</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span> <span class="c1">// 解析地址，默认地址是 0.0.0.0:8080
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">debugPrint</span><span class="p">(</span><span class="s">&#34;Listening and serving HTTP on %s\n&#34;</span><span class="p">,</span> <span class="nx">address</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">err</span> <span class="p">=</span> <span class="nx">http</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">(</span><span class="nx">address</span><span class="p">,</span> <span class="nx">engine</span><span class="p">.</span><span class="nf">Handler</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　Run 只做了两件事情，解析地址和开启服务。这里的地址其实只需要传一个字符串，但是为了实现可传可不传，所以用的参数是一个变参。在 resolveAddress 中处理了 addr 的不同情况下的结果。<br>
+　　开启服务使用的是标准库 net/http package 中的 ListenAndServe 方法，这个方法接受一个监听地址和一个 Handler 接口的变量。Handler 接口的定义很简单，只有一个 ServeHTTP 方法。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">ListenAndServe</span><span class="p">(</span><span class="nx">addr</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">handler</span> <span class="nx">Handler</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">server</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">Server</span><span class="p">{</span><span class="nx">Addr</span><span class="p">:</span> <span class="nx">addr</span><span class="p">,</span> <span class="nx">Handler</span><span class="p">:</span> <span class="nx">handler</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">server</span><span class="p">.</span><span class="nf">ListenAndServe</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">Handler</span> <span class="kd">interface</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">ServeHTTP</span><span class="p">(</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="o">*</span><span class="nx">Request</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　因为 Engine 就实现了 ServeHTTP，这里会将 Engine 本身传给 ListenAndServe 方法，当监听的端口有新的连接时，ListenAndServe 会负责 accept 建立连接，并且在连接上有数据时，会调用 handler 的 ServeHTTP 方法进行处理。</p>
+<h2 id="处理消息">处理消息</h2>
+<p>　　Engine 的 ServeHTTP 是处理处理消息的回调函数，下面就来看一下它的内容。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">ServeHTTP</span><span class="p">(</span><span class="nx">w</span> <span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span> <span class="nx">req</span> <span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">c</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nf">Get</span><span class="p">().(</span><span class="o">*</span><span class="nx">Context</span><span class="p">)</span> 
+</span></span><span class="line"><span class="cl">    <span class="nx">c</span><span class="p">.</span><span class="nx">writermem</span><span class="p">.</span><span class="nf">reset</span><span class="p">(</span><span class="nx">w</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">c</span><span class="p">.</span><span class="nx">Request</span> <span class="p">=</span> <span class="nx">req</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">c</span><span class="p">.</span><span class="nf">reset</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nf">handleHTTPRequest</span><span class="p">(</span><span class="nx">c</span><span class="p">)</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">engine</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nx">c</span><span class="p">)</span> 
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　回调函数有两个参数，第一个是用于接收请求回复的 w，将回复的数据写入到 w 即可，另一个是持有本次请求的数据的 req，可以从 req 里读后续处理所需的所有数据。<br>
+　　ServeHTTP 做了四件事情，首先从 pool 池里拿取一个 Context，然后将 Context 与回调函数的参数绑定，接着使用 Context 作为参数调用 handleHTTPRequest 方法处理这个网络请求，最后将 Context 放回到池中。<br>
+　　这里我们先只看 handleHTTPRequest 方法的核心部分。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">handleHTTPRequest</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">t</span> <span class="o">:=</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">trees</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">tl</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">t</span><span class="p">);</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">tl</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">t</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">method</span> <span class="o">!=</span> <span class="nx">httpMethod</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">root</span> <span class="o">:=</span> <span class="nx">t</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">root</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Find route in tree
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">value</span> <span class="o">:=</span> <span class="nx">root</span><span class="p">.</span><span class="nf">getValue</span><span class="p">(</span><span class="nx">rPath</span><span class="p">,</span> <span class="nx">c</span><span class="p">.</span><span class="nx">params</span><span class="p">,</span> <span class="nx">c</span><span class="p">.</span><span class="nx">skippedNodes</span><span class="p">,</span> <span class="nx">unescape</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="nx">value</span><span class="p">.</span><span class="nx">handlers</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">handlers</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">c</span><span class="p">.</span><span class="nx">fullPath</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">fullPath</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">c</span><span class="p">.</span><span class="nf">Next</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">c</span><span class="p">.</span><span class="nx">writermem</span><span class="p">.</span><span class="nf">WriteHeaderNow</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略一些代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　在 handleHTTPRequest 方法中最主要做的是两件事，首先根据请求的地址从基数树中拿取之前注册过的方法，这里会将 handlers 赋值给本次处理的 Context，然后调用 Context 的 Next 函数来执行 handlers 中的方法，最后在 Context 的 responseWriter 类型对象中写入本次请求的返回数据。</p>
+<h2 id="context">Context</h2>
+<p>　　在处理 HTTP 请求的时候，所有的上下文相关数据都在 Context 变量中，作者也在 Context struct 的注释里写了 &ldquo;Context is the most important part of gin&rdquo;，足见它的重要性。<br>
+　　在上面讲到 Engine 的 ServeHTTP 方法时，可以看到 Context 并不是直接创建的，而是通过 Engine 的 pool 变量的 Get 方法取得的，取出来以后先将其状态重置然后再使用，在使用完毕以后又被放回了 pool 中。<br>
+　　Engine 的 pool 变量是一个 sync.Pool 类型的，此处只要知道它是 Go 官方提供的一个支持并发使用的对象池即可，可以通过它的 Get 方法从池中取出一个对象，也可以使用 Put 方法向池中投入一个对象。在池是空的时候如果使用 Get 方法，则它会通过自己的 New 方法来创建一个对象并将其返回。<br>
+　　这个 New 方法正是在 Engine 的 New 方法中定义的，再来看一眼 Engine 的 New 方法。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">New</span><span class="p">()</span> <span class="o">*</span><span class="nx">Engine</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略其它代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">engine</span><span class="p">.</span><span class="nx">pool</span><span class="p">.</span><span class="nx">New</span> <span class="p">=</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">any</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">engine</span><span class="p">.</span><span class="nf">allocateContext</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">engine</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　从代码中可以看到 Context 的创建方法是 Engine 的 allocateContext 方法。在 allocateContext 方法中并没有什么玄机，只是做了两步切片长度的预分配，然后创建对象并返回。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">engine</span> <span class="o">*</span><span class="nx">Engine</span><span class="p">)</span> <span class="nf">allocateContext</span><span class="p">()</span> <span class="o">*</span><span class="nx">Context</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">v</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="nx">Params</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">maxParams</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">skippedNodes</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nx">skippedNode</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">engine</span><span class="p">.</span><span class="nx">maxSections</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">Context</span><span class="p">{</span><span class="nx">engine</span><span class="p">:</span> <span class="nx">engine</span><span class="p">,</span> <span class="nx">params</span><span class="p">:</span> <span class="o">&amp;</span><span class="nx">v</span><span class="p">,</span> <span class="nx">skippedNodes</span><span class="p">:</span> <span class="o">&amp;</span><span class="nx">skippedNodes</span><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　上文提到的 Context 的 Next 方法会执行 handlers 中的所有方法，来看一下它的实现。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="nf">Next</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="o">++</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="nx">c</span><span class="p">.</span><span class="nx">index</span> <span class="p">&lt;</span> <span class="nb">int8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">c</span><span class="p">.</span><span class="nx">handlers</span><span class="p">[</span><span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="p">](</span><span class="nx">c</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">c</span><span class="p">.</span><span class="nx">index</span><span class="o">++</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　虽然 handlers 是一个切片，但是 Next 方法并未简单实现成一个对 handlers 的遍历，而是引入了一个处理进度的记录 index，它被初始化为 0，在方法一开始的时候执行累加，在一个方法执行结束以后再次执行累加。<br>
+　　Next 被设计成这样跟它的用法有很大关系，主要是为了跟一些中间件函数配合。比如当某个 handler 执行的时候触发了 panic，在中间件中可以使用 recover 接住错误，然后再次调用 Next，即可继续执行后面的 handler，不会因为一个 handler 的问题影响到整个 handlers 数组。</p>
+<h2 id="处理-panic">处理 panic</h2>
+<p>　　在 Gin 中，如果某个请求的处理函数触发了 panic，整个框架并不会直接 crash，而是抛出一条错误信息，然后继续提供服务。有点像 Lua 框架一般会使用 xpcall 来执行消息的处理函数一样。这个操作就是官方文档提到的功能点 <code>Crash-free</code> 了。<br>
+　　上文提到，当使用 gin.Default 创建一个 Engine 的时候，会执行 Engine 的 Use 方法导入两个函数，其中的一个是 Recovery 函数的返回值，它又是对其它函数的封装，最后调用到的函数是 CustomRecoveryWithWriter，来看一下这个函数的实现。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">CustomRecoveryWithWriter</span><span class="p">(</span><span class="nx">out</span> <span class="nx">io</span><span class="p">.</span><span class="nx">Writer</span><span class="p">,</span> <span class="nx">handle</span> <span class="nx">RecoveryFunc</span><span class="p">)</span> <span class="nx">HandlerFunc</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ... 省略其它代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="kd">func</span><span class="p">(</span><span class="nx">c</span> <span class="o">*</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">defer</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nb">recover</span><span class="p">();</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// ... 错误处理代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}()</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">c</span><span class="p">.</span><span class="nf">Next</span><span class="p">()</span> <span class="c1">// 执行下一个 handler
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这里不关注错误处理的细节，只看它做的事情。这个函数返回了一个匿名函数，在匿名函数中使用 defer 注册了另一个匿名函数，在这个匿名函数中使用了 recover 接住了 panic，然后进行错误处理。在处理结束以后，调用了 Context 的 Next 方法，使原先正在依次执行的 Context 的 handlers 可以继续执行下去。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/web%E5%BC%80%E5%8F%91/">web开发</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+<aside class="related-contents--wrapper">
+    <h2 class="section-title">相关文章</h2>
+    <div class="related-contents">
+        <div class="flex article-list--tile">
+            
+                
+<article class="">
+    <a href="/p/skynet-%E4%B8%8E-golang-%E5%B9%B6%E5%8F%91%E6%9C%BA%E5%88%B6%E6%AF%94%E8%BE%83/">
+        
+        
+
+        <div class="article-details">
+            <h2 class="article-title">skynet 与 golang 并发机制比较</h2>
+        </div>
+    </a>
+</article>
+            
+        </div>
+    </div>
+</aside>
+
+     
+    
+        
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#介绍">介绍</a></li>
+    <li><a href="#从一个小例子入手">从一个小例子入手</a></li>
+    <li><a href="#http-method">HTTP Method</a></li>
+    <li><a href="#创建-engine-变量">创建 Engine 变量</a></li>
+    <li><a href="#注册路由回调函数">注册路由回调函数</a></li>
+    <li><a href="#使用基数树加速路由检索">使用基数树加速路由检索</a></li>
+    <li><a href="#导入中间件处理函数">导入中间件处理函数</a></li>
+    <li><a href="#开始运行">开始运行</a></li>
+    <li><a href="#处理消息">处理消息</a></li>
+    <li><a href="#context">Context</a></li>
+    <li><a href="#处理-panic">处理 panic</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+     
+</style>
+
+<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+</script>
+
+
+    </body>
+</html>

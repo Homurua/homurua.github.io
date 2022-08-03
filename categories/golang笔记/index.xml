@@ -7,11 +7,11 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>zh-cn</language>
         <lastBuildDate>Sat, 18 Jun 2022 11:18:17 +0800</lastBuildDate><atom:link href="https://wmf.im/categories/golang%E7%AC%94%E8%AE%B0/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Gin 框架学习笔记</title>
-        <link>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</link>
+        <title>Gin 框架源码阅读笔记</title>
+        <link>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/</link>
         <pubDate>Sat, 18 Jun 2022 11:18:17 +0800</pubDate>
         
-        <guid>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/</guid>
+        <guid>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/</guid>
         <description>&lt;p&gt;　　最近在学习 Go 语言，简单学完语法以后，想找个框架看看。正好 Gin 框架的代码非常精炼，不算 test 和注释的话，只有四千多行，名字也比较好听，注释也写的比较完整，非常适合阅读，就果断 fork 一份开始看了。本篇记录下学习中的要点。&lt;/p&gt;
 &lt;h2 id=&#34;介绍&#34;&gt;介绍&lt;/h2&gt;
 &lt;blockquote&gt;
@@ -224,7 +224,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;　　可以看到在 Engine 的 addRoute 方法中，会首先使用 trees 的 get 方法拿到 method 对应的基数树的 root 节点。如果没有取到基数树的 root 节点，则说明之前没有对该 method 注册过方法，会创建一个树节点作为树的根节点并将其加入到 trees 中。&lt;br&gt;
-　　在拿到 root 节点以后，使用 root 节点的 addRoute 方法为路径 path 注册一组处理函数 handlers，这一步就是为 path 和 handlers 创建一个节点存入基数树中。&lt;br&gt;
+　　在拿到 root 节点以后，使用 root 节点的 addRoute 方法为路径 path 注册一组处理函数 handlers，这一步就是为 path 和 handlers 创建一个节点存入基数树中，如果试图注册一个已经注册过的地址，addRoute 会直接抛出一个 panic 错误。&lt;br&gt;
 　　在处理 HTTP 请求的时候，就需要通过 path 查找对应的节点的值。root 节点有一个 getValue 的方法负责处理查询的操作，后面讲到 Gin 处理 HTTP 请求的时候会提到。&lt;/p&gt;
 &lt;h2 id=&#34;导入中间件处理函数&#34;&gt;导入中间件处理函数&lt;/h2&gt;
 &lt;p&gt;　　RouterGroup 的 Use 方法可以导入一组中间件处理函数。官网提到的功能点里的 &lt;code&gt;Middleware support&lt;/code&gt; 就是通过 Use 方法实现的。&lt;br&gt;
