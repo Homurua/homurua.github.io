@@ -255,8 +255,7 @@
     
     
     <p>　　要学习 skynet 源码，首先需要了解源码的文件分布，skynet 的源码排布还是很有规范的，利于了学习。本篇会以 1.4.0 版本的 skynet 源码为准，对各个文件夹其中包含的代码做一个大致的说明。</p>
-<ul>
-<li><strong>3rd</strong> 使用的第三方库
+<h2 id="3rd-第三方库">3rd 第三方库</h2>
 <ul>
 <li><strong>jemalloc</strong> 内存分配默认使用了 jemalloc, 如果不使用也可以，加编译选项 -DNOUSE_JEMALLOC , 参考资料：<a class="link" href="https://github.com/jemalloc/jemalloc"  target="_blank" rel="noopener"
     >jemalloc</a></li>
@@ -267,17 +266,11 @@
 <li><strong>lua-md5</strong> 为 lua 提供 md5 支持，参考资料：<a class="link" href="https://github.com/keplerproject/md5"  target="_blank" rel="noopener"
     >md5</a></li>
 </ul>
-</li>
-</ul>
-<ul>
-<li>
-<p><strong>examples</strong> 一些示例服务，刚接触一个模块的时候可以看看</p>
+<h2 id="examples-示例服务">examples 示例服务</h2>
 <ul>
 <li><strong>login</strong> 一个简单的登录示例模块</li>
 </ul>
-</li>
-<li>
-<p><strong>lualib</strong> skynet 自带的 lua 库</p>
+<h2 id="lualib-lua-库">lualib lua 库</h2>
 <ul>
 <li>
 <p><strong>compat10</strong> 为了兼容 skynet 1.0 及以前的目录做的一堆兼容转换，如果要用的话，把本目录加到 lua_path 里。</p>
@@ -310,21 +303,13 @@
     >snax</a></p>
 </li>
 </ul>
-</li>
-</ul>
-<ul>
-<li>
-<p><strong>lualib-src</strong> 是 lualib 中的 lua 功能的 c 部分的代码</p>
+<h2 id="lualib-src-lua-库的-c-源码">lualib-src lua 库的 C 源码</h2>
 <ul>
 <li><strong>sproto</strong> 内置了一份 sproto 的代码，如果项目用 protobuf 那就不用看了，貌似几乎没人用这个东西，参考资料：<a class="link" href="https://github.com/cloudwu/sproto"  target="_blank" rel="noopener"
     >sproto</a></li>
 </ul>
-</li>
-<li>
-<p><strong>service</strong> 框架提供的一些内置服务</p>
-</li>
-<li>
-<p><strong>service-src</strong> 提供了一些 C 模块</p>
+<h2 id="service-内置服务">service 内置服务</h2>
+<h2 id="service-src-c-模块源码">service-src C 模块源码</h2>
 <ul>
 <li><strong>service_gate</strong> C 层的一个网关模块，貌似已经用 lua 重构了，参考资料：<a class="link" href="https://blog.codingnow.com/2014/04/skynet_gate_lua_version.html"  target="_blank" rel="noopener"
     >skynet_gate_lua_version</a></li>
@@ -333,9 +318,7 @@
 <li><strong>service_logger</strong> 日志模块</li>
 <li><strong>service_snlua</strong> 最重要的提供 lua 服务能力的模块，所有 lua 服务都是从该模块启动的。</li>
 </ul>
-</li>
-<li>
-<p><strong>skynet-src</strong> 框架本身的代码</p>
+<h2 id="skynet-src-框架源码">skynet-src 框架源码</h2>
 <ul>
 <li><strong>atomic</strong> 封装了原子操作的宏定义，在支持 C11 的编译器中，直接用了标准库的 atomic 库，参考资料：<a class="link" href="https://zh.cppreference.com/w/c/atomic"  target="_blank" rel="noopener"
     >原子操作库</a>、<a class="link" href="https://blog.codingnow.com/2021/01/skynet_stdatomic.html"  target="_blank" rel="noopener"
@@ -363,8 +346,6 @@
 <li><strong>socket_info</strong> 定义了 socket 的连接信息结构</li>
 <li><strong>socket_server</strong> socket 线程的核心操作，定义了 socket 相关的几乎全部操作</li>
 <li><strong>spinlock</strong> 自旋锁，也是用原子操作来实现的</li>
-</ul>
-</li>
 </ul>
 </section>
 
@@ -567,7 +548,44 @@
             >
 
             </main>
-    
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#3rd-第三方库">3rd 第三方库</a></li>
+    <li><a href="#examples-示例服务">examples 示例服务</a></li>
+    <li><a href="#lualib-lua-库">lualib lua 库</a></li>
+    <li><a href="#lualib-src-lua-库的-c-源码">lualib-src lua 库的 C 源码</a></li>
+    <li><a href="#service-内置服务">service 内置服务</a></li>
+    <li><a href="#service-src-c-模块源码">service-src C 模块源码</a></li>
+    <li><a href="#skynet-src-框架源码">skynet-src 框架源码</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
 
         </div>
         <script 
