@@ -3,10 +3,25 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://wmf.im/</loc>
-    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/</loc>
-    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/post/</loc>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/scoop/</loc>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/</loc>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/p/%E4%BD%BF%E7%94%A8-scoop-%E7%AE%A1%E7%90%86-windows-%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/</loc>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/categories/%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</loc>
+    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/</loc>
     <lastmod>2022-06-18T11:18:17+08:00</lastmod>
@@ -15,12 +30,6 @@
     <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/golang%E7%AC%94%E8%AE%B0/</loc>
-    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
-  </url><url>
-    <loc>https://wmf.im/post/</loc>
-    <lastmod>2022-06-18T11:18:17+08:00</lastmod>
-  </url><url>
-    <loc>https://wmf.im/tags/</loc>
     <lastmod>2022-06-18T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/tags/web%E5%BC%80%E5%8F%91/</loc>
@@ -108,9 +117,6 @@
     <lastmod>2022-03-19T03:38:47+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/p/git%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</loc>
-    <lastmod>2022-03-19T03:38:47+08:00</lastmod>
-  </url><url>
-    <loc>https://wmf.im/categories/%E4%BD%BF%E7%94%A8%E7%AC%94%E8%AE%B0/</loc>
     <lastmod>2022-03-19T03:38:47+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/page/</loc>
