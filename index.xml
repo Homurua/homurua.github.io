@@ -99,7 +99,7 @@
 &lt;li&gt;&lt;code&gt;scoop list&lt;/code&gt; 列出所有已安装的软件&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;补充说明&#34;&gt;补充说明&lt;/h2&gt;
-&lt;p&gt;　　scoop 一般并不使用的 Windows 的安装功能，而是使用压缩工具将软件解压到指定目录。这个很类似流行的绿色软件的概念。不过在安装一些无法绿色化的软件的时候，也一样会使用 Windows 的安装功能，比如国内的很多软件。&lt;br&gt;
+&lt;p&gt;　　scoop 一般并不使用的 Windows 的安装功能，而是使用压缩工具将软件解压到指定目录。这个很类似流行的绿色软件的概念。不过在安装一些无法绿色化的软件的时候，也一样会使用 Windows 的安装功能，比如 QQ 这种。&lt;br&gt;
 　　scoop 在更新软件的时候不会直接将旧版本的内容删掉，而是下载一个新版本，并将 current 指向它，所以要定期使用 cleanup 命令清理历史版本。&lt;br&gt;
 　　最后列一下我的所有使用 scoop 安装的软件，基本上能用 scoop 安装的已经全都改用 scoop 了，软件的安装和更新都比以前方便太多了。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
