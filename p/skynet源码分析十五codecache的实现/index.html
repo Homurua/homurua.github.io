@@ -6,7 +6,7 @@
 
 <link rel='canonical' href='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/'>
 
-<link rel="stylesheet" href="/scss/style.min.d0fc03f879b1979dafde5baf7db14d269d937affb58029b024c2593d27dd9160.css"><meta property='og:title' content='skynet源码分析（十五）CodeCache的实现'>
+<link rel="stylesheet" href="/scss/style.min.e2f1b0a7c117e0132d2bfedd61d7ce82c7bd6daae147284607d15b4402c78602.css"><meta property='og:title' content='skynet源码分析（十五）CodeCache的实现'>
 <meta property='og:description' content='　CodeCache 应该算是 skynet 的一个特色功能了，是用来优化不同 LuaState 加载同一份代码的速度。因为 skynet 大量启动了 LuaState 来作为 Acotr 使用，所以才在重复加载代码上需要这样的优化。本篇会尝试分析 CodeCache 的实现。
 '>
 <meta property='og:url' content='https://wmf.im/p/skynet%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E5%8D%81%E4%BA%94codecache%E7%9A%84%E5%AE%9E%E7%8E%B0/'>

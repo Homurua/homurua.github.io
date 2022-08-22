@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="zh-cn" dir="ltr">
+    <head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'><meta name='description' content='　Redis 从 6.0 开始已经支持多线程 IO 了，网络模型变得比之前单线程的时候复杂了一些，本篇尝试分析一下 Redis 网络模型的变化。所有出现的代码均为 Redis 7.0 版本的。
+'><title>Redis 网络模型分析</title>
+
+<link rel='canonical' href='https://wmf.im/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/'>
+
+<link rel="stylesheet" href="/scss/style.min.e2f1b0a7c117e0132d2bfedd61d7ce82c7bd6daae147284607d15b4402c78602.css"><meta property='og:title' content='Redis 网络模型分析'>
+<meta property='og:description' content='　Redis 从 6.0 开始已经支持多线程 IO 了，网络模型变得比之前单线程的时候复杂了一些，本篇尝试分析一下 Redis 网络模型的变化。所有出现的代码均为 Redis 7.0 版本的。
+'>
+<meta property='og:url' content='https://wmf.im/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/'>
+<meta property='og:site_name' content='放学后茶会'>
+<meta property='og:type' content='article'><meta property='article:section' content='Post' /><meta property='article:tag' content='redis' /><meta property='article:published_time' content='2022-08-11T11:18:17&#43;08:00'/><meta property='article:modified_time' content='2022-08-11T11:18:17&#43;08:00'/>
+<meta name="twitter:title" content="Redis 网络模型分析">
+<meta name="twitter:description" content="　Redis 从 6.0 开始已经支持多线程 IO 了，网络模型变得比之前单线程的时候复杂了一些，本篇尝试分析一下 Redis 网络模型的变化。所有出现的代码均为 Redis 7.0 版本的。
+">
+    <link rel="shortcut icon" href="/img/dango.svg" />
+
+    </head>
+    <body class="
+    article-page
+    ">
+    <script>
+        (function() {
+            const colorSchemeKey = 'StackColorScheme';
+            if(!localStorage.getItem(colorSchemeKey)){
+                localStorage.setItem(colorSchemeKey, "auto");
+            }
+        })();
+    </script><script>
+    (function() {
+        const colorSchemeKey = 'StackColorScheme';
+        const colorSchemeItem = localStorage.getItem(colorSchemeKey);
+        const supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+
+        if (colorSchemeItem == 'dark' || colorSchemeItem === 'auto' && supportDarkMode) {
+            
+
+            document.documentElement.dataset.scheme = 'dark';
+        } else {
+            document.documentElement.dataset.scheme = 'light';
+        }
+    })();
+</script>
+<div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky ">
+    <button class="hamburger hamburger--spin" type="button" id="toggle-menu" aria-label="切换菜单">
+        <span class="hamburger-box">
+            <span class="hamburger-inner"></span>
+        </span>
+    </button>
+
+    <header>
+        
+            
+            <figure class="site-avatar">
+                <a href="/">
+                
+                    
+                    
+                    
+                        
+                        <img src="/img/avatar2_hu982b126fde96804c253e53a1f123b818_111741_300x0_resize_box_3.png" width="300"
+                            height="300" class="site-logo" loading="lazy" alt="Avatar">
+                    
+                
+                </a>
+                
+                    <span class="emoji">🍡</span>
+                
+            </figure>
+            
+        
+        
+        <div class="site-meta">
+            <h1 class="site-name"><a href="/">放学后茶会</a></h1>
+            <h2 class="site-description">Please don&#39;t say &#34;You are lazy&#34;</h2>
+        </div>
+    </header><ol class="social-menu">
+            
+                <li>
+                    <a 
+                        href='https://github.com/medetasi'
+                        target="_blank"
+                        title="GitHub"
+                    >
+                        
+                        
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+</svg>
+
+
+
+                        
+                    </a>
+                </li>
+            
+        </ol><ol class="menu" id="main-menu">
+        
+        
+        
+
+        <li >
+            <a href='/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <polyline points="5 12 3 12 12 3 21 12 19 12" />
+  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+</svg>
+
+
+
+                
+                <span>主页</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/archives/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <rect x="3" y="4" width="18" height="4" rx="2" />
+  <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+  <line x1="10" y1="12" x2="14" y2="12" />
+</svg>
+
+
+
+                
+                <span>归档</span>
+            </a>
+        </li>
+        
+        
+
+        <li >
+            <a href='/%E6%94%BE%E5%AD%A6%E5%90%8E%E8%8C%B6%E4%BC%9A/' >
+                
+                
+                
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="7" r="4" />
+  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+</svg>
+
+
+
+                
+                <span>关于</span>
+            </a>
+        </li>
+        
+
+        <div class="menu-bottom-section">
+            
+            
+                <li id="dark-mode-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="8" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="16" cy="12" r="2" />
+  <rect x="2" y="6" width="20" height="12" rx="6" />
+</svg>
+
+
+
+                    <span>暗色模式</span>
+                </li>
+            
+        </div>
+    </ol>
+</aside>
+<main class="main full-width">
+    <article class="main-article">
+    <header class="article-header">
+
+    <div class="article-details">
+    
+    <header class="article-category">
+        
+            <a href="/categories/redis%E7%AC%94%E8%AE%B0/" style="background-color: #FF3333; color: #fff;">
+                redis笔记
+            </a>
+        
+    </header>
+    
+
+    <div class="article-title-wrapper">
+        <h2 class="article-title">
+            <a href="/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/">Redis 网络模型分析</a>
+        </h2>
+    
+        
+    </div>
+
+    
+    <footer class="article-time">
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4" />
+  <circle cx="18" cy="18" r="4" />
+  <path d="M15 3v4" />
+  <path d="M7 3v4" />
+  <path d="M3 11h16" />
+  <path d="M18 16.496v1.504l1 1" />
+</svg>
+                <time class="article-time--published">Aug 11, 2022</time>
+            </div>
+        
+
+        
+            <div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <polyline points="12 7 12 12 15 15" />
+</svg>
+
+
+
+                <time class="article-time--reading">
+                    阅读时长: 17 分钟
+                </time>
+            </div>
+        
+    </footer>
+    
+
+    
+</div>
+</header>
+
+    <section class="article-content">
+    
+    
+    <p>　　Redis 从 6.0 开始已经支持多线程 IO 了，网络模型变得比之前单线程的时候复杂了一些，本篇尝试分析一下 Redis 网络模型的变化。所有出现的代码均为 Redis 7.0 版本的。</p>
+<h2 id="为什么坚持单线程">为什么坚持单线程</h2>
+<p>　　Redis 在流行的中间件中一直是一个异类，它居然一直是用单线程进行网络 IO 的。所有的消息过来以后，原地解析消息获得命令，并且执行命令。<br>
+　　官网给出的原因是，造成 Redis 瓶颈的原因大部分情况下都是内存和网络，如果一般只使用 O(N) 或 O(log(N)) 方法的话，CPU 不会成为瓶颈。<br>
+　　个人感觉可能是为了控制代码实现的复杂度，而且引入锁机制以后可能在很多地方因为锁竞争反而会造成性能的下降。</p>
+<h2 id="为什么又上了多线程">为什么又上了多线程</h2>
+<p>　　Redis 并不是从 6.0 才开始使用多线程的，其实从 4.0 开始就已经引入了多线程来执行一些异步操作，但是这些线程并不参与到网络模型中，而是专门用来处理一些比较重的任务，比如像 <code>UNLINK</code>，<code>BGSAVE</code>, <code>FLUSHALL SYNC</code> 等。这类线程为 Redis 带来了异步操作的支持，解决了一些很重的任务会给整个服务带来长时间的卡顿问题。<br>
+　　从 6.0 开始，Redis 正式在网络模型中加入了多线程支持，主要还是为了优化性能的原因，虽然 Redis 的性能本来就很好，但是性能优化只有更好。在官方给出的配置示例的注释里，指明了使用 I/O 线程可以给 Redis 带来两倍的性能提升。<br>
+　　不过 Redis 官方目前还是没有默认开启 I/O 线程，需要在配置里开启才行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">io-threads 4
+</span></span><span class="line"><span class="cl">io-threads-do-reads yes
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>io-threads</code> 用于指明想要开启的 I/O 线程数量，配置的注释里说明了开太多线程并不会带来性能的线性增长，超过 8 个 I/O 线程以后带来的性能增长就很不明显了。<br>
+　　<code>io-threads-do-reads</code> 用来指明 I/O 线程是否可以用来读取数据，默认情况下 I/O 线程只用于写数据。将该选项设为 yes 即可使 I/O 线程同时用于数据读取。</p>
+<h2 id="单线程网络模型">单线程网络模型</h2>
+<p>　　直到现在，Redis 的网络模型在默认情况下依然是单线程的。下面这幅图是将这种模型的大致抽象画出的样子。</p>
+<p><img src="/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/single_thread.png"
+	width="4964"
+	height="2364"
+	srcset="/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/single_thread_hu35728c3ae2c0f3b721097afdba03482e_493633_480x0_resize_box_3.png 480w, /p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/single_thread_hu35728c3ae2c0f3b721097afdba03482e_493633_1024x0_resize_box_3.png 1024w"
+	loading="lazy"
+	
+		alt="single_thread"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="209"
+		data-flex-basis="503px"
+	
+></p>
+<p>　　虽然这部分的代码已经很庞大了，但是整个模型抽象出来还是很简单的。整个模型是一个标准的基于 epoll reactor 实现的单线程网络模型。<br>
+　　当监听套接字上有消息过来的时候，会调用 Accepter 的回调来创建一个新的客户端，并且将客户端连接的消息回调函数设为 <code>readQueryFromClient</code>。<br>
+　　当客户端套接字上有消息过来的时候，会为其调用 <code>readQueryFromClient</code> 的消息回调。这个方法会将数据从 socket 套接字上读取出来，并且放入 client 的接收缓冲区中。然后执行 <code>processInputBuffer</code> 解析读取缓冲区中的内容，并且执行解析出的命令，并且将命令执行的结果放入 client 的发送缓冲区中。在稍后的事件循环中，会为每一个有数据需要发送的客户端执行 <code>writeToClient</code>，在这里直接使用 <code>write</code> 将数据发送给客户端。</p>
+<h2 id="多线程网络模型">多线程网络模型</h2>
+<p>　　多线程模式下也没有变化太多，应该是开发组在设计多线程网络模型的时候希望可以尽量复用单线程模型的处理方法。不过画图苦手已经有点顶不住了，::&gt;_&lt;::</p>
+<p><img src="/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/multi_thread.png"
+	width="5844"
+	height="6384"
+	srcset="/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/multi_thread_hu8dcf39ef3126697164305d3463edd4d1_1301351_480x0_resize_box_3.png 480w, /p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/multi_thread_hu8dcf39ef3126697164305d3463edd4d1_1301351_1024x0_resize_box_3.png 1024w"
+	loading="lazy"
+	
+		alt="multi_thread"
+	
+	
+		class="gallery-image" 
+		data-flex-grow="91"
+		data-flex-basis="219px"
+	
+></p>
+<p>　　在多线程模式下，有两个比较重要的东西，一个等待读的客户端链表 <code>clients_pending_read</code>，还有一个等待写的客户端链表 <code>clients_pending_write</code>。其实它们在单线程模式上就已经有用上了，不过那时不太重要。<br>
+　　在处理读取的时候，使用 <code>handleClientsWithPendingReadsUsingThreads</code>，它将所有当前在 <code>clients_pending_read</code> 中的客户端按照线程数量进行了 N 等份，交给不同的线程进行处理，IO 线程为所有它需要处理的客户端调用 <code>readQueryFromClient</code>，不过跟单线程不同的地方是这一步并不会执行命令，只会给客户端加上一个有命令需要执行的标记。等所有线程都执行结束了，在主线程里会执行所有需要执行的命令。<br>
+　　在处理写入的时候，使用 <code>handleClientsWithPendingWritesUsingThreads</code>，它将所有当前在 <code>clients_pending_write</code> 中的客户端按线程数量分成了 N 等份，交给不同的线程进行处理。线程最终会调用到 <code>writeToClient</code> 把消息发送给客户端。<br>
+　　值得一提的是，当 IO 线程在工作的时候，主线程也没闲着，它在读取阶段充当了一个读线程，在写出阶段充当了一个写线程。在自己的任务处理完以后，主线程会等待其它线程的任务也都结束，然后才会继续后面的操作。</p>
+<h2 id="事件驱动器">事件驱动器</h2>
+<p>　　整个 Redis 服务器的核心就是一个事件驱动器，Server 的 main 函数最终就是阻塞在了 aeMain 上，由此可见它的重要性。</p>
+<h3 id="结构">结构</h3>
+<p>　　在每个 Redis Server 实例中，只有一个 eventloop，它是 <code>aeEventLoop</code> 结构的，负责处理整个 Server 中所有的事件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">maxfd</span><span class="p">;</span> <span class="c1">// 已经注册过的最大 fd
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">setsize</span><span class="p">;</span> <span class="c1">// 最大可以处理的套接字个数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeEventNextId</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">events</span><span class="p">;</span> <span class="c1">// 使用数组保存了所有 fd 到 aeFileEvent 的映射关系
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">aeFiredEvent</span> <span class="o">*</span><span class="n">fired</span><span class="p">;</span> <span class="c1">// 触发的事件会被放在这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">aeTimeEvent</span> <span class="o">*</span><span class="n">timeEventHead</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">stop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">apidata</span><span class="p">;</span> <span class="c1">// epoll 相关的数据会在这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">beforesleep</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeBeforeSleepProc</span> <span class="o">*</span><span class="n">aftersleep</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">aeEventLoop</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　aeEventLoop 的核心是 epoll，由于要支持多个系统的 poll 接口，所以 epoll 相关的数据是放在了 <code>apidata</code> 里面。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeApiState</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">epfd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">epoll_event</span> <span class="o">*</span><span class="n">events</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">aeApiState</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　如果使用 epoll 的话，那么在 <code>apidata</code> 里面存储的就是一个 <code>aeApiState</code> 结构的对象。在 <code>aeApiState</code> 中包含的就是 epoll 必备的 epfd 和 events 数组。</p>
+<h3 id="创建-eventloop">创建 eventloop</h3>
+<p>　　Redis Server 会在程序启动的初始化阶段，调用 <code>aeCreateEventLoop</code> 来创建自己的 eventloop 对象。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="n">server</span><span class="p">.</span><span class="n">el</span> <span class="o">=</span> <span class="n">aeCreateEventLoop</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">maxclients</span> <span class="o">+</span> <span class="n">CONFIG_FDSET_INCR</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　传入的参数除了一个固定的宏以外，还有就是配置中的 maxclients 字段的值，该字段如果不配置的话，默认是 10000。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="n">aeEventLoop</span> <span class="o">*</span><span class="nf">aeCreateEventLoop</span><span class="p">(</span><span class="kt">int</span> <span class="n">setsize</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">monotonicInit</span><span class="p">();</span>    <span class="cm">/* just in case the calling app didn&#39;t initialize */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="n">eventLoop</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">eventLoop</span><span class="p">)))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">aeFileEvent</span><span class="p">)</span><span class="o">*</span><span class="n">setsize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">aeFiredEvent</span><span class="p">)</span><span class="o">*</span><span class="n">setsize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">setsize</span> <span class="o">=</span> <span class="n">setsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">timeEventHead</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">timeEventNextId</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">maxfd</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">aftersleep</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">aeApiCreate</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1">// 这里创建 epoll 对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Events with mask == AE_NONE are not set. So let&#39;s initialize the
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * vector with it. */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">setsize</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">mask</span> <span class="o">=</span> <span class="n">AE_NONE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">eventLoop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">err</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">eventLoop</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">aeApiCreate</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeApiState</span> <span class="o">*</span><span class="n">state</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">aeApiState</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">state</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">state</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">epoll_event</span><span class="p">)</span><span class="o">*</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">setsize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">state</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">state</span><span class="o">-&gt;</span><span class="n">epfd</span> <span class="o">=</span> <span class="n">epoll_create</span><span class="p">(</span><span class="mi">1024</span><span class="p">);</span> <span class="cm">/* 1024 is just a hint for the kernel */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">epfd</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">zfree</span><span class="p">(</span><span class="n">state</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">anetCloexec</span><span class="p">(</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">epfd</span><span class="p">);</span> <span class="c1">// 为 epfd 设置 FD_CLOEXEC，防止子进程的 fd 无法关闭
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">apidata</span> <span class="o">=</span> <span class="n">state</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这里代码长了点，但是内容很简单，基本就是结构体 <code>aeEventLoop</code> 的初始化，以及 epoll 相关结构体 <code>aeApiState</code> 的创建。主要关注一下几点即可。</p>
+<ol>
+<li>调用 <code>aeCreateEventLoop</code> 时传入的参数会被当作 <code>aeEventLoop</code> 的 <code>setsize</code></li>
+<li><code>aeEventLoop</code> 的 <code>events</code> 变量是一个 <code>aeFileEvent</code> 结构的数组</li>
+<li><code>aeEventLoop</code> 的 <code>fired</code> 变量是一个 <code>aeFiredEvent</code> 结构的数组</li>
+<li>在 <code>aeApiCreate</code> 中创建了 <code>aeApiState</code> 对象，并将其保存在了 <code>apidata</code> 中</li>
+</ol>
+<h3 id="文件事件结构">文件事件结构</h3>
+<p>　　要增加对一个 socket 套接字的监听，要通过创建文件事件来实现。<br>
+　　上面提到了 <code>aeEventLoop</code> 的 <code>events</code> 变量是一个 <code>aeFileEvent</code> 结构的数组。这个 <code>aeFileEvent</code> 就是单个文件事件的对象了。在使用果成中不会去创建它，直接根据自己的 fd 从 <code>events</code> 中拿取使用即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFileEvent</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span> <span class="cm">/* one of AE_(READABLE|WRITABLE|BARRIER) */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">rfileProc</span><span class="p">;</span> <span class="c1">// 读套接字的方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">wfileProc</span><span class="p">;</span> <span class="c1">// 写套接字的方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">;</span> <span class="c1">// 保存了可以找到 client 对象的数据，为 conn 类型
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span> <span class="n">aeFileEvent</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　关于这个结构需要注意的点是，因为要兼容多个系统，所以 mask 并没有直接使用 epoll 的 mask，而是自己定义了一套，会在系统相关的接口里进行转换。<br>
+　　所有事件驱动器都要解决的一个问题就是，触发了某个 fd 的事件以后怎么找到对应的 client，本结构的 <code>clientData</code> 中保存了一个 <code>connection</code> 的结构体，其中保存了 client 的指针。关于 <code>connection</code> 的结构在后面讲到 accept 的时候会解释。</p>
+<h3 id="创建文件事件">创建文件事件</h3>
+<p>　　创建文件事件的接口是 <code>aeCreateFileEvent</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">aeCreateFileEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">,</span> <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">proc</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">fd</span> <span class="o">&gt;=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">setsize</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">errno</span> <span class="o">=</span> <span class="n">ERANGE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">AE_ERR</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">aeApiAddEvent</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">AE_ERR</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">|=</span> <span class="n">mask</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_READABLE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span> <span class="o">=</span> <span class="n">proc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span> <span class="o">=</span> <span class="n">proc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span> <span class="o">=</span> <span class="n">clientData</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">fd</span> <span class="o">&gt;</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">maxfd</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">maxfd</span> <span class="o">=</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">AE_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">aeApiAddEvent</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeApiState</span> <span class="o">*</span><span class="n">state</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">apidata</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">epoll_event</span> <span class="n">ee</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span> <span class="cm">/* avoid valgrind warning */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">op</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">].</span><span class="n">mask</span> <span class="o">==</span> <span class="n">AE_NONE</span> <span class="o">?</span> <span class="nl">EPOLL_CTL_ADD</span> <span class="p">:</span> <span class="n">EPOLL_CTL_MOD</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ee</span><span class="p">.</span><span class="n">events</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mask</span> <span class="o">|=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span> <span class="cm">/* Merge old events */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_READABLE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ee</span><span class="p">.</span><span class="n">events</span> <span class="o">|=</span> <span class="n">EPOLLIN</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ee</span><span class="p">.</span><span class="n">events</span> <span class="o">|=</span> <span class="n">EPOLLOUT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ee</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">fd</span> <span class="o">=</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">epoll_ctl</span><span class="p">(</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">epfd</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ee</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　又是一堆源码，不过好在这一部分也很简单。只需要关注下面几点即可。</p>
+<ol>
+<li><code>aeFileEvent</code> 是通过 fd 从 <code>events</code> 数组中拿取的</li>
+<li>在 <code>aeApiAddEvent</code> 中将自定义的 mask 转为了 epoll 的 mask</li>
+<li>使用 <code>epoll_ctl</code> 将 fd 加入到了 epfd 的监听中</li>
+<li>根据希望监听的事件类型设置了 <code>rfileProc</code> 和 <code>wfileProc</code></li>
+<li>更新了 <code>eventLoop-&gt;maxfd</code></li>
+</ol>
+<h3 id="驱动器阻塞">驱动器阻塞</h3>
+<p>　　在 Redis 的 main 函数最后会调用 <code>aeMain</code>，它又调用了 <code>aeProcessEvents</code>，然后 <code>aeApiPoll</code> 又被调用，在 <code>aeApiPoll</code> 中使用了 <code>epoll_wait</code> 进行了阻塞。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">aeApiPoll</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="k">struct</span> <span class="n">timeval</span> <span class="o">*</span><span class="n">tvp</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">aeApiState</span> <span class="o">*</span><span class="n">state</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">apidata</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">retval</span><span class="p">,</span> <span class="n">numevents</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">retval</span> <span class="o">=</span> <span class="n">epoll_wait</span><span class="p">(</span><span class="n">state</span><span class="o">-&gt;</span><span class="n">epfd</span><span class="p">,</span> <span class="n">state</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">,</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">setsize</span><span class="p">,</span> <span class="n">tvp</span> <span class="o">?</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_sec</span> <span class="o">*</span> <span class="mi">1000</span> <span class="o">+</span> <span class="p">(</span><span class="n">tvp</span><span class="o">-&gt;</span><span class="n">tv_usec</span> <span class="o">+</span> <span class="mi">999</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">retval</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">numevents</span> <span class="o">=</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">numevents</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">struct</span> <span class="n">epoll_event</span> <span class="o">*</span><span class="n">e</span> <span class="o">=</span> <span class="n">state</span><span class="o">-&gt;</span><span class="n">events</span><span class="o">+</span><span class="n">j</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">&amp;</span> <span class="n">EPOLLIN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">mask</span> <span class="o">|=</span> <span class="n">AE_READABLE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">&amp;</span> <span class="n">EPOLLOUT</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">mask</span> <span class="o">|=</span> <span class="n">AE_WRITABLE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">&amp;</span> <span class="n">EPOLLERR</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">mask</span> <span class="o">|=</span> <span class="n">AE_WRITABLE</span><span class="o">|</span><span class="n">AE_READABLE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">events</span> <span class="o">&amp;</span> <span class="n">EPOLLHUP</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">mask</span> <span class="o">|=</span> <span class="n">AE_WRITABLE</span><span class="o">|</span><span class="n">AE_READABLE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span> <span class="o">=</span> <span class="n">e</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">retval</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">errno</span> <span class="o">!=</span> <span class="n">EINTR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">panic</span><span class="p">(</span><span class="s">&#34;aeApiPoll: epoll_wait, %s&#34;</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">numevents</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　当从 <code>epoll_wait</code> 中唤醒以后，<code>aeApiPoll</code> 主要做了两件事情。</p>
+<ol>
+<li>将 epoll 的 mask 重新转为自定义的 mask</li>
+<li>将触发的事件填充到 <code>eventLoop</code> 的 <code>fired</code> 中，等待后续处理</li>
+</ol>
+<h3 id="事件触发">事件触发</h3>
+<p>　　在事件触发以后，会将相关信息填充到 <code>eventLoop</code> 的 <code>fired</code> 中，<code>fired</code> 是一个 <code>aeFiredEvent</code> 结构体的数组，来看一下 <code>aeFiredEvent</code> 的结构。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">aeFiredEvent</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">mask</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">aeFiredEvent</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　它的结构非常简单，只保存了 fd 和 mask。因为关于文件事件的数据都保存在了 <code>aeFileEvent</code> 中，而 <code>aeFiredEvent</code> 只需要保存可以指明后续要进行什么操作的数据即可。<br>
+　　通过 fd 可以从 <code>events</code> 中拿到对应的 <code>aeFileEvent</code>，而 mask 可以说明后续要执行哪个回调函数来进行操作。</p>
+<h3 id="事件执行">事件执行</h3>
+<p>　　当 <code>aeApiPoll</code> 返回以后，它会返回触发的事件个数，同时 <code>fired</code> 数组也已经填充完毕，可以开始执行了。<code>aeProcessEvents</code> 是一个非常长的函数，下面是我简化过以后只保留了事件处理部分的代码。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 大量简化后的 aeProcessEvents
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">int</span> <span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">processed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numevents</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">numevents</span> <span class="o">=</span> <span class="n">aeApiPoll</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">tvp</span><span class="p">);</span> <span class="c1">// 这里会调用 epoll_wait 阻塞
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 处理本次 wait 返回触发的事件
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">numevents</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">fd</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">aeFileEvent</span> <span class="o">*</span><span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">fired</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* Number of events fired for current fd. */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_READABLE</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span> <span class="n">mask</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">fired</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">fe</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span> <span class="cm">/* Refresh in case of resize. */</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Fire the writable event. */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">AE_WRITABLE</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">fired</span> <span class="o">||</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span> <span class="o">!=</span> <span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="n">fd</span><span class="p">,</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="n">mask</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="n">fired</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">processed</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">processed</span><span class="p">;</span> <span class="cm">/* return the number of processed file/time events */</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　它遍历了 fired 中所有的触发事件，通过 fd 拿到了对应的 <code>aeFileEvent *fe</code>，又根据 mask 来判断是应该调用 <code>fe-&gt;rfileProc</code> 还是 <code>fe-&gt;wfileProc</code>，抑或是两者都需要调用。在最后它返回了总的被处理的事件个数。</p>
+<h2 id="创建客户端连接">创建客户端连接</h2>
+<h3 id="绑定监听地址端口">绑定监听地址端口</h3>
+<p>　　Redis Server 绑定的地址和端口写在配置文件之中。官方给出的默认配置如下。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">bind 127.0.0.1 -::1
+</span></span><span class="line"><span class="cl">port 6379
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　在 initServer 中，使用了 <code>listenToPort</code> 方法对每个地址和端口进行绑定。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 大量简化后的 listenToPort
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">int</span> <span class="nf">listenToPort</span><span class="p">(</span><span class="kt">int</span> <span class="n">port</span><span class="p">,</span> <span class="n">socketFds</span> <span class="o">*</span><span class="n">sfd</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">**</span><span class="n">bindaddr</span> <span class="o">=</span> <span class="n">server</span><span class="p">.</span><span class="n">bindaddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">bindaddr_count</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">char</span> <span class="o">*</span><span class="n">addr</span> <span class="o">=</span> <span class="n">bindaddr</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">[</span><span class="n">sfd</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="n">anetTcpServer</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">neterr</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">server</span><span class="p">.</span><span class="n">tcp_backlog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">anetNonBlock</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">[</span><span class="n">sfd</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">anetCloexec</span><span class="p">(</span><span class="n">sfd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">[</span><span class="n">sfd</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">count</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　精简过以后的 <code>listenToPort</code> 内部很简单，为每一对地址+端口调用 <code>anetTcpServer</code> 创建一个 socket 套接字，并为其调用 listen 使其变为主动套接字。</p>
+<h3 id="创建监听事件">创建监听事件</h3>
+<p>　　在 initServer 中，使用 <code>createSocketAcceptHandler</code> 为所有监听套接字创建文件事件，并且将 handler 设为 <code>acceptTcpHandler</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">createSocketAcceptHandler</span><span class="p">(</span><span class="n">socketFds</span> <span class="o">*</span><span class="n">sfd</span><span class="p">,</span> <span class="n">aeFileProc</span> <span class="o">*</span><span class="n">accept_handler</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">aeCreateFileEvent</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="p">,</span> <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">AE_READABLE</span><span class="p">,</span> <span class="n">accept_handler</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">==</span> <span class="n">AE_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="cm">/* Rollback */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">--</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">aeDeleteFileEvent</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="p">,</span> <span class="n">sfd</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">AE_READABLE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">C_ERR</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>createSocketAcceptHandler</code> 的内部实现很简单，只是遍历了 <code>sfd</code> 中的所有套接字，使用 <code>aeCreateFileEvent</code> 为其创建文件事件。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">acceptTcpHandler</span><span class="p">(</span><span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">el</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">privdata</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">cport</span><span class="p">,</span> <span class="n">cfd</span><span class="p">,</span> <span class="n">max</span> <span class="o">=</span> <span class="n">MAX_ACCEPTS_PER_CALL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="n">cip</span><span class="p">[</span><span class="n">NET_IP_STR_LEN</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="n">UNUSED</span><span class="p">(</span><span class="n">el</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">UNUSED</span><span class="p">(</span><span class="n">mask</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">UNUSED</span><span class="p">(</span><span class="n">privdata</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">while</span><span class="p">(</span><span class="n">max</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 单次唤醒只处理 1000 个
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">cfd</span> <span class="o">=</span> <span class="n">anetTcpAccept</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">neterr</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">cip</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">cip</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">cport</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">cfd</span> <span class="o">==</span> <span class="n">ANET_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">EWOULDBLOCK</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">serverLog</span><span class="p">(</span><span class="n">LL_WARNING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="s">&#34;Accepting client connection: %s&#34;</span><span class="p">,</span> <span class="n">server</span><span class="p">.</span><span class="n">neterr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="n">serverLog</span><span class="p">(</span><span class="n">LL_VERBOSE</span><span class="p">,</span><span class="s">&#34;Accepted %s:%d&#34;</span><span class="p">,</span> <span class="n">cip</span><span class="p">,</span> <span class="n">cport</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">acceptCommonHandler</span><span class="p">(</span><span class="n">connCreateAcceptedSocket</span><span class="p">(</span><span class="n">cfd</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cip</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>anetTcpAccept</code> 的作用是为 fd 执行 accept4，并且将客户端的 ip 写入 cip 中，端口写入 cport 中，然后返回客户端套接字 cfd。<br>
+　　使用 <code>connCreateAcceptedSocket</code> 为客户端创建了一个连接对象，并将它传给了 <code>acceptCommonHandler</code> 来进行 accept 之后的处理，这两个函数我们分开来说。</p>
+<h3 id="创建连接对象">创建连接对象</h3>
+<p>　　先来看一下 connection 的结构内部。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">ConnectionType</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">ae_handler</span><span class="p">)(</span><span class="k">struct</span> <span class="n">aeEventLoop</span> <span class="o">*</span><span class="n">el</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">clientData</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mask</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">connect</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="kt">int</span> <span class="n">port</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">source_addr</span><span class="p">,</span> <span class="n">ConnectionCallbackFunc</span> <span class="n">connect_handler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">write</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">data_len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">writev</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">iovec</span> <span class="o">*</span><span class="n">iov</span><span class="p">,</span> <span class="kt">int</span> <span class="n">iovcnt</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">read</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">buf_len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">close</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">accept</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="n">ConnectionCallbackFunc</span> <span class="n">accept_handler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">set_write_handler</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="n">ConnectionCallbackFunc</span> <span class="n">handler</span><span class="p">,</span> <span class="kt">int</span> <span class="n">barrier</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">set_read_handler</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="n">ConnectionCallbackFunc</span> <span class="n">handler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">get_last_error</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">blocking_connect</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="kt">int</span> <span class="n">port</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeout</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ssize_t</span> <span class="p">(</span><span class="o">*</span><span class="n">sync_write</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">ssize_t</span> <span class="n">size</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeout</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ssize_t</span> <span class="p">(</span><span class="o">*</span><span class="n">sync_read</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">ssize_t</span> <span class="n">size</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeout</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ssize_t</span> <span class="p">(</span><span class="o">*</span><span class="n">sync_readline</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">ssize_t</span> <span class="n">size</span><span class="p">,</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">timeout</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">get_type</span><span class="p">)(</span><span class="k">struct</span> <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">ConnectionType</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">connection</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ConnectionType</span> <span class="o">*</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ConnectionState</span> <span class="n">state</span><span class="p">;</span> <span class="c1">// 连接状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">short</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">short</span> <span class="kt">int</span> <span class="n">refs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">last_errno</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">private_data</span><span class="p">;</span> <span class="c1">// 保存了 client
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ConnectionCallbackFunc</span> <span class="n">conn_handler</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ConnectionCallbackFunc</span> <span class="n">write_handler</span><span class="p">;</span> <span class="c1">// 写数据的方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ConnectionCallbackFunc</span> <span class="n">read_handler</span><span class="p">;</span> <span class="c1">// 读数据的方法
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span> <span class="c1">// 保存了 fd
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>connection</code> 是为了适应各种类型的连接协议而存在的一个中间结构体，它为上层提供了统一的连接操作接口。不要被 <code>ConnectionType</code> 中密密麻麻的方法吓到，它只是对一类连接的所有方法的封装而已，暂时不需要管它。<br>
+　　如果是像上文一样通过 accept 创建的连接，那么会使用 <code>connCreateAcceptedSocket</code> 来进行创建 <code>connection</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="n">connection</span> <span class="o">*</span><span class="nf">connCreateSocket</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span> <span class="o">=</span> <span class="n">zcalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">connection</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">type</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">CT_Socket</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">conn</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">connection</span> <span class="o">*</span><span class="nf">connCreateAcceptedSocket</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">connection</span> <span class="o">*</span><span class="n">conn</span> <span class="o">=</span> <span class="n">connCreateSocket</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">state</span> <span class="o">=</span> <span class="n">CONN_STATE_ACCEPTING</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">conn</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这里可以看到，conn 的 type 被设为了一个全局变量 <code>CT_Socket</code> 的指针，在这个全局变量里，实现了刚刚 <code>ConnectionType</code> 中的所有方法。</p>
+<h3 id="创建客户端">创建客户端</h3>
+<p>　　在创建完 <code>connection</code> 以后，还使用了 <code>acceptCommonHandler</code> 进行了后续的处理，我们要关注的创建客户端对象也在这里。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 大量简化后的 acceptCommonHandler
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">void</span> <span class="nf">acceptCommonHandler</span><span class="p">(</span><span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ip</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Create connection and client */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="n">c</span> <span class="o">=</span> <span class="n">createClient</span><span class="p">(</span><span class="n">conn</span><span class="p">))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 创建 client
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">connClose</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span> <span class="cm">/* May be already closed, just ignore errors */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　只留下我们目前关注的代码，最重要的就是调用 <code>createClient</code> 来创建客户端了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 大量简化后的 createClient
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">client</span> <span class="o">*</span><span class="nf">createClient</span><span class="p">(</span><span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">client</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">conn</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">connEnableTcpNoDelay</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span> <span class="c1">// 设置 TCP_NODELAY
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">tcpkeepalive</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">connKeepAlive</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span><span class="n">server</span><span class="p">.</span><span class="n">tcpkeepalive</span><span class="p">);</span> <span class="c1">// 设置 SO_KEEPALIVE
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">connSetReadHandler</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">readQueryFromClient</span><span class="p">);</span> <span class="c1">// 创建读取事件
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">connSetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span> <span class="c1">// 会将 client 设置到 conn 的 private_data 中
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">selectDb</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// 默认的 db 是 0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">uint64_t</span> <span class="n">client_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">atomicGetIncr</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">next_client_id</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">// 得到 client id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">c</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">=</span> <span class="n">client_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span> <span class="o">=</span> <span class="n">conn</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">linkClient</span><span class="p">(</span><span class="n">c</span><span class="p">);</span> <span class="c1">// 将 client 加入到 server.clients 中
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　同样省略了大幅的非关键代码以后，<code>createClient</code> 中需要关注的是以下几点。</p>
+<ol>
+<li>对 conn 做了一些网络参数相关的设置</li>
+<li>为 conn 创建文件事件</li>
+<li>将 client 设为了 conn 的 <code>private_data</code>，解决了从 conn 找 client 的需求</li>
+<li>客户端的默认 DB 为 0 号</li>
+<li>客户端的 ID 通过累加一个原子变量产生</li>
+<li>conn 也被保存在了 client 的 conn 字段中</li>
+<li>client 被加入到了 server.clients 中</li>
+</ol>
+<h3 id="创建客户端读取事件">创建客户端读取事件</h3>
+<p>　　在创建客户端的时候，为它的 conn 执行了 <code>connSetReadHandler</code> 函数，并且将函数 <code>readQueryFromClient</code> 作为参数传入。这个函数是用来创建读取文件事件的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">connSocketSetReadHandler</span><span class="p">(</span><span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="n">ConnectionCallbackFunc</span> <span class="n">func</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">func</span> <span class="o">==</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">read_handler</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">read_handler</span> <span class="o">=</span> <span class="n">func</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">read_handler</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">aeDeleteFileEvent</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">,</span> <span class="n">AE_READABLE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">aeCreateFileEvent</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">,</span> <span class="n">AE_READABLE</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">type</span><span class="o">-&gt;</span><span class="n">ae_handler</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span> <span class="o">==</span> <span class="n">AE_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">C_ERR</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　它为 conn 创建了一个读取事件，回调为 <code>ae_handler</code>，这个函数就不细说了，它大概就是根据触发的 mask，来执行 handler，如果是读取事件，则执行 read_handler。<code>conn-&gt;red_handler</code> 被设为了传入的参数 func，根据上层调用的地方可得，当 conn 为客户端连接时，这个 func 就是在架构图里多次出现的 <code>readQueryFromClient</code> 了。</p>
+<h2 id="io-线程">IO 线程</h2>
+<h3 id="创建线程">创建线程</h3>
+<p>　　在服务器启动的时候，会调用 <code>initThreadedIO</code> 来创建 IO 线程。下面来看一下精简过的 <code>initThreadedIO</code> 函数代码。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 精简过的 initThreadedIO
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">void</span> <span class="nf">initThreadedIO</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* We start with threads not active. */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Indicate that io-threads are currently idle */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">io_threads_op</span> <span class="o">=</span> <span class="n">IO_THREADS_OP_IDLE</span><span class="p">;</span> <span class="c1">// 设置线程状态
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Spawn and initialize the I/O threads. */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Things we do for all the threads including the main thread. */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">io_threads_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">listCreate</span><span class="p">();</span> <span class="c1">// 为每个线程创建一个链表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span> <span class="cm">/* Thread 0 is the main thread. */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Things we do only for the additional threads. */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">pthread_t</span> <span class="n">tid</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">pthread_mutex_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">NULL</span><span class="p">);</span> <span class="c1">// 初始化每个线程的锁
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">setIOPendingCount</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// 初始化每个线程的待处理计数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span> <span class="c1">// 锁上，后面有用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tid</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">IOThreadMain</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="kt">long</span><span class="p">)</span><span class="n">i</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">serverLog</span><span class="p">(</span><span class="n">LL_WARNING</span><span class="p">,</span> <span class="s">&#34;Fatal: Can&#39;t initialize IO thread.&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="n">io_threads</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tid</span><span class="p">;</span> <span class="c1">// 记录线程 id
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　函数按照配置的数量创建了 IO 线程，需要注意的是主线程也是一个 IO 线程，需要将配置设为 &gt;=2 才是真正的多线程。<br>
+　　线程执行的函数是 <code>IOThreadMain</code>，为每个线程创建的锁被直接锁上了，这个原因后面会讲到。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">setIOPendingCount</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">count</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">atomicSetWithSync</span><span class="p">(</span><span class="n">io_threads_pending</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">count</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>setIOPendingCount</code> 的内容很简单，就是使用原子方法将线程对应的待处理客户端数量设置为参数指定的值。</p>
+<h3 id="线程控制全局变量">线程控制全局变量</h3>
+<p>　　在上面创建线程的代码中，与 IO 线程有关的五个全局变量已经悉数登场。</p>
+<ol>
+<li><code>io_threads</code> 保存了线程 index 到 id 的映射关系</li>
+<li><code>io_threads_mutex</code> 保存了各个线程的锁</li>
+<li><code>io_threads_pending</code> 保存了各个线程中待处理的客户端数量</li>
+<li><code>io_threads_op</code> IO 线程状态，或者叫线程当前的操作</li>
+<li><code>io_threads_list</code> 保存了线程中所有待处理的客户端</li>
+</ol>
+<p>　　后三个尤其重要，会在很多地方看到使用它们。</p>
+<h3 id="io-线程主函数">IO 线程主函数</h3>
+<p>　　上面创建线程的部分有提到，创建出来的 IO 线程执行的函数是 <code>IOThreadMain</code>，下面来看一下精简过后的函数源码。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span><span class="nf">IOThreadMain</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">myid</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">long</span> <span class="n">id</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">myid</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Wait for start */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">getIOPendingCount</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Give the main thread a chance to stop this thread. */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">getIOPendingCount</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 如果要待处理的客户端数量为 0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span> <span class="c1">// 阻塞在这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">serverAssert</span><span class="p">(</span><span class="n">getIOPendingCount</span><span class="p">(</span><span class="n">id</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* Process: note that the main thread will never touch our list
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * before we drop the pending count to 0. */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listIter</span> <span class="n">li</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listNode</span> <span class="o">*</span><span class="n">ln</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listRewind</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="n">id</span><span class="p">],</span> <span class="o">&amp;</span><span class="n">li</span><span class="p">);</span> <span class="c1">// 拿到线程分到的待处理客户端
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">while</span><span class="p">((</span><span class="n">ln</span> <span class="o">=</span> <span class="n">listNext</span><span class="p">(</span><span class="o">&amp;</span><span class="n">li</span><span class="p">)))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">listNodeValue</span><span class="p">(</span><span class="n">ln</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">io_threads_op</span> <span class="o">==</span> <span class="n">IO_THREADS_OP_WRITE</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">writeToClient</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">io_threads_op</span> <span class="o">==</span> <span class="n">IO_THREADS_OP_READ</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">readQueryFromClient</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">serverPanic</span><span class="p">(</span><span class="s">&#34;io_threads_op value is unknown&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listEmpty</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span> <span class="c1">// 清空链表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">setIOPendingCount</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// 设置本线程等待的数量为 0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　线程在创建好以后会阻塞在 <code>io_threads_mutex</code> 对应的自己的锁上。当加锁成功以后，立即释放，检查等待处理的客户端数量，如果不为 0，则从链表中依次拿取客户端，根据目前 IO 线程的动作来调用 <code>writeToClient</code> 进行写或者调用 <code>readQueryFromClient</code> 进行读。<br>
+　　当全部处理完以后，清空链表，并且将等待处理的数量设为 0，然后继续循环。但是这里不用担心，如果没有足够的工作，那么 IO 线程会马上再次阻塞在 mutex 上，后面再讲。</p>
+<h3 id="使用-io-线程读取">使用 IO 线程读取</h3>
+<p>　　如果大家对一开始的图还有印象的话，那么有两个名字巨长的函数可能你还记得，其中有一个就是 <code>handleClientsWithPendingReadsUsingThreads</code>，它被用来使用多线程读取数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">handleClientsWithPendingReadsUsingThreads</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">||</span> <span class="o">!</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_do_reads</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">processed</span> <span class="o">=</span> <span class="n">listLength</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_read</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">processed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 划分每个线程负责的链表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">listIter</span> <span class="n">li</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">listNode</span> <span class="o">*</span><span class="n">ln</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">listRewind</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_read</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">li</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">item_id</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span><span class="p">((</span><span class="n">ln</span> <span class="o">=</span> <span class="n">listNext</span><span class="p">(</span><span class="o">&amp;</span><span class="n">li</span><span class="p">)))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">listNodeValue</span><span class="p">(</span><span class="n">ln</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">target_id</span> <span class="o">=</span> <span class="n">item_id</span> <span class="o">%</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listAddNodeTail</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="n">target_id</span><span class="p">],</span><span class="n">c</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">item_id</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">io_threads_op</span> <span class="o">=</span> <span class="n">IO_THREADS_OP_READ</span><span class="p">;</span> <span class="c1">// 修改线程操作
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">listLength</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">setIOPendingCount</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span> <span class="c1">// 设置线程待处理数量
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Also use the main thread to process a slice of clients. */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">listRewind</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">&amp;</span><span class="n">li</span><span class="p">);</span> <span class="c1">// 主线程默认使用第一个链表
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">while</span><span class="p">((</span><span class="n">ln</span> <span class="o">=</span> <span class="n">listNext</span><span class="p">(</span><span class="o">&amp;</span><span class="n">li</span><span class="p">)))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">listNodeValue</span><span class="p">(</span><span class="n">ln</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">readQueryFromClient</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">listEmpty</span><span class="p">(</span><span class="n">io_threads_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 等待所有线程的任务执行完毕
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">pending</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">pending</span> <span class="o">+=</span> <span class="n">getIOPendingCount</span><span class="p">(</span><span class="n">j</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">pending</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">io_threads_op</span> <span class="o">=</span> <span class="n">IO_THREADS_OP_IDLE</span><span class="p">;</span> <span class="c1">// 重新修改线程动作
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Run the list of clients again to process the new buffers. */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span><span class="p">(</span><span class="n">listLength</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_read</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ln</span> <span class="o">=</span> <span class="n">listFirst</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_read</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">listNodeValue</span><span class="p">(</span><span class="n">ln</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">listDelNode</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_read</span><span class="p">,</span><span class="n">ln</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">c</span><span class="o">-&gt;</span><span class="n">pending_read_list_node</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">serverAssert</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">CLIENT_BLOCKED</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">beforeNextClient</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">updateClientMemUsage</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">// 执行所有等待执行的客户端的命令
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">processPendingCommandAndInputBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">// 如果需要回复，则将客户端加入 clients_pending_write 中
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">CLIENT_PENDING_WRITE</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">clientHasPendingReplies</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="n">putClientInPendingWriteQueue</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Update processed count on server */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">server</span><span class="p">.</span><span class="n">stat_io_reads_processed</span> <span class="o">+=</span> <span class="n">processed</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">processed</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　这函数挺长，但是也没什么好精简的，233。在一开始会将 <code>clients_pending_read</code> 中所有待处理客户端按照线程数量进行分割，分割结果写到 <code>io_threads_list</code> 对应线程的链表里。<br>
+　　修改 <code>io_threads_op</code> 为 <code>IO_THREADS_OP_READ</code> 告知 IO 线程接下来是做读取操作。为每个线程修改它待处理的客户端数量。主线程也作为 IO 线程，使用 0 号链表。<br>
+　　主线程执行完毕以后，会进入一个死循环，不断检查各个线程剩余的数量，直到总数量为 0，此时所有线程的任务都已经执行完毕了。再将 <code>io_threads_op</code> 修改为 <code>IO_THREADS_OP_IDLE</code>。<br>
+　　多线程状态下的 <code>readQueryFromClient</code> 并不会直接执行指令，而是仅仅读取指令到客户端的缓冲区中。接下来在主线程中，遍历所有 <code>clients_pending_read</code> 中的客户端，为它们执行 <code>processPendingCommandAndInputBuffer</code> 执行它们需要的命令，如果它们执行的结果需要返回，那么会将其加入到 <code>clients_pending_write</code> 中。<br>
+　　需要特别注意的是，只有在两次修改 <code>io_threads_op</code> 之间的操作是多线程的，执行命令的部分都是在主线程中进行的。</p>
+<h3 id="io-线程的停止与启动">IO 线程的停止与启动</h3>
+<p>　　当 Redis 的命令不多时，此时留着 IO 线程空转就太不环保了。Redis 中机制来对 IO 线程进行开启和关闭。<br>
+　　当每次调用 <code>handleClientsWithPendingWritesUsingThreads</code> 的时候，会执行一个叫做 <code>stopThreadedIOIfNeeded</code> 的函数，看名字就直到它是用来判断是否要关闭 IO 线程的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">stopThreadedIOIfNeeded</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">pending</span> <span class="o">=</span> <span class="n">listLength</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_write</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Return ASAP if IO threads are disabled (single threaded mode). */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">pending</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">stopThreadedIO</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　它判断的标准是，如果当前等待写的客户端不到 IO 线程数量的 2 倍，则应该关闭 IO 线程。关闭 IO 线程调用的是 <code>stopThreadedIO</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">stopThreadedIO</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">handleClientsWithPendingReadsUsingThreads</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="n">serverAssert</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">==</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　在关闭之前最后执行了一个多线程读，然后对每个线程的锁加锁，使所有 IO 线程都重新被阻塞在自己的锁上，等待下一次唤醒。<br>
+　　同样是在 <code>handleClientsWithPendingWritesUsingThreads</code> 中，如果当待处理写的客户端数量超过了 IO 线程的 2 倍，则会调用 <code>startThreadedIO</code> 让 IO 线程重新开始运行。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">startThreadedIO</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">serverAssert</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">==</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">server</span><span class="p">.</span><span class="n">io_threads_num</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">io_threads_mutex</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">server</span><span class="p">.</span><span class="n">io_threads_active</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>　　<code>startThreadedIO</code> 的操作很简单，只需要解锁所有线程的锁即可让它们重新恢复运行。</p>
+<h2 id="无锁实现">无锁实现</h2>
+<p>　　得益于 Redis 的设计，整个网络模型中是没有锁的。这样就无需修改底层的数据结构，不然要为每个结构都加上锁，影响会很大。接下来来看一下 Redis 是怎么实现无锁的。<br>
+　　首先是全局变量 <code>io_threads_list</code>，它保存了主线程对所有客户端分配的结果链表，它在一开始分配的时候，IO 线程还都没有在执行。当它分配完毕以后，主线程不会再修改它，直到 IO 线程的任务执行结束的时候由 IO 线程自己将链表清空。所以并不存在对 <code>io_threads_list</code> 的并行读写。<br>
+　　全局变量 <code>io_threads_pending</code> 保存了所有线程当前剩余的未处理客户端个数，这个数组主线程和 IO 线程都需要读写，但是它是个原子变量数组，操作它都是使用的原子方法，故不影响并行读写。<br>
+　　对于全局变量 <code>io_threads_op</code> 来说，它保存了当前线程的执行状态，但是它也是主线程和 IO 线程错开读写的，主线程设置好它以后，IO 线程才开始执行，当 IO 线程都执行完毕以后，主线程才再次修改它。<br>
+　　至于为什么执行命令的时候不需要对被操作的数据加锁，这个其实上面已经解释过了。命令的读取是多线程的，但是命令的执行永远都是单线程的，只有主线程中会真正执行命令。</p>
+<h2 id="总结">总结</h2>
+<p>　　那么，Redis 的多线程网络模型分析就到此结束了。可以看到在设计中为了不引入锁，其实做了很多妥协。本质上来说目前 Redis 的多线程还不能算是真正的多线程。<br>
+　　后面可能会继续写 Redis 的各种数据结构的分析。</p>
+</section>
+
+
+    <footer class="article-footer">
+    
+    <section class="article-tags">
+        
+            <a href="/tags/redis/">redis</a>
+        
+    </section>
+
+
+    
+    <section class="article-copyright">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <circle cx="12" cy="12" r="9" />
+  <path d="M14.5 9a3.5 4 0 1 0 0 6" />
+</svg>
+
+
+
+        <span>Licensed under CC BY-NC-SA 4.0</span>
+    </section>
+    </footer>
+
+
+    
+</article>
+
+    
+
+    
+
+     
+    
+        
+    <script src="https://utteranc.es/client.js" 
+        repo="medetasi/homurua.github.io"
+        issue-term="pathname"
+        
+        label="blog-comment"
+        
+        crossorigin="anonymous"
+        async
+        >
+</script>
+
+<style>
+    .utterances {
+        max-width: unset;
+    }
+</style>
+
+<script>
+    function setUtterancesTheme(theme) {
+        let utterances = document.querySelector('.utterances iframe');
+        if (utterances) {
+            utterances.contentWindow.postMessage(
+                {
+                    type: 'set-theme',
+                    theme: `github-${theme}`
+                },
+                'https://utteranc.es'
+            );
+        }
+    }
+
+    addEventListener('message', event => {
+        if (event.origin !== 'https://utteranc.es') return;
+        setUtterancesTheme(document.documentElement.dataset.scheme)
+    });
+
+    window.addEventListener('onColorSchemeChange', (e) => {
+        setUtterancesTheme(e.detail)
+    })
+</script>
+
+
+    
+
+    <footer class="site-footer">
+    <section class="copyright">
+        &copy; 
+        
+        2022 放学后茶会
+    </section>
+    
+    <section class="powerby">
+        Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+    </section>
+</footer>
+
+
+    
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    
+    <div class="pswp__bg"></div>
+
+    
+    <div class="pswp__scroll-wrap">
+
+        
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                
+                
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo="crossorigin="anonymous"
+                defer
+                >
+            </script><script 
+                src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU="crossorigin="anonymous"
+                defer
+                >
+            </script><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+            ><link 
+                rel="stylesheet" 
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+            >
+
+            </main>
+    <aside class="sidebar right-sidebar sticky">
+        
+            
+                
+    <section class="widget archives">
+        <div class="widget-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z"/>
+  <line x1="5" y1="9" x2="19" y2="9" />
+  <line x1="5" y1="15" x2="19" y2="15" />
+  <line x1="11" y1="4" x2="7" y2="20" />
+  <line x1="17" y1="4" x2="13" y2="20" />
+</svg>
+
+
+
+        </div>
+        <h2 class="widget-title section-title">目录</h2>
+        
+        <div class="widget--toc">
+            <nav id="TableOfContents">
+  <ol>
+    <li><a href="#为什么坚持单线程">为什么坚持单线程</a></li>
+    <li><a href="#为什么又上了多线程">为什么又上了多线程</a></li>
+    <li><a href="#单线程网络模型">单线程网络模型</a></li>
+    <li><a href="#多线程网络模型">多线程网络模型</a></li>
+    <li><a href="#事件驱动器">事件驱动器</a>
+      <ol>
+        <li><a href="#结构">结构</a></li>
+        <li><a href="#创建-eventloop">创建 eventloop</a></li>
+        <li><a href="#文件事件结构">文件事件结构</a></li>
+        <li><a href="#创建文件事件">创建文件事件</a></li>
+        <li><a href="#驱动器阻塞">驱动器阻塞</a></li>
+        <li><a href="#事件触发">事件触发</a></li>
+        <li><a href="#事件执行">事件执行</a></li>
+      </ol>
+    </li>
+    <li><a href="#创建客户端连接">创建客户端连接</a>
+      <ol>
+        <li><a href="#绑定监听地址端口">绑定监听地址端口</a></li>
+        <li><a href="#创建监听事件">创建监听事件</a></li>
+        <li><a href="#创建连接对象">创建连接对象</a></li>
+        <li><a href="#创建客户端">创建客户端</a></li>
+        <li><a href="#创建客户端读取事件">创建客户端读取事件</a></li>
+      </ol>
+    </li>
+    <li><a href="#io-线程">IO 线程</a>
+      <ol>
+        <li><a href="#创建线程">创建线程</a></li>
+        <li><a href="#线程控制全局变量">线程控制全局变量</a></li>
+        <li><a href="#io-线程主函数">IO 线程主函数</a></li>
+        <li><a href="#使用-io-线程读取">使用 IO 线程读取</a></li>
+        <li><a href="#io-线程的停止与启动">IO 线程的停止与启动</a></li>
+      </ol>
+    </li>
+    <li><a href="#无锁实现">无锁实现</a></li>
+    <li><a href="#总结">总结</a></li>
+  </ol>
+</nav>
+        </div>
+    </section>
+
+            
+        
+    </aside>
+
+
+        </div>
+        <script 
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                
+                >
+            </script><script type="text/javascript" src="/ts/main.js" defer></script>
+<style>
+     
+</style>
+
+<script>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+</script>
+
+
+    </body>
+</html>

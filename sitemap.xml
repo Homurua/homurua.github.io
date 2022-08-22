@@ -3,18 +3,27 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://wmf.im/</loc>
-    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/categories/</loc>
-    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/post/</loc>
-    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
   </url><url>
-    <loc>https://wmf.im/tags/scoop/</loc>
-    <lastmod>2022-08-09T13:38:47+08:00</lastmod>
+    <loc>https://wmf.im/tags/redis/</loc>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/p/redis-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90/</loc>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/categories/redis%E7%AC%94%E8%AE%B0/</loc>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/tags/</loc>
+    <lastmod>2022-08-11T11:18:17+08:00</lastmod>
+  </url><url>
+    <loc>https://wmf.im/tags/scoop/</loc>
     <lastmod>2022-08-09T13:38:47+08:00</lastmod>
   </url><url>
     <loc>https://wmf.im/p/%E4%BD%BF%E7%94%A8-scoop-%E7%AE%A1%E7%90%86-windows-%E8%BD%AF%E4%BB%B6%E5%AE%89%E8%A3%85/</loc>
