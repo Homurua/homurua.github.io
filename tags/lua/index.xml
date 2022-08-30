@@ -16,7 +16,7 @@
 &lt;h2 id=&#34;加载模块&#34;&gt;加载模块&lt;/h2&gt;
 &lt;h3 id=&#34;dofile&#34;&gt;dofile&lt;/h3&gt;
 &lt;p&gt;　　使用 dofile 进行代码加载是最简单粗暴的，在进程启动的时候，直接将本进程所有要用到的脚本文件使用 dofile 加载进来。&lt;br&gt;
-　　如果需要重新加载，那么就对修改过的文件再次执行 dofile 重新加载一次。但是这样加载有一个不好的地方，就是每个文件都要有一个全局变量的 Table，而且如果这个 Table 被别的文件里使用 local 引用了，那么即使重新 dofile 加载一次，原来的引用还是保存了原先那个 Table 的地址。&lt;/p&gt;
+　　如果需要重新加载，那么就对修改过的文件再次执行 dofile 重新加载一次。但是这样加载有一个不好的地方，就是每个文件都要对应的使用一个全局变量 Table 来进行保存，而且如果这个 Table 被别的文件里使用 local 引用了，那么即使重新 dofile 加载一次，原来的引用还是保存了原先那个 Table 的地址。&lt;/p&gt;
 &lt;h3 id=&#34;loadfile&#34;&gt;loadfile&lt;/h3&gt;
 &lt;p&gt;　　使用 loadfile 加载文件，会得到一个中间函数，这个中间函数执行完就跟直接调用 dofile 加载效果是一样的了。但是因为有了一个中间函数，就有一些操作的机会。&lt;br&gt;
 　　可以使用 setfenv 将加载结果的函数放在一个新创建的 Table 中执行，这样既解决了需要全局变量的问题，也解决了别的地方引用的问题。给出一个简单的实现方法。&lt;/p&gt;
@@ -78,14 +78,15 @@
 &lt;p&gt;　　require 是 Lua 官方提供的加载模块的接口，不仅可以加载 Lua 模块，也可以加载 C 模块。它加载过的模块会被放在 package.loaded 中，对同一个模块第二次加载，不会重复加载，会直接返回旧的模块给调用者。&lt;br&gt;
 　　需要重新加载的时候需要首先将 package.loaded 中对应模块设为 nil，然后再次执行 require。但是这样也有一个问题，那就是如果在某个地方使用 local 变量引用了 require 的结果，那么更新以后它引用的还是旧的模块。&lt;/p&gt;
 &lt;h2 id=&#34;热更新&#34;&gt;热更新&lt;/h2&gt;
-&lt;p&gt;　　重新加载模块并不是完整的热更新，热更新需要在重新加载模块的时候做很多处理，对各个类型的变量进行有选择性的保留或是覆盖。下面来说一下各个种类的变量要怎么处理。&lt;/p&gt;
+&lt;p&gt;　　重新加载一个模块并不能完整对它进行热更新，热更新需要在重新加载模块的时候做很多处理，对各个类型的变量进行有选择性的保留或是覆盖。下面来说一下各个种类的变量要怎么处理。&lt;/p&gt;
 &lt;h3 id=&#34;外部变量&#34;&gt;外部变量&lt;/h3&gt;
-&lt;p&gt;　　外部变量包括了模块中的全局变量和 return 出来的局部变量。它们比较容易处理，因为外部可以直接读取到，区分它们处理方式的是它们有没有被外部引用。&lt;br&gt;
+&lt;p&gt;　　外部变量包括了模块中的全局变量和 return 出来的局部变量。它们比较容易处理，因为外部可以直接读取到，区分它们的处理方式要看需不需要处理它们的外部变量引用。&lt;br&gt;
 　　如果不需要处理它们的外部引用，那么一般将整个文件重新加载即可。重新加载以后文件中的变量都会被覆盖掉，如果需要保留部分旧值的话，可以在重新加载之前在外部获取并且保存这些旧值，然后在重新加载之后，再次恢复这些旧值即可。&lt;br&gt;
-　　如果需要处理它们的外部引用，那么就需要使用热更新脚本，在原地址上进行修改。&lt;/p&gt;
+　　如果需要处理它们的外部引用，那么就需要使用后面要讲到的热更新脚本了，会在原地址上进行修改，来保证外部的引用不会出问题。&lt;/p&gt;
 &lt;h3 id=&#34;局部变量&#34;&gt;局部变量&lt;/h3&gt;
 &lt;p&gt;　　局部变量如果不需要保留的话，那就不用额外处理了，局部变量在外部都是以函数的 upvalue 形式存在的，重新加载以后函数会使用新的 upvalue，跟以前的值没关系。如果要保留以前值的话，那就要将旧的 upvalue 赋值给新的 upvalue。&lt;br&gt;
-　　upvalue 的处理大概是热更新中最麻烦的部分，这部分因为要处理的问题跟实际情况的关联很强，所以除非在开发过程中就有一些强制规范约束，否则基本上不太可能实现类似一键更新这种操作。对于这种情况一般采用的方法需要每次为热更编写一个脚本，然后将需要修改的内容全部收集起来，使用 load 加载热更脚本，收集的内容作为 loadfile 的 env 参数传入。&lt;br&gt;
+　　upvalue 的处理大概是热更新中最麻烦的部分，这部分因为要处理的问题跟实际情况的关联很强，所以除非在开发过程中就有一些强制规范约束，否则基本上不太可能实现类似一键更新这种操作。&lt;br&gt;
+　　对于要处理局部变量的情况，一般采用的方法是为每次热更新编写一个脚本，在脚本中将需要修改的内容全部收集起来，然后使用 &lt;code&gt;loadfile&lt;/code&gt; 加载热更脚本，并且将之前收集到的内容作为 &lt;code&gt;loadfile&lt;/code&gt; 的 &lt;code&gt;env&lt;/code&gt; 参数传入。&lt;br&gt;
 　　处理 upvalue 的时候需要使用到一些 debug 库的方法。&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;debug.getinfo 用来获得函数信息，可以通过使用 debug.getinfo(func, &amp;ldquo;u&amp;rdquo;) 获得函数信息中与 upvalue 相关的部分。&lt;/li&gt;
@@ -94,7 +95,7 @@
 &lt;li&gt;debug.upvalueid 可以得到指定函数指定序号的 upvalue 的一个唯一标识符，可以用来判断两个函数引用的 upvalue 是否是同一个值。&lt;/li&gt;
 &lt;li&gt;debug.upvaluejoin 让一个闭包中的某个 upvalue 引用另一个闭包的某个 upvalue。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;　　要实现 upvalue 的保留关键就是通过上述的 api 拿到想要保留的旧函数 upvalue 的值，然后再赋值给新函数的 upvalue。&lt;br&gt;
+&lt;p&gt;　　要实现 upvalue 的保留，本质就是通过上述的 api 拿到想要保留的旧函数 upvalue 的值，然后再赋值给新函数的 upvalue。&lt;br&gt;
 　　收集 upvalue 的方法可以参考 skynet 中 &lt;a class=&#34;link&#34; href=&#34;https://github.com/cloudwu/skynet/blob/master/lualib/skynet/inject.lua&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;inject&lt;/a&gt; 的实现稍作修改，将 number 和 string 类型的 upvalue 也加入进来。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
@@ -141,7 +142,8 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;end&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　收集到以后的修改就非常自由了，既可以把模块整个重新加载一遍，然后将保存的 upvalue 还原，也可以在原来模块的基础上直接修改函数。一般为了避免其它地方引用的问题，所以还是在原地址上直接修改函数的比较多。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　收集完成以后，修改的方式就非常自由了，既可以把模块整个重新加载一遍，然后将保存的 upvalue 还原，也可以在原来模块的基础上直接修改函数。一般为了避免其它地方引用的问题，所以还是在原地址上直接修改函数的比较多。&lt;br&gt;
+　　来看一个简单的例子，在 m.add 被执行几次以后，需要进行热更修改，将 a 每次增加的值改为 2，并且需要保留之前 a 的值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -170,7 +172,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;m&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　来看一个简单的例子，在 m.add 被执行几次以后，需要进行热更修改，将 a 每次增加的值改为 2，并且需要延续之前 a 的值。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　在热更脚本 hotfix.lua 中，从环境中拿到传进来的 upvalue 直接赋值即可，旧的 m.add 函数和其 upvalue a 都被换成了新的。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -219,7 +221,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;-- a = 8&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　可以看到，热更脚本从环境中拿到传进来的 upvalue 直接赋值即可，旧的 m.add 函数和其 upvalue a 都被换成了新的。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　再来看一个稍微复杂一点的情况，这次再增加一个函数 &lt;code&gt;m.set&lt;/code&gt;，目标是将 add 改成 a = a + step，并且 step 变成两个函数的公共 upvalue，也就是说再次调用 m.set 修改 step 以后，m.add 可以直接使用新的值，而不需要再次热更。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -254,7 +256,7 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;return&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;m&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　再来看一个稍微复杂一点的情况，这次再加一个函数，目标是将 add 改成 a = a + step，并且 step 变成两个函数的公共 upvalue，也就是说再次调用 m.set 修改 step 以后，m.add 可以直接使用新的值，而不需要再次热更。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　要实现 upvalue 的关联需要使用 &lt;code&gt;debug.upvaluejoin&lt;/code&gt; 将 m.add 的第二个 upvalue step 与 m.set 的第一个 upvalue step 进行关联。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -306,15 +308,16 @@
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kd&#34;&gt;local&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;env&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;setmetatable&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;({&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;u&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;u&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;m&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;m&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;},&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;n&#34;&gt;__index&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;_ENV&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;})&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;loadfile&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;./hotfix.lua&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;bt&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt; &lt;span class=&#34;n&#34;&gt;env&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)()&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;-- a = 14&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;-- a = 14，增加了 10&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.set&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;mi&#34;&gt;100&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;-- a = 114&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;m.add&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt; &lt;span class=&#34;c1&#34;&gt;-- a = 114，增加了 100&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;　　这里最关键的一步是使用了 debug.upvaluejoin，将 m.add 的第二个 upvalue step 与 m.set 的第一个 upvalue step 进行了关联，可以看到热更过以后，再次调用 m.add 此时累加的步长已经变成了 step 的当前值 10，调用 m.set 将 step 设为 100 以后，再次调用 m.add，累加的步长变成了 100。&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;　　可以看到热更过以后，再次调用 &lt;code&gt;m.add&lt;/code&gt; 此时累加的步长已经变成了 &lt;code&gt;step&lt;/code&gt; 的当前值 10，使用 &lt;code&gt;m.set&lt;/code&gt; 将 &lt;code&gt;step&lt;/code&gt; 设为 100 以后，再次调用 &lt;code&gt;m.add&lt;/code&gt;，累加的步长变成了 100。&lt;/p&gt;
 &lt;h3 id=&#34;旧的对象&#34;&gt;旧的对象&lt;/h3&gt;
 &lt;p&gt;　　Lua 中的面向对象是使用元表的 __index 方法模拟出来的，创建出来的对象只有修改过的数据和函数是自己的，未修改过的数据和函数都是使用的类定义的提供的。&lt;br&gt;
-　　得益于这种实现方法，Lua 中热更新一个类的成员函数基本上不需要做什么额外处理，直接在原函数的位置上修改即可。&lt;/p&gt;
+　　得益于这种实现方法，Lua 中热更新一个类的成员函数基本上不需要做什么额外处理，直接在原函数的位置上修改即可。&lt;br&gt;
+　　在 c.lua 中实现一个简单的类，每次为它调用 add 方法会累加自己的 count 值。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
