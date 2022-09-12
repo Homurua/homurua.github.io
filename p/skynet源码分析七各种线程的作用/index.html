@@ -240,7 +240,7 @@
 
 
                 <time class="article-time--reading">
-                    阅读时长: 8 分钟
+                    阅读时长: 9 分钟
                 </time>
             </div>
         
@@ -400,7 +400,15 @@
 <p>　　timer 线程主要负责了两件事情，更新系统的当前时间和唤醒一个睡眠的 worker 线程。前者是为了给时间的获取接口提供时间返回值，以及执行定时任务，后者是让之前因为没有取到消息处理而睡眠的 worker 线程再次尝试去处理消息。</p>
 <h3 id="自己计时的意义">自己计时的意义</h3>
 <p>　　计时的实现很简单，记录了一个进程的开始时间 starttime 和一个进程从开始到现在经过的时间 current 来完成当前时间的计算，每经过 2.5ms 将 current 的值更新一次。<br>
-　　之所以要框架自己实现计时的原因主要有两个。首先，业务逻辑中取时间是一个经常有的操作，而 lua 标准库中的取时间的接口 os.time 的实现是用的系统调用 time 来做的，这个系统调用会使进程进入内核态，大量使用的话效率堪忧。而 skynet 每个 tick 更新时间是调用的 clock_gettime，这个接口可以说不是系统接口，或者说是因为 linux 的 vdso 机制使这个接口可以很高效的频繁调用。第二个原因是自己实现的计时不会被系统时间影响，在进程执行的过程中如果系统时间被改掉了，自己实现的计时器还是会按以前的步骤执行，这样可以避免一些问题的发生，比如定时器的触发问题。</p>
+　　之所以要框架自己实现计时的原因主要有两个。首先，可以为业务层取高精度时间提供一个高效的近似接口，不用每次都去调用 <code>clock_gettime</code> 取，提高了性能。第二个原因是自己实现的计时不会被系统时间影响，在进程执行的过程中如果系统时间被改掉了，自己实现的计时器还是会按以前的步骤执行，这样可以避免一些问题的发生，比如定时器的触发问题。</p>
+<h3 id="时间接口的使用">时间接口的使用</h3>
+<p>　　在 skynet 中有四个时间接口，<code>skynet.now</code>，<code>skynet.time</code>，<code>skynet.hpc</code> 还有 Lua 官方提供的 <code>os.time</code>，要根据场景使用不同的接口。</p>
+<ul>
+<li><code>skynet.now</code> 直接返回了 <code>current</code> 的值，也就是进程启动到现在的时间，这是个近似接口，<code>current</code> 的更新由 timer 线程维护，精度为 2.5ms。</li>
+<li><code>skynet.time</code> 返回了 <code>current</code> + <code>starttime</code> 的时间，也就是当前的绝对时间，它的精度同样为 2.5ms。</li>
+<li><code>skynet.hpc</code> 则直接调用了 <code>clock_gettime</code> 拿取了进程启动的相对纳秒时间，这个是准确的时间，但是消耗是最大的。</li>
+<li><code>os.time</code> 接口是直接调用了 <code>time</code> 的，它返回的是秒级的绝对时间，是最快的。</li>
+</ul>
 <h3 id="定时器的实现">定时器的实现</h3>
 <p>　　skynet 中定时器的计时是使用时间轮算法来实现的，时间轮是一个被广泛用于实现高效率定时器的算法，linux kernel 的定时器也是使用时间轮算法实现的。<br>
 　　skynet.timeout 是 skynet 提供的定时调用接口，它首先拿到一个新的 session 用于接收定时器的唤醒，然后创建一个包裹了等待执行的函数的协程，把协程跟 session 关联起来，然后用 session 和自己的 handle 创建一个 struct timer_event 加入到时间轮中。</p>
@@ -959,6 +967,7 @@
       <ol>
         <li><a href="#作用-1">作用</a></li>
         <li><a href="#自己计时的意义">自己计时的意义</a></li>
+        <li><a href="#时间接口的使用">时间接口的使用</a></li>
         <li><a href="#定时器的实现">定时器的实现</a></li>
       </ol>
     </li>
