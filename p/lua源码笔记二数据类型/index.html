@@ -527,7 +527,7 @@
 </span></span><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Udata</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="n">CommonHeader</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">nuvalue</span><span class="p">;</span>  <span class="cm">/* number of user values */</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">len</span><span class="p">;</span>  <span class="cm">/* number of bytes */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">len</span><span class="p">;</span>  <span class="cm">/* number of bytes */</span>
 </span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">Table</span> <span class="o">*</span><span class="n">metatable</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">GCObject</span> <span class="o">*</span><span class="n">gclist</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">UValue</span> <span class="n">uv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>  <span class="cm">/* user values */</span>
@@ -571,7 +571,7 @@
 </span></span><span class="line"><span class="cl">    <span class="n">lu_byte</span> <span class="n">shrlen</span><span class="p">;</span>  <span class="cm">/* length for short strings */</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">hash</span><span class="p">;</span> <span class="c1">// 哈希值
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">union</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="n">size_t</span> <span class="n">lnglen</span><span class="p">;</span>  <span class="cm">/* length for long strings */</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">size_t</span> <span class="n">lnglen</span><span class="p">;</span>  <span class="cm">/* length for long strings */</span>
 </span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">TString</span> <span class="o">*</span><span class="n">hnext</span><span class="p">;</span>  <span class="cm">/* linked list for hash table */</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="n">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span> <span class="c1">// 保存字符串的内容
@@ -955,9 +955,9 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 
     
 
-<aside class="related-contents--wrapper">
+<aside class="related-content--wrapper">
     <h2 class="section-title">相关文章</h2>
-    <div class="related-contents">
+    <div class="related-content">
         <div class="flex article-list--tile">
             
                 
@@ -971,6 +971,7 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -983,6 +984,7 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -995,6 +997,7 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
         </div>
     </a>
 </article>
+
             
         </div>
     </div>
@@ -1051,12 +1054,14 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
     <section class="copyright">
         &copy; 
         
-        2022 放学后茶会
+            2022 - 
+        
+        2023 放学后茶会
     </section>
     
     <section class="powerby">
         Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
-        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.14.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>
 
@@ -1133,10 +1138,10 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
                 >
             </script><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
             ><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
             >
 
             </main>
@@ -1209,26 +1214,21 @@ abslineinfo 保存了绝对行数的信息，它是一个 AbsLineInfo 结构的�
 
         </div>
         <script 
-                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
-<style>
-     
-</style>
-
 <script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-</script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
 
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
 
     </body>
 </html>

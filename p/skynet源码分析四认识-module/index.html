@@ -383,7 +383,7 @@
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="nf">_query</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">M</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">strcmp</span><span class="p">(</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">&amp;</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
 </span></span><span class="line"><span class="cl">        <span class="p">}</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
@@ -391,27 +391,27 @@
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="nf">skynet_module_query</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">_query</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="nf">_query</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">result</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="c1">// 上锁
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">SPIN_LOCK</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">SPIN_LOCK</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// 因为可能就是刚刚交出锁的那个线程添加了这个模块，所以要再检查一次
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">result</span> <span class="o">=</span> <span class="n">_query</span><span class="p">(</span><span class="n">name</span><span class="p">);</span> <span class="c1">// double check
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">result</span> <span class="o">=</span> <span class="nf">_query</span><span class="p">(</span><span class="n">name</span><span class="p">);</span> <span class="c1">// double check
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// 判断数量
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="n">M</span><span class="o">-&gt;</span><span class="n">count</span> <span class="o">&lt;</span> <span class="n">MAX_MODULE_TYPE</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">M</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">        <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="n">_try_open</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="nf">_try_open</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">dl</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">            <span class="c1">// 如果打开动态库成功，临时保存名字和句柄给 open_sym 使用
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">].</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">            <span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">].</span><span class="n">module</span> <span class="o">=</span> <span class="n">dl</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">open_sym</span><span class="p">(</span><span class="o">&amp;</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="nf">open_sym</span><span class="p">(</span><span class="o">&amp;</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">                <span class="c1">// 真正保存模块名字
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">].</span><span class="n">name</span> <span class="o">=</span> <span class="n">skynet_strdup</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">].</span><span class="n">name</span> <span class="o">=</span> <span class="nf">skynet_strdup</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">                <span class="c1">// 累加模块记录
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">M</span><span class="o">-&gt;</span><span class="n">count</span><span class="o">++</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">                <span class="n">result</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">M</span><span class="o">-&gt;</span><span class="n">m</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
@@ -419,7 +419,7 @@
 </span></span><span class="line"><span class="cl">        <span class="p">}</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// 解锁
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">SPIN_UNLOCK</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">SPIN_UNLOCK</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
@@ -480,41 +480,41 @@
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">_try_open</span><span class="p">(</span><span class="k">struct</span> <span class="n">modules</span> <span class="o">*</span><span class="n">m</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">l</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span> <span class="o">=</span> <span class="n">m</span><span class="o">-&gt;</span><span class="n">path</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">path_size</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">name_size</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">path_size</span> <span class="o">=</span> <span class="nf">strlen</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">name_size</span> <span class="o">=</span> <span class="nf">strlen</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">sz</span> <span class="o">=</span> <span class="n">path_size</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// search path
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">void</span> <span class="o">*</span><span class="n">dl</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="n">tmp</span><span class="p">[</span><span class="n">sz</span><span class="p">];</span>
 </span></span><span class="line"><span class="cl">    <span class="k">do</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="n">memset</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sz</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">memset</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sz</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">path</span> <span class="o">==</span> <span class="sc">&#39;;&#39;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">            <span class="n">path</span><span class="o">++</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">path</span> <span class="o">==</span> <span class="sc">&#39;\0&#39;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span> <span class="c1">// 如果 path 已经查找完了，则跳出循环
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">l</span> <span class="o">=</span> <span class="n">strchr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sc">&#39;;&#39;</span><span class="p">);</span> <span class="c1">// 查找分号位置
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">l</span> <span class="o">=</span> <span class="nf">strchr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sc">&#39;;&#39;</span><span class="p">);</span> <span class="c1">// 查找分号位置
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">l</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">            <span class="n">l</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">l</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="nf">strlen</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">l</span> <span class="o">-</span> <span class="n">path</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;?&#39;</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">            <span class="n">tmp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
 </span></span><span class="line"><span class="cl">        <span class="p">}</span>
-</span></span><span class="line"><span class="cl">        <span class="n">memcpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">name_size</span><span class="p">);</span> <span class="c1">// 组合出本路径下的完整 module 名字
+</span></span><span class="line"><span class="cl">        <span class="nf">memcpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">name_size</span><span class="p">);</span> <span class="c1">// 组合出本路径下的完整 module 名字
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">&#39;?&#39;</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">            <span class="n">strncpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">,</span> <span class="n">path</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">len</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">strncpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">,</span> <span class="n">path</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">len</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">            <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;Invalid C service path</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;Invalid C service path</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="p">}</span>
-</span></span><span class="line"><span class="cl">        <span class="n">dl</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">RTLD_NOW</span> <span class="o">|</span> <span class="n">RTLD_GLOBAL</span><span class="p">);</span> <span class="c1">// 尝试打开组合好的路径
+</span></span><span class="line"><span class="cl">        <span class="n">dl</span> <span class="o">=</span> <span class="nf">dlopen</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">RTLD_NOW</span> <span class="o">|</span> <span class="n">RTLD_GLOBAL</span><span class="p">);</span> <span class="c1">// 尝试打开组合好的路径
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">path</span> <span class="o">=</span> <span class="n">l</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">);</span> <span class="c1">// 如果打开失败则继续循环，只要有一个打开成功了则认为找到了
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// 上面的循环 break 以后，如果 dl 还是 NULL 就拿错误信息
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">dl</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;try open %s failed : %s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dlerror</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&#34;try open %s failed : %s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nf">dlerror</span><span class="p">());</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">dl</span><span class="p">;</span>
@@ -557,27 +557,27 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 拿到模块中定义好的指定函数的地址
 </span></span></span><span class="line"><span class="cl"><span class="c1">// 并没有在乎有没有拿到，调用的时候会再判断
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">get_api</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="n">mod</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">api_name</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">name_size</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">mod</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">api_size</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">api_name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">name_size</span> <span class="o">=</span> <span class="nf">strlen</span><span class="p">(</span><span class="n">mod</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">api_size</span> <span class="o">=</span> <span class="nf">strlen</span><span class="p">(</span><span class="n">api_name</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="n">tmp</span><span class="p">[</span><span class="n">name_size</span> <span class="o">+</span> <span class="n">api_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
-</span></span><span class="line"><span class="cl">    <span class="n">memcpy</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">mod</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">name_size</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">memcpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">,</span> <span class="n">api_name</span><span class="p">,</span> <span class="n">api_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">// 组合 module 名字和 api 名字
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">strrchr</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="sc">&#39;.&#39;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">memcpy</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">mod</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">name_size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">memcpy</span><span class="p">(</span><span class="n">tmp</span> <span class="o">+</span> <span class="n">name_size</span><span class="p">,</span> <span class="n">api_name</span><span class="p">,</span> <span class="n">api_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">// 组合 module 名字和 api 名字
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="nf">strrchr</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="sc">&#39;.&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">ptr</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">        <span class="n">ptr</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">        <span class="n">ptr</span> <span class="o">=</span> <span class="n">ptr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
-</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">mod</span><span class="o">-&gt;</span><span class="n">module</span><span class="p">,</span> <span class="n">ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">dlsym</span><span class="p">(</span><span class="n">mod</span><span class="o">-&gt;</span><span class="n">module</span><span class="p">,</span> <span class="n">ptr</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1">// 读取动态库内的函数地址
 </span></span></span><span class="line"><span class="cl"><span class="c1">// 返回是否读取到了 init 函数
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="nf">open_sym</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="n">mod</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">create</span> <span class="o">=</span> <span class="n">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_create&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">init</span> <span class="o">=</span> <span class="n">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_init&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">release</span> <span class="o">=</span> <span class="n">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_release&#34;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">signal</span> <span class="o">=</span> <span class="n">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_signal&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">create</span> <span class="o">=</span> <span class="nf">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_create&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">init</span> <span class="o">=</span> <span class="nf">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_init&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">release</span> <span class="o">=</span> <span class="nf">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_release&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">mod</span><span class="o">-&gt;</span><span class="n">signal</span> <span class="o">=</span> <span class="nf">get_api</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s">&#34;_signal&#34;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">mod</span><span class="o">-&gt;</span><span class="n">init</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
@@ -603,9 +603,9 @@
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">void</span> <span class="o">*</span><span class="nf">skynet_module_instance_create</span><span class="p">(</span><span class="k">struct</span> <span class="n">skynet_module</span> <span class="o">*</span><span class="n">m</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">m</span><span class="o">-&gt;</span><span class="n">create</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">        <span class="c1">// 使用之前注册好的模块的 create 方法获取模块副本
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">return</span> <span class="n">m</span><span class="o">-&gt;</span><span class="n">create</span><span class="p">();</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">return</span> <span class="n">m</span><span class="o">-&gt;</span><span class="nf">create</span><span class="p">();</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">intptr_t</span><span class="p">)</span> <span class="p">(</span><span class="o">~</span><span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="kt">intptr_t</span><span class="p">)</span> <span class="p">(</span><span class="o">~</span><span class="mi">0</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span></code></pre></td></tr></table>
@@ -646,9 +646,9 @@
 
     
 
-<aside class="related-contents--wrapper">
+<aside class="related-content--wrapper">
     <h2 class="section-title">相关文章</h2>
-    <div class="related-contents">
+    <div class="related-content">
         <div class="flex article-list--tile">
             
                 
@@ -662,6 +662,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -674,6 +675,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -686,6 +688,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -698,6 +701,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -710,6 +714,7 @@
         </div>
     </a>
 </article>
+
             
         </div>
     </div>
@@ -766,12 +771,14 @@
     <section class="copyright">
         &copy; 
         
-        2022 放学后茶会
+            2022 - 
+        
+        2023 放学后茶会
     </section>
     
     <section class="powerby">
         Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
-        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.14.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>
 
@@ -848,10 +855,10 @@
                 >
             </script><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
             ><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
             >
 
             </main>
@@ -894,26 +901,21 @@
 
         </div>
         <script 
-                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
-<style>
-     
-</style>
-
 <script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-</script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
 
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
 
     </body>
 </html>

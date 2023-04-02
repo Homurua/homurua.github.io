@@ -409,15 +409,15 @@
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// 精简版，仅留下最基本的流程
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">void</span> <span class="nf">readQueryFromClient</span><span class="p">(</span><span class="n">connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="n">connGetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span> <span class="c1">// 根据 conn 拿到 client
+</span></span><span class="line"><span class="cl">    <span class="n">client</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="nf">connGetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span> <span class="c1">// 根据 conn 拿到 client
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">nread</span><span class="p">,</span> <span class="n">big_arg</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="n">size_t</span> <span class="n">qblen</span><span class="p">,</span> <span class="n">readlen</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">qblen</span><span class="p">,</span> <span class="n">readlen</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">readlen</span> <span class="o">=</span> <span class="n">PROTO_IOBUF_LEN</span><span class="p">;</span> <span class="c1">// 默认 16KB
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">qblen</span> <span class="o">=</span> <span class="n">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">);</span> <span class="c1">// 拿到当前已写入的长度
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">nread</span> <span class="o">=</span> <span class="n">connRead</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span> <span class="o">+</span> <span class="n">qblen</span><span class="p">,</span> <span class="n">readlen</span><span class="p">);</span> <span class="c1">// 读取数据
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">sdsIncrLen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">,</span> <span class="n">nread</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">qblen</span> <span class="o">=</span> <span class="n">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">processInputBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="c1">// 解析并执行 buffer 中的内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">qblen</span> <span class="o">=</span> <span class="nf">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">);</span> <span class="c1">// 拿到当前已写入的长度
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">nread</span> <span class="o">=</span> <span class="nf">connRead</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span> <span class="o">+</span> <span class="n">qblen</span><span class="p">,</span> <span class="n">readlen</span><span class="p">);</span> <span class="c1">// 读取数据
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">sdsIncrLen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">,</span> <span class="n">nread</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">qblen</span> <span class="o">=</span> <span class="nf">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">processInputBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="c1">// 解析并执行 buffer 中的内容
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>         <span class="n">c</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span></code></pre></td></tr></table>
@@ -449,19 +449,19 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">processInputBuffer</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span> <span class="o">&lt;</span> <span class="n">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span> <span class="o">&lt;</span> <span class="nf">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">))</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">        <span class="c1">// 解析 buf，解析结果放在 client 的 argc 和 argv 中，增加 qb_pos
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">processInlineBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">!=</span> <span class="n">C_OK</span><span class="p">)</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="nf">processInlineBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">!=</span> <span class="n">C_OK</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        
 </span></span><span class="line"><span class="cl">        <span class="c1">// 执行命令
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">processCommandAndResetClient</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="p">{</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="nf">processCommandAndResetClient</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="n">C_ERR</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">C_ERR</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        <span class="p">}</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="n">sdsrange</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// 收缩 querybuf
+</span></span><span class="line"><span class="cl">        <span class="nf">sdsrange</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span> <span class="c1">// 收缩 querybuf
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">
@@ -483,8 +483,8 @@
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">processCommand</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// 根据 client 的 argc 和 argv 在命令表中查找命令
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">lastcmd</span> <span class="o">=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">realcmd</span> <span class="o">=</span> <span class="n">lookupCommand</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">    <span class="n">call</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">CMD_CALL_FULL</span><span class="p">);</span> <span class="c1">// 最后执行命令
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd</span> <span class="o">=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">lastcmd</span> <span class="o">=</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">realcmd</span> <span class="o">=</span> <span class="nf">lookupCommand</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">call</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">CMD_CALL_FULL</span><span class="p">);</span> <span class="c1">// 最后执行命令
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span></code></pre></td></tr></table>
@@ -503,10 +503,10 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">call</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="n">flags</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">call_timer</span> <span class="o">=</span> <span class="n">ustime</span><span class="p">();</span> <span class="c1">// 起始时间打点
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">proc</span><span class="p">(</span><span class="n">c</span><span class="p">);</span> <span class="c1">// 调用命令的 proc 函数
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">ustime_t</span> <span class="n">duration</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="n">duration</span> <span class="o">=</span> <span class="n">ustime</span><span class="p">()</span> <span class="o">-</span> <span class="n">call_timer</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">call_timer</span> <span class="o">=</span> <span class="nf">ustime</span><span class="p">();</span> <span class="c1">// 起始时间打点
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="nf">proc</span><span class="p">(</span><span class="n">c</span><span class="p">);</span> <span class="c1">// 调用命令的 proc 函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">ustime_t</span> <span class="n">duration</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">duration</span> <span class="o">=</span> <span class="nf">ustime</span><span class="p">()</span> <span class="o">-</span> <span class="n">call_timer</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">c</span><span class="o">-&gt;</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span><span class="p">;</span> <span class="c1">// 保存本条命令执行的时间
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
 </span></span></code></pre></td></tr></table>
@@ -538,19 +538,19 @@
 </span></span><span class="line"><span class="cl">    <span class="n">robj</span> <span class="o">*</span><span class="n">o</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="c1">// 查找指定对象
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">((</span><span class="n">o</span> <span class="o">=</span> <span class="n">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shared</span><span class="p">.</span><span class="n">null</span><span class="p">[</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">resp</span><span class="p">]))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">((</span><span class="n">o</span> <span class="o">=</span> <span class="nf">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shared</span><span class="p">.</span><span class="n">null</span><span class="p">[</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">resp</span><span class="p">]))</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">OBJ_STRING</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">OBJ_STRING</span><span class="p">))</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">C_ERR</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="p">}</span>
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">    <span class="n">addReplyBulk</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">o</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">addReplyBulk</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">o</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">C_OK</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">getCommand</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="n">getGenericCommand</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">getGenericCommand</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
 </span></span></code></pre></td></tr></table>
 </div>
@@ -578,10 +578,10 @@
 </span><span class="lnt">16
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">_writeToClient</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="n">ssize_t</span> <span class="o">*</span><span class="n">nwritten</span><span class="p">)</span> <span class="p">{</span>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">_writeToClient</span><span class="p">(</span><span class="n">client</span> <span class="o">*</span><span class="n">c</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="o">*</span><span class="n">nwritten</span><span class="p">)</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="n">nwritten</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">bufpos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="n">nwritten</span> <span class="o">=</span> <span class="n">connWrite</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">buf</span> <span class="o">+</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">sentlen</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">bufpos</span> <span class="o">-</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">sentlen</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="n">nwritten</span> <span class="o">=</span> <span class="nf">connWrite</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">buf</span> <span class="o">+</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">sentlen</span><span class="p">,</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">bufpos</span> <span class="o">-</span> <span class="n">c</span><span class="o">-&gt;</span><span class="n">sentlen</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">nwritten</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">C_ERR</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">        <span class="n">c</span><span class="o">-&gt;</span><span class="n">sentlen</span> <span class="o">+=</span> <span class="o">*</span><span class="n">nwritten</span><span class="p">;</span>
@@ -631,9 +631,9 @@
 
     
 
-<aside class="related-contents--wrapper">
+<aside class="related-content--wrapper">
     <h2 class="section-title">相关文章</h2>
-    <div class="related-contents">
+    <div class="related-content">
         <div class="flex article-list--tile">
             
                 
@@ -647,6 +647,7 @@
         </div>
     </a>
 </article>
+
             
         </div>
     </div>
@@ -703,12 +704,14 @@
     <section class="copyright">
         &copy; 
         
-        2022 放学后茶会
+            2022 - 
+        
+        2023 放学后茶会
     </section>
     
     <section class="powerby">
         Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
-        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.14.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>
 
@@ -785,10 +788,10 @@
                 >
             </script><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
             ><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
             >
 
             </main>
@@ -830,26 +833,21 @@
 
         </div>
         <script 
-                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
-<style>
-     
-</style>
-
 <script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-</script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
 
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
 
     </body>
 </html>

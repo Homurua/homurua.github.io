@@ -285,15 +285,15 @@
 </span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_aligned_alloc aligned_alloc
 </span></span></span><span class="line"><span class="cl"><span class="cp">#define skynet_posix_memalign posix_memalign
 </span></span></span><span class="line"><span class="cl"><span class="cp"></span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_malloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">sz</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_calloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">nmemb</span><span class="p">,</span><span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_realloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_malloc</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">sz</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_calloc</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">nmemb</span><span class="p">,</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_realloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">size</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">skynet_free</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="kt">char</span> <span class="o">*</span> <span class="nf">skynet_strdup</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_lalloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">osize</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">nsize</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_memalign</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_aligned_alloc</span><span class="p">(</span><span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">skynet_posix_memalign</span><span class="p">(</span><span class="kt">void</span> <span class="o">**</span><span class="n">memptr</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_lalloc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">osize</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">nsize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_memalign</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="o">*</span> <span class="nf">skynet_aligned_alloc</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">skynet_posix_memalign</span><span class="p">(</span><span class="kt">void</span> <span class="o">**</span><span class="n">memptr</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">alignment</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">size</span><span class="p">);</span>
 </span></span></code></pre></td></tr></table>
 </div>
 </div><p>　　这一套接口跟标准库的接口命名完全一样，只是在名字前面加了 skynet_ 的前缀，同时参数和功能也是完全一样的。<br>
@@ -325,7 +325,7 @@
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">mem_data</span> <span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="kt">uint32_t</span> <span class="n">handle</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">    <span class="n">ssize_t</span> <span class="n">allocated</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">ssize_t</span> <span class="n">allocated</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">};</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">mem_cookie</span> <span class="p">{</span>
@@ -387,9 +387,9 @@
 
     
 
-<aside class="related-contents--wrapper">
+<aside class="related-content--wrapper">
     <h2 class="section-title">相关文章</h2>
-    <div class="related-contents">
+    <div class="related-content">
         <div class="flex article-list--tile">
             
                 
@@ -403,6 +403,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -415,6 +416,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -427,6 +429,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -439,6 +442,7 @@
         </div>
     </a>
 </article>
+
             
                 
 <article class="">
@@ -451,6 +455,7 @@
         </div>
     </a>
 </article>
+
             
         </div>
     </div>
@@ -507,12 +512,14 @@
     <section class="copyright">
         &copy; 
         
-        2022 放学后茶会
+            2022 - 
+        
+        2023 放学后茶会
     </section>
     
     <section class="powerby">
         Built with <a href="https://gohugo.io/" target="_blank" rel="noopener">Hugo</a> <br />
-        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.10.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
+        主题 <b><a href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener" data-version="3.14.0">Stack</a></b> 由 <a href="https://jimmycai.com" target="_blank" rel="noopener">Jimmy</a> 设计
     </section>
 </footer>
 
@@ -589,10 +596,10 @@
                 >
             </script><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css"integrity="sha256-c0uckgykQ9v5k&#43;IqViZOZKc47Jn7KQil4/MP3ySA3F8="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css"crossorigin="anonymous"
             ><link 
                 rel="stylesheet" 
-                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css"integrity="sha256-SBLU4vv6CA6lHsZ1XyTdhyjJxCjPif/TRkjnsyGAGnE="crossorigin="anonymous"
+                href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css"crossorigin="anonymous"
             >
 
             </main>
@@ -639,26 +646,21 @@
 
         </div>
         <script 
-                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"integrity="sha256-5NovOZc4iwiAWTYIFiIM7DxKUXKWvpVEuMEPLzcm5/g="crossorigin="anonymous"
+                src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z&#43;KMkF24hUW8WePSA9HM="crossorigin="anonymous"
                 
                 >
             </script><script type="text/javascript" src="/ts/main.js" defer></script>
-<style>
-     
-</style>
-
 <script>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-</script>
+    (function () {
+        const customFont = document.createElement('link');
+        customFont.href = "https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap";
 
+        customFont.type = "text/css";
+        customFont.rel = "stylesheet";
+
+        document.head.appendChild(customFont);
+    }());
+</script>
 
     </body>
 </html>
